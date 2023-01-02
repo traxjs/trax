@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "declaration": true,
+        "outDir": "lib",
+        "esModuleInterop": true,
+        "target": "es6",
+        "module": "es6",
+        "moduleResolution": "node",
+        "strict": true,
+        "removeComments": false,
+        "preserveConstEnums": true
+    },
+    "exclude": [
+        "node_modules",
+        "**/*.spec.ts",
+        "**/__tests__",
+        "**/__mocks__"
+    ]
+}

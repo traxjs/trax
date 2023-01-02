@@ -1,0 +1,42 @@
+{
+    "name": "@traxjs/trax",
+    "version": "0.0.1",
+    "description": "Reactive state management",
+    "main": "dist/trax.mjs",
+    "files": [
+        "src",
+        "dist"
+    ],
+    "types": "lib/trax.d.ts",
+    "typings": "lib/trax.d.ts",
+    "author": "Bertrand Laporte",
+    "license": "MIT",
+    "bugs": "https://github.com/traxjs/trax/issues",
+    "keywords": [
+        "data store",
+        "state management",
+        "state",
+        "compute",
+        "computed property",
+        "reactive",
+        "reactivity",
+        "mobx",
+        "observable",
+        "trackable",
+        "react-component",
+        "react",
+        "preact",
+        "model",
+        "frp",
+        "data flow"
+    ],
+    "scripts": {
+        "build": "tsc && vite build",
+        "test": "vitest"
+    },
+    "devDependencies": {
+        "typescript": "^4.9.4",
+        "vite": "^4.0.3",
+        "vitest": "^0.26.3"
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "name": "trax-root",
+    "private": true,
+    "workspaces": [
+        "packages/*"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/traxjs/trax.git"
+    },
+    "license": "MIT",
+    "scripts": {
+        "test-trax": "yarn workspace @traxjs/trax test run",
+        "test-examples": "yarn workspace @traxjs/examples test run",
+        "test": "yarn test-trax && yarn test-examples",
+        "build-trax": "yarn workspace @traxjs/trax build",
+        "build-examples": "yarn workspace @traxjs/examples build",
+        "build": "yarn build-trax && yarn build-examples"
+    }
+}

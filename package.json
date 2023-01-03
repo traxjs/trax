@@ -15,6 +15,7 @@
         "test": "yarn test-trax && yarn test-examples",
         "build-trax": "yarn workspace @traxjs/trax build",
         "build-examples": "yarn workspace @traxjs/examples build",
-        "build": "yarn build-trax && yarn build-examples"
+        "build": "yarn build-trax && yarn build-examples",
+        "pre-release": "yarn build && yarn test"
     }
 }

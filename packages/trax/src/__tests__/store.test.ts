@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest';
 import { $Store, createStore } from '../trax';
 
 interface $Person {

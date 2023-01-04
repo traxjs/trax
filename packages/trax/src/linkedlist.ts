@@ -35,9 +35,8 @@ function getItemFromPool<T>(value: T, next?: $ListItem<T>) {
 }
 
 /**
- * Simple Linked list
- * Object properties should be kept minimal as an instance of this object
- * will be created for each tracked object used by a processor
+ * Simple Linked list that can be used to manage stacks
+ * Object properties are voluntarily kept minimal to minimize memory footprint
  */
 export class LinkedList<T> {
     private _head?: $ListItem<T>;

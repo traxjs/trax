@@ -3,7 +3,7 @@
  * Data type that can be used in logs
  * Must be a valid parameter for JSON.stringify()
  */
-export type $LogData = string | number | boolean | null | Object;
+export type $LogData = string | number | boolean | null | Object | $LogData[];
 
 /**
  * Log entry in the log stream
@@ -45,7 +45,7 @@ export interface $LogStream {
     size: number;
     /**
      * Stream max size
-     * Use 0 to specify no limits
+     * Use -1 to specify no limits
      * Otherwise minimum size will be 2
      * (Default: 500)
      */

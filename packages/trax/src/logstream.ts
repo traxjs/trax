@@ -12,6 +12,8 @@ export const traxEvents = Object.freeze({
     "Warning": "!WRN",
     /** When an error is logged */
     "Error": "!ERR",
+    /** When a cycle ends, leaving the place for the next cycle */
+    "CycleComplete": "!NXT",
     /** When a trax entity is created (e.g. object / processor / store)  */
     "New": "!NEW",
     /** When a trax entity is disposed (e.g. object / processor / store)  */
@@ -90,8 +92,18 @@ export function createLogStream(format: $LogFormatter): $LogStream {
 
     return {
         event(type: string, data?: $LogData, src?: any) {
-            // TODO maxSize and object reuse
-            const itm: $LogEntry = { id: "", type: "", data: null };
+            let itm: $LogEntry;
+            if (size >= maxSize && maxSize > 1) {
+                itm = head!;
+                head = head!.next;
+                size--;
+                itm.id = "";
+                itm.type = "";
+                itm.next = itm.data = undefined;
+            } else {
+                itm = { id: "", type: "", data: null }
+            }
+
             format(itm, type, data, src);
             if (itm.id === "" || itm.type === "") {
                 // invalid formatter, there is nothing we can do here
@@ -100,25 +112,42 @@ export function createLogStream(format: $LogFormatter): $LogStream {
             } else {
                 if (head === undefined) {
                     head = tail = itm;
+                    size = 1;
                 } else {
                     // append to tail
                     tail!.next = itm;
                     tail = itm;
+                    size++;
                 }
-                size++;
             }
         },
         info(...data: $LogData[]) {
-
+            this.event(traxEvents.Info, mergeMessageData(data));
         },
         warning(...data: $LogData[]) {
-
+            this.event(traxEvents.Warning, mergeMessageData(data));
         },
         error(...data: $LogData[]) {
-
+            this.event(traxEvents.Error, mergeMessageData(data));
         },
-        set maxSize(size: number) {
-
+        set maxSize(sz: number) {
+            const prev = maxSize;
+            if (sz < 0) {
+                maxSize = -1; // no limits
+            } else if (sz < 2) {
+                maxSize = 2; // minimum size to remove corner cases
+            } else {
+                maxSize = sz;
+            }
+            if (maxSize > 0 && maxSize < prev && maxSize < size) {
+                // we need to remove the oldest elements
+                let count = size - maxSize;
+                while (head && count) {
+                    head = head.next;
+                    count--;
+                    size--;
+                }
+            }
         },
         get maxSize(): number {
             return maxSize;
@@ -141,3 +170,31 @@ export function createLogStream(format: $LogFormatter): $LogStream {
 
 }
 
+function mergeMessageData(data: $LogData[]): $LogData | undefined {
+    let curMessage = "";
+    const output: $LogData[] = [];
+    for (let d of data) {
+        const tp = typeof d;
+        if (tp === "string" || tp === "number" || tp === "boolean" || d === null) {
+            if (curMessage) {
+                curMessage += " " + d;
+            } else {
+                curMessage = "" + d;
+            }
+        } else {
+            if (curMessage) {
+                output.push(curMessage);
+                curMessage = "";
+            }
+            output.push(d);
+        }
+    }
+    if (curMessage) {
+        output.push(curMessage);
+    }
+    if (output.length === 0) return undefined;
+    if (output.length === 1) {
+        return output[0];
+    }
+    return output;
+}

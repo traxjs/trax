@@ -103,48 +103,215 @@ describe('LogStream', () => {
         });
     });
 
-    it('should accept internal and custom events', async () => {
-        expect(log.size).toBe(0);
-        log.event("foo.bar");
-        expect(log.size).toBe(1);
-        log.event("blah", { v: "value" });
-        expect(log.size).toBe(2);
-        log.event(traxEvents.New, {}, internalSrcKey);
-        expect(log.size).toBe(3);
+    describe('Events', () => {
+        it('should log internal and custom events', async () => {
+            expect(log.size).toBe(0);
+            log.event("foo.bar");
+            expect(log.size).toBe(1);
+            log.event("blah", { v: "value" });
+            expect(log.size).toBe(2);
+            log.event(traxEvents.New, {}, internalSrcKey);
+            expect(log.size).toBe(3);
 
-        expect(printLogs()).toMatchObject([
-            "1 foo.bar - NO-DATA",
-            '2 blah - {"v":"value"}',
-            "3 !NEW - {}",
-        ]);
+            expect(printLogs()).toMatchObject([
+                "1 foo.bar - NO-DATA",
+                '2 blah - {"v":"value"}',
+                "3 !NEW - {}",
+            ]);
+        });
+
+        it('should log errors for non authorized events', async () => {
+            log.event(traxEvents.New, {}, internalSrcKey);
+            log.event(traxEvents.New, {}); // key not provided
+            expect(log.size).toBe(2);
+
+            expect(printLogs()).toMatchObject([
+                "1 !NEW - {}",
+                '2 !ERR - Event type cannot start with reserved prefix: !NEW',
+            ]);
+        });
     });
 
-    it('should scan until processor return false', async () => {
-        log.event("foo.bar");
-        log.event("foo.bar");
-        log.event("foo.bar");
-        log.event("foo.bar");
-        expect(log.size).toBe(4);
+    describe('Scan', () => {
+        it('should scan until processor return false', async () => {
+            log.event("foo.bar");
+            log.event("foo.bar");
+            log.event("foo.bar");
+            log.event("foo.bar");
+            expect(log.size).toBe(4);
 
-        expect(printLogs2()).toMatchObject([
-            "1 foo.bar - NO-DATA",
-            "2 foo.bar - NO-DATA"
-        ]);
+            expect(printLogs2()).toMatchObject([
+                "1 foo.bar - NO-DATA",
+                "2 foo.bar - NO-DATA"
+            ]);
 
-        function printLogs2(): string[] {
-            const arr: string[] = [];
-            let count = 0;
-            log.scan((itm) => {
-                arr.push(`${itm.id} ${itm.type} - ${itm.data || "NO-DATA"}`);
-                count++;
-                return (count !== 2);
-            });
-            return arr;
-        }
+            function printLogs2(): string[] {
+                const arr: string[] = [];
+                let count = 0;
+                log.scan((itm) => {
+                    arr.push(`${itm.id} ${itm.type} - ${itm.data || "NO-DATA"}`);
+                    count++;
+                    return (count !== 2);
+                });
+                return arr;
+            }
 
+        });
     });
 
-    it('should have a default maxSize of 500', async () => {
-        expect(log.maxSize).toBe(500);
+    describe('App logs', () => {
+        it('should log info messages', async () => {
+            log.info("Hello", "World");
+            log.info("Hello", "Trax", "!");
+            expect(printLogs()).toMatchObject([
+                '1 !LOG - "Hello World"',
+                '2 !LOG - "Hello Trax !"',
+            ]);
+        });
+
+        it('should log info messages', async () => {
+            log.warning("A", 42, "x");
+            log.warning("B", false, null, 321);
+            expect(printLogs()).toMatchObject([
+                '1 !WRN - "A 42 x"',
+                '2 !WRN - "B false null 321"',
+            ]);
+        });
+
+        it('should log error messages', async () => {
+            log.error("Some error", { description: "!!!" });
+            log.error({ desc: "Some Error" });
+            log.error();
+            log.error("Unexpected error");
+            expect(printLogs()).toMatchObject([
+                '1 !ERR - ["Some error",{"description":"!!!"}]',
+                '2 !ERR - {"desc":"Some Error"}',
+                '3 !ERR - NO-DATA',
+                '4 !ERR - "Unexpected error"',
+            ]);
+        });
     });
+
+    describe('Stream Maxsize', () => {
+        it('should have a default maxSize of 500', async () => {
+            expect(log.maxSize).toBe(500);
+        });
+
+        it('should consider negative values as no limits', async () => {
+            log.maxSize = 4;
+            expect(log.maxSize).toBe(4);
+            log.maxSize = -4;
+            expect(log.maxSize).toBe(-1);
+        });
+
+        it('should not accept values 0 and 1', async () => {
+            log.maxSize = 1;
+            expect(log.maxSize).toBe(2);
+            log.maxSize = 9;
+            expect(log.maxSize).toBe(9);
+            log.maxSize = 0;
+            expect(log.maxSize).toBe(2);
+        });
+
+        it('should start rotating entries when max size is reached', async () => {
+            log.maxSize = 3;
+            log.info("A");
+            log.info("B");
+            log.info("C");
+            expect(log.size).toBe(3);
+            expect(printLogs()).toMatchObject([
+                '1 !LOG - "A"',
+                '2 !LOG - "B"',
+                '3 !LOG - "C"',
+            ]);
+            log.info("D");
+            expect(log.size).toBe(3);
+            expect(printLogs()).toMatchObject([
+                '2 !LOG - "B"',
+                '3 !LOG - "C"',
+                '4 !LOG - "D"',
+            ]);
+        });
+
+        it('should accept max size increase', async () => {
+            log.maxSize = 3;
+            log.info("A");
+            log.info("B");
+            log.info("C");
+            log.info("D");
+            expect(log.size).toBe(3);
+            log.maxSize = 5;
+            log.info("E");
+            log.info("F");
+            log.info("G");
+            expect(log.size).toBe(5);
+            expect(printLogs()).toMatchObject([
+                '3 !LOG - "C"',
+                '4 !LOG - "D"',
+                '5 !LOG - "E"',
+                '6 !LOG - "F"',
+                '7 !LOG - "G"',
+            ]);
+        });
+
+        it('should manage size decrease (max reached)', async () => {
+            log.maxSize = 4;
+            log.info("A");
+            log.info("B");
+            log.info("C");
+            log.info("D");
+            expect(log.size).toBe(4);
+            log.maxSize = 3;
+            expect(log.size).toBe(3);
+            expect(printLogs()).toMatchObject([
+                '2 !LOG - "B"',
+                '3 !LOG - "C"',
+                '4 !LOG - "D"'
+            ]);
+        });
+
+        it('should manage size decrease (max not reached)', async () => {
+            log.maxSize = 42;
+            log.info("A");
+            log.info("B");
+            log.info("C");
+            log.info("D");
+            log.info("E");
+            log.info("F");
+            log.info("G");
+            expect(log.size).toBe(7);
+            log.maxSize = 3;
+            expect(log.size).toBe(3);
+            expect(printLogs()).toMatchObject([
+                '5 !LOG - "E"',
+                '6 !LOG - "F"',
+                '7 !LOG - "G"'
+            ]);
+        });
+
+        it('should support no limits', async () => {
+            log.maxSize = -1;
+            expect(log.maxSize).toBe(-1);
+
+            log.info("A");
+            log.info("B");
+            log.info("C");
+            log.info("D");
+            log.info("E");
+            log.info("F");
+            log.info("G");
+            expect(log.size).toBe(7);
+            expect(printLogs()).toMatchObject([
+                '1 !LOG - "A"',
+                '2 !LOG - "B"',
+                '3 !LOG - "C"',
+                '4 !LOG - "D"',
+                '5 !LOG - "E"',
+                '6 !LOG - "F"',
+                '7 !LOG - "G"'
+            ]);
+
+        });
+    });
+
 });

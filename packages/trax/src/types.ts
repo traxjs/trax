@@ -5,14 +5,26 @@
  */
 export type $LogData = string | number | boolean | null | Object | $LogData[];
 
+
+/**
+ * Log Evvent
+ */
+export interface $LogEvent {
+    /** 
+     * Unique id composed of 2 numbers: task id and event count
+     * e.g. 42:12 where 42 is the task index and 12 the event count within task #42
+     */
+    id: string;
+    /** Event type - allows to determine how to interprete data */
+    type: string;
+    /** Event data */
+    data?: $LogData;
+}
+
 /**
  * Log entry in the log stream
  */
-export interface $LogEntry {
-    /** Unique id e.g. 42:12 where 42 is the cycle index and 12 the position within the cycle  */
-    id: string;
-    type: string;
-    data?: $LogData;
+export interface $LogEntry extends $LogEvent {
     next?: $LogEntry;
 };
 
@@ -53,7 +65,7 @@ export interface $LogStream {
     /**
      * Scan all current entries in the log stream
      * (oldest to newest)
-     * @param entryProcessor the function called for each item - can return false to stop the scan
+     * @param entryProcessor the function called for each entry - can return false to stop the scan
      */
     scan(entryProcessor: (itm: $LogEntry) => void | boolean): void;
 }

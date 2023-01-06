@@ -12,8 +12,11 @@ export const traxEvents = Object.freeze({
     "Warning": "!WRN",
     /** When an error is logged */
     "Error": "!ERR",
-    /** When a cycle ends, leaving the place for the next cycle */
-    "CycleComplete": "!NXT",
+    /** When a task is created */
+    "TaskStart": "!TS",
+    /** When a task ends */
+    "TaskComplete": "!TC",
+
     /** When a trax entity is created (e.g. object / processor / store)  */
     "New": "!NEW",
     /** When a trax entity is disposed (e.g. object / processor / store)  */
@@ -35,92 +38,84 @@ export const traxEvents = Object.freeze({
     // TOOD: actions
 });
 
-type $LogFormatter = (entry: $LogEntry, type: string, data?: $LogData, src?: any) => void;
-type $IdGenerator = () => string;
-
 /**
- * Create a log formatter that will only authorize reserved events if an internal key
- * is passed as event source
- * @param idGenerator 
+ * Create a log stream
+ * The key passed as argument will be used to authorize logs with reserved types
  * @param internalSrcKey 
  * @returns 
  */
-export function createLogFormatter(idGenerator: $IdGenerator, internalSrcKey: any): $LogFormatter {
-    return function (entry: $LogEntry, type: string, data?: $LogData, src?: any) {
-        entry.id = idGenerator();
-        let hasError = false;
-        let errMsg = "";
-        if (type === "") {
-            hasError = true;
-            errMsg = "Event type cannot be empty";
-        } else {
-            if (type.charAt(0) === "!"
-                && src !== internalSrcKey
-                && type !== traxEvents.Error
-                && type !== traxEvents.Warning
-                && type !== traxEvents.Info) {
-                // reserved 
-                hasError = true;
-                errMsg = "Event type cannot start with reserved prefix: " + type;
-            } else {
-                entry.type = type;
-                if (data !== undefined) {
-                    try {
-                        entry.data = JSON.stringify(data);
-                    } catch (ex) {
-                        hasError = true;
-                        errMsg = "Event strinfication error: " + ex;
-                    }
-                } else {
-                    data = undefined;
-                }
-            }
-        }
-        if (hasError) {
-            // transform event into an error event
-            entry.type = traxEvents.Error;
-            entry.data = errMsg;
-        }
-    }
-}
-
-export function createLogStream(format: $LogFormatter): $LogStream {
+export function createLogStream(internalSrcKey: any): $LogStream {
     let size = 0;
     let maxSize = 500;
     let head: $LogEntry | undefined;
     let tail: $LogEntry | undefined;
 
-    return {
-        event(type: string, data?: $LogData, src?: any) {
-            let itm: $LogEntry;
-            if (size >= maxSize && maxSize > 1) {
-                itm = head!;
-                head = head!.next;
-                size--;
-                itm.id = "";
-                itm.type = "";
-                itm.next = itm.data = undefined;
-            } else {
-                itm = { id: "", type: "", data: null }
-            }
+    // ----------------------------------------------
+    // task id managment
+    let taskCount = -1; // task counter, incremented for each new task
+    let logCount = -1; // log counter, incremented for each new log, reset for each new task
+    let taskCompletePromise: null | Promise<void> = null;
+    let taskTimeMs = 0; // Time stamp used to process elapsed time values
 
-            format(itm, type, data, src);
-            if (itm.id === "" || itm.type === "") {
-                // invalid formatter, there is nothing we can do here
-                // as the formatter will also be called for errors
-                console.error("[trax/createLogStream] Invalid Event Formatter");
+    function generateId() {
+        if (taskCompletePromise === null) {
+            // no current task defined
+            logCount = -1;
+            taskCount++;
+            taskCompletePromise = Promise.resolve().then(processTaskEnd);
+            logTaskEvent(traxEvents.TaskStart);
+        }
+        logCount++;
+        return taskCount + ":" + logCount;
+    }
+
+    function processTaskEnd() {
+        logTaskEvent(traxEvents.TaskComplete);
+        taskCompletePromise = null;
+    }
+
+    function logTaskEvent(type: string) {
+        const ts = Date.now();
+        const elapsedTime = taskTimeMs !== 0 ? ts - taskTimeMs : 0;
+        taskTimeMs = ts;
+        logEvent(type, { elapsedTime }, internalSrcKey);
+    }
+    // ----------------------------------------------
+
+    function logEvent(type: string, data?: $LogData, src?: any) {
+        let itm: $LogEntry;
+        if (size >= maxSize && maxSize > 1) {
+            itm = head!;
+            head = head!.next;
+            size--;
+            itm.id = "";
+            itm.type = "";
+            itm.next = itm.data = undefined;
+        } else {
+            itm = { id: "", type: "", data: null }
+        }
+
+        format(internalSrcKey, itm, type, data, src);
+        itm.id = generateId();
+        if (itm.type === "") {
+            // invalid formatter, there is nothing we can do here
+            // as the formatter will also be called for errors
+            console.error("[trax/createLogStream] Invalid Event Formatter");
+        } else {
+            if (head === undefined) {
+                head = tail = itm;
+                size = 1;
             } else {
-                if (head === undefined) {
-                    head = tail = itm;
-                    size = 1;
-                } else {
-                    // append to tail
-                    tail!.next = itm;
-                    tail = itm;
-                    size++;
-                }
+                // append to tail
+                tail!.next = itm;
+                tail = itm;
+                size++;
             }
-        },
+        }
+    }
+
+    return {
+        event: logEvent,
         info(...data: $LogData[]) {
             this.event(traxEvents.Info, mergeMessageData(data));
         },
@@ -197,4 +192,40 @@ function mergeMessageData(data: $LogData[]): $LogData | undefined {
         return output[0];
     }
     return output;
+}
+
+function format(internalSrcKey: any, entry: $LogEntry, type: string, data?: $LogData, src?: any) {
+    let hasError = false;
+    let errMsg = "";
+    if (type === "") {
+        hasError = true;
+        errMsg = "Event type cannot be empty";
+    } else {
+        if (type.charAt(0) === "!"
+            && src !== internalSrcKey
+            && type !== traxEvents.Error
+            && type !== traxEvents.Warning
+            && type !== traxEvents.Info) {
+            // reserved 
+            hasError = true;
+            errMsg = "Event type cannot start with reserved prefix: " + type;
+        } else {
+            entry.type = type;
+            if (data !== undefined) {
+                try {
+                    entry.data = JSON.stringify(data);
+                } catch (ex) {
+                    hasError = true;
+                    errMsg = "Event strinfication error: " + ex;
+                }
+            } else {
+                data = undefined;
+            }
+        }
+    }
+    if (hasError) {
+        // transform event into an error event
+        entry.type = traxEvents.Error;
+        entry.data = errMsg;
+    }
 }

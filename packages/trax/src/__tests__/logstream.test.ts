@@ -1,105 +1,80 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createLogFormatter, createLogStream, traxEvents } from '../logstream';
+import { createLogStream, traxEvents } from '../logstream';
 import { $LogEntry, $LogStream } from '../types';
 
 describe('LogStream', () => {
     let log: $LogStream;
     let count = 0;
     const internalSrcKey = {};
-    const formatter = createLogFormatter(() => "" + (++count), internalSrcKey);
 
-    function error(id: number, msg: string): $LogEntry {
-        return { id: "" + id, type: traxEvents.Error, data: msg };
-    }
-
-    function printLogs(): string[] {
+    function printLogs(ignoreTaskEvents = true): string[] {
         const arr: string[] = [];
         log.scan((itm) => {
-            arr.push(`${itm.id} ${itm.type} - ${itm.data || "NO-DATA"}`);
+            if (!ignoreTaskEvents || (itm.type !== traxEvents.TaskStart && itm.type !== traxEvents.TaskComplete)) {
+                if ((itm.type === traxEvents.TaskStart || itm.type === traxEvents.TaskComplete)) {
+                    // item.data is a string - e.g.: '{"elapsedTime":0}'
+                    itm.data = ("" + itm.data).replace(/"elapsedTime":\n+/, 'elapsedTime":0');
+                }
+                arr.push(`${itm.id} ${itm.type} - ${itm.data || "NO-DATA"}`);
+            }
         });
         return arr;
     }
 
     beforeEach(() => {
         count = 0;
-        log = createLogStream(formatter);
+        log = createLogStream(internalSrcKey);
     });
 
     describe('LogFormatter', () => {
-        let itm: $LogEntry = { id: "", type: "" }
-
-        beforeEach(() => {
-            itm = { id: "", type: "" };
-        });
-
         it('should generate errors for invalid types', async () => {
-            formatter(itm, "", { foo: "bar" });
-            expect(itm).toMatchObject(error(1, "Event type cannot be empty"));
+            log.event("", { foo: "bar" });
+            expect(printLogs()).toMatchObject([
+                "0:1 !ERR - Event type cannot be empty",
+            ]);
         });
 
         it('should not accept unauthorized events', async () => {
-            formatter(itm, traxEvents.New, { foo: "bar" });
-            expect(itm).toMatchObject(error(1, "Event type cannot start with reserved prefix: !NEW"));
+            log.event(traxEvents.New, { foo: "bar" });
+            expect(printLogs()).toMatchObject([
+                "0:1 !ERR - Event type cannot start with reserved prefix: !NEW",
+            ]);
         });
 
         it('should accept authorized events', async () => {
-            formatter(itm, traxEvents.New, { foo: "bar" }, internalSrcKey);
-            expect(itm).toMatchObject({
-                id: "1",
-                type: traxEvents.New,
-                data: '{"foo":"bar"}'
-            });
+            log.event(traxEvents.New, { foo: "bar" }, internalSrcKey);
+            expect(printLogs()).toMatchObject([
+                '0:1 !NEW - {"foo":"bar"}',
+            ]);
         });
 
         it('should accept Info, warning and errors without authorization', async () => {
-            formatter(itm, traxEvents.Info, { foo: "bar" });
-            expect(itm).toMatchObject({
-                id: "1",
-                type: traxEvents.Info,
-                data: '{"foo":"bar"}'
-            });
-
-            formatter(itm, traxEvents.Warning, { foo: "bar" });
-            expect(itm).toMatchObject({
-                id: "2",
-                type: traxEvents.Warning,
-                data: '{"foo":"bar"}'
-            });
-
-            formatter(itm, traxEvents.Error, { foo: "bar" });
-            expect(itm).toMatchObject({
-                id: "3",
-                type: traxEvents.Error,
-                data: '{"foo":"bar"}'
-            });
+            log.event(traxEvents.Info, { foo: "bar" });
+            log.event(traxEvents.Warning, { foo: "bar" });
+            log.event(traxEvents.Error, { foo: "bar" });
+            expect(printLogs()).toMatchObject([
+                '0:1 !LOG - {"foo":"bar"}',
+                '0:2 !WRN - {"foo":"bar"}',
+                '0:3 !ERR - {"foo":"bar"}',
+            ]);
         });
 
         it('should accept Info, warning and errors with authorization', async () => {
-            formatter(itm, traxEvents.Info, { foo: "bar" }, internalSrcKey);
-            expect(itm).toMatchObject({
-                id: "1",
-                type: traxEvents.Info,
-                data: '{"foo":"bar"}'
-            });
-
-            formatter(itm, traxEvents.Warning, { foo: "bar" }, internalSrcKey);
-            expect(itm).toMatchObject({
-                id: "2",
-                type: traxEvents.Warning,
-                data: '{"foo":"bar"}'
-            });
-
-            formatter(itm, traxEvents.Error, { foo: "bar" }, internalSrcKey);
-            expect(itm).toMatchObject({
-                id: "3",
-                type: traxEvents.Error,
-                data: '{"foo":"bar"}'
-            });
+            log.event(traxEvents.Info, { foo: "bar" }, internalSrcKey);
+            log.event(traxEvents.Warning, { foo: "bar" }, internalSrcKey);
+            log.event(traxEvents.Error, { foo: "bar" }, internalSrcKey);
+            expect(printLogs()).toMatchObject([
+                '0:1 !LOG - {"foo":"bar"}',
+                '0:2 !WRN - {"foo":"bar"}',
+                '0:3 !ERR - {"foo":"bar"}',
+            ]);
         });
 
         it('should generate error in case of stringification problem', async () => {
-            formatter(itm, traxEvents.New, { foo: "bar", fn: BigInt(42) }, internalSrcKey);
-            expect(itm).toMatchObject(error(1, "Event strinfication error: TypeError: Do not know how to serialize a BigInt"));
+            log.event(traxEvents.New, { foo: "bar", fn: BigInt(42) }, internalSrcKey);
+            expect(printLogs()).toMatchObject([
+                '0:1 !ERR - Event strinfication error: TypeError: Do not know how to serialize a BigInt',
+            ]);
         });
     });
 
@@ -107,27 +82,28 @@ describe('LogStream', () => {
         it('should log internal and custom events', async () => {
             expect(log.size).toBe(0);
             log.event("foo.bar");
-            expect(log.size).toBe(1);
+            expect(log.size).toBe(2); // because of task start
             log.event("blah", { v: "value" });
-            expect(log.size).toBe(2);
-            log.event(traxEvents.New, {}, internalSrcKey);
             expect(log.size).toBe(3);
+            log.event(traxEvents.New, {}, internalSrcKey);
+            expect(log.size).toBe(4);
 
-            expect(printLogs()).toMatchObject([
-                "1 foo.bar - NO-DATA",
-                '2 blah - {"v":"value"}',
-                "3 !NEW - {}",
+            expect(printLogs(false)).toMatchObject([
+                "0:0 !TS - {\"elapsedTime\":0}",
+                "0:1 foo.bar - NO-DATA",
+                '0:2 blah - {"v":"value"}',
+                "0:3 !NEW - {}",
             ]);
         });
 
         it('should log errors for non authorized events', async () => {
             log.event(traxEvents.New, {}, internalSrcKey);
             log.event(traxEvents.New, {}); // key not provided
-            expect(log.size).toBe(2);
+            expect(log.size).toBe(3);
 
             expect(printLogs()).toMatchObject([
-                "1 !NEW - {}",
-                '2 !ERR - Event type cannot start with reserved prefix: !NEW',
+                "0:1 !NEW - {}",
+                '0:2 !ERR - Event type cannot start with reserved prefix: !NEW',
             ]);
         });
     });
@@ -138,11 +114,12 @@ describe('LogStream', () => {
             log.event("foo.bar");
             log.event("foo.bar");
             log.event("foo.bar");
-            expect(log.size).toBe(4);
+            expect(log.size).toBe(4 + 1);
 
             expect(printLogs2()).toMatchObject([
-                "1 foo.bar - NO-DATA",
-                "2 foo.bar - NO-DATA"
+                "0:0 !TS - {\"elapsedTime\":0}",
+                "0:1 foo.bar - NO-DATA",
+                "0:2 foo.bar - NO-DATA"
             ]);
 
             function printLogs2(): string[] {
@@ -151,7 +128,7 @@ describe('LogStream', () => {
                 log.scan((itm) => {
                     arr.push(`${itm.id} ${itm.type} - ${itm.data || "NO-DATA"}`);
                     count++;
-                    return (count !== 2);
+                    return (count !== 3);
                 });
                 return arr;
             }
@@ -164,8 +141,8 @@ describe('LogStream', () => {
             log.info("Hello", "World");
             log.info("Hello", "Trax", "!");
             expect(printLogs()).toMatchObject([
-                '1 !LOG - "Hello World"',
-                '2 !LOG - "Hello Trax !"',
+                '0:1 !LOG - "Hello World"',
+                '0:2 !LOG - "Hello Trax !"',
             ]);
         });
 
@@ -173,8 +150,8 @@ describe('LogStream', () => {
             log.warning("A", 42, "x");
             log.warning("B", false, null, 321);
             expect(printLogs()).toMatchObject([
-                '1 !WRN - "A 42 x"',
-                '2 !WRN - "B false null 321"',
+                '0:1 !WRN - "A 42 x"',
+                '0:2 !WRN - "B false null 321"',
             ]);
         });
 
@@ -184,10 +161,10 @@ describe('LogStream', () => {
             log.error();
             log.error("Unexpected error");
             expect(printLogs()).toMatchObject([
-                '1 !ERR - ["Some error",{"description":"!!!"}]',
-                '2 !ERR - {"desc":"Some Error"}',
-                '3 !ERR - NO-DATA',
-                '4 !ERR - "Unexpected error"',
+                '0:1 !ERR - ["Some error",{"description":"!!!"}]',
+                '0:2 !ERR - {"desc":"Some Error"}',
+                '0:3 !ERR - NO-DATA',
+                '0:4 !ERR - "Unexpected error"',
             ]);
         });
     });
@@ -214,22 +191,24 @@ describe('LogStream', () => {
         });
 
         it('should start rotating entries when max size is reached', async () => {
-            log.maxSize = 3;
+            log.maxSize = 4;
             log.info("A");
             log.info("B");
             log.info("C");
-            expect(log.size).toBe(3);
-            expect(printLogs()).toMatchObject([
-                '1 !LOG - "A"',
-                '2 !LOG - "B"',
-                '3 !LOG - "C"',
+            expect(log.size).toBe(3 + 1);
+            expect(printLogs(false)).toMatchObject([
+                '0:0 !TS - {"elapsedTime":0}',
+                '0:1 !LOG - "A"',
+                '0:2 !LOG - "B"',
+                '0:3 !LOG - "C"',
             ]);
             log.info("D");
-            expect(log.size).toBe(3);
-            expect(printLogs()).toMatchObject([
-                '2 !LOG - "B"',
-                '3 !LOG - "C"',
-                '4 !LOG - "D"',
+            expect(log.size).toBe(3 + 1);
+            expect(printLogs(false)).toMatchObject([
+                '0:1 !LOG - "A"',
+                '0:2 !LOG - "B"',
+                '0:3 !LOG - "C"',
+                '0:4 !LOG - "D"',
             ]);
         });
 
@@ -245,12 +224,12 @@ describe('LogStream', () => {
             log.info("F");
             log.info("G");
             expect(log.size).toBe(5);
-            expect(printLogs()).toMatchObject([
-                '3 !LOG - "C"',
-                '4 !LOG - "D"',
-                '5 !LOG - "E"',
-                '6 !LOG - "F"',
-                '7 !LOG - "G"',
+            expect(printLogs(false)).toMatchObject([
+                '0:3 !LOG - "C"',
+                '0:4 !LOG - "D"',
+                '0:5 !LOG - "E"',
+                '0:6 !LOG - "F"',
+                '0:7 !LOG - "G"',
             ]);
         });
 
@@ -259,14 +238,18 @@ describe('LogStream', () => {
             log.info("A");
             log.info("B");
             log.info("C");
-            log.info("D");
             expect(log.size).toBe(4);
-            log.maxSize = 3;
-            expect(log.size).toBe(3);
-            expect(printLogs()).toMatchObject([
-                '2 !LOG - "B"',
-                '3 !LOG - "C"',
-                '4 !LOG - "D"'
+            expect(printLogs(false)).toMatchObject([
+                '0:0 !TS - {"elapsedTime":0}',
+                '0:1 !LOG - "A"',
+                '0:2 !LOG - "B"',
+                '0:3 !LOG - "C"'
+            ]);
+            log.maxSize = 2;
+            expect(log.size).toBe(2);
+            expect(printLogs(false)).toMatchObject([
+                '0:2 !LOG - "B"',
+                '0:3 !LOG - "C"'
             ]);
         });
 
@@ -279,13 +262,13 @@ describe('LogStream', () => {
             log.info("E");
             log.info("F");
             log.info("G");
-            expect(log.size).toBe(7);
+            expect(log.size).toBe(7 + 1);
             log.maxSize = 3;
             expect(log.size).toBe(3);
-            expect(printLogs()).toMatchObject([
-                '5 !LOG - "E"',
-                '6 !LOG - "F"',
-                '7 !LOG - "G"'
+            expect(printLogs(false)).toMatchObject([
+                '0:5 !LOG - "E"',
+                '0:6 !LOG - "F"',
+                '0:7 !LOG - "G"'
             ]);
         });
 
@@ -300,17 +283,48 @@ describe('LogStream', () => {
             log.info("E");
             log.info("F");
             log.info("G");
-            expect(log.size).toBe(7);
-            expect(printLogs()).toMatchObject([
-                '1 !LOG - "A"',
-                '2 !LOG - "B"',
-                '3 !LOG - "C"',
-                '4 !LOG - "D"',
-                '5 !LOG - "E"',
-                '6 !LOG - "F"',
-                '7 !LOG - "G"'
+            expect(log.size).toBe(7 + 1);
+            await Promise.resolve();
+            expect(log.size).toBe(7 + 2);
+            expect(printLogs(false)).toMatchObject([
+                '0:0 !TS - {"elapsedTime":0}',
+                '0:1 !LOG - "A"',
+                '0:2 !LOG - "B"',
+                '0:3 !LOG - "C"',
+                '0:4 !LOG - "D"',
+                '0:5 !LOG - "E"',
+                '0:6 !LOG - "F"',
+                '0:7 !LOG - "G"',
+                '0:8 !TC - {"elapsedTime":0}',
             ]);
 
+        });
+    });
+
+    describe('Task ids', () => {
+        it('should be incremented when a new task starts', async () => {
+            log.info("A");
+            log.info("B");
+            await Promise.resolve();
+            log.info("C");
+            await Promise.resolve();
+            // nothing logged here, so no new task in the logger
+            await Promise.resolve();
+            log.warning("D");
+            log.info("E");
+
+            expect(printLogs(false)).toMatchObject([
+                '0:0 !TS - {"elapsedTime":0}',
+                '0:1 !LOG - "A"',
+                '0:2 !LOG - "B"',
+                '0:3 !TC - {"elapsedTime":0}',
+                '1:0 !TS - {"elapsedTime":0}',
+                '1:1 !LOG - "C"',
+                '1:2 !TC - {"elapsedTime":0}',
+                '2:0 !TS - {"elapsedTime":0}',
+                '2:1 !WRN - "D"',
+                '2:2 !LOG - "E"',
+            ]);
         });
     });
 

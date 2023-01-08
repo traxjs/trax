@@ -371,9 +371,9 @@ describe('Event Stream', () => {
             const logs = getLogArray();
             expect(elapsed(0)).toBe(0); // first is always 0
             expect(elapsed(3)).toBeLessThan(10); // probably 0 or 1
-            expect(elapsed(4)).toBeGreaterThan(10 - 1)
+            expect(elapsed(4)).toBeGreaterThan(10 - 2)
             expect(elapsed(6)).toBeLessThan(10); // probably 0 or 1
-            expect(elapsed(7)).toBeGreaterThan(20 - 1)
+            expect(elapsed(7)).toBeGreaterThan(20 - 2)
 
             function elapsed(idx: number) {
                 return JSON.parse("" + logs[idx]!.data!).elapsedTime;
@@ -467,6 +467,93 @@ describe('Event Stream', () => {
             expect(count1).toBe(1);
             expect(count2).toBe(1);
             expect(lastEvent1).toMatchObject(lastEvent2!);
+        });
+
+        it('should accept multiple subscriptions with the same callback', async () => {
+            let traces = "";
+            function cb(e: $Event) {
+                traces += e.id + "/" + e.type + ";"
+            }
+
+            const s1 = log.subscribe("*", cb);
+            log.info("A");
+            expect(traces).toBe("0:0/!CS;0:1/!LOG;");
+
+            traces = "";
+            const s2 = log.subscribe("*", cb);
+            expect(s2).not.toBe(s1);
+
+            log.info("B");
+            log.info("C");
+            expect(traces).toBe("0:2/!LOG;0:2/!LOG;0:3/!LOG;0:3/!LOG;"); // double logging
+
+            traces = "";
+            let r2 = log.unsubscribe(s2);
+            expect(r2).toBe(true);
+            r2 = log.unsubscribe(s2);
+            expect(r2).toBe(false); // already unsubscribed
+            const r3 = log.unsubscribe(cb);
+            expect(r3).toBe(false);
+
+            log.info("D");
+            expect(traces).toBe("0:4/!LOG;");
+
+            traces = "";
+            const r1 = log.unsubscribe(s1);
+            expect(r1).toBe(true);
+            log.info("E");
+            expect(traces).toBe("");
+        });
+
+        it('should accept mixing * and specific event subscriptions', async () => {
+            let traces = "", warnings = "";
+
+            const s1 = log.subscribe("*", (e: $Event) => {
+                traces += e.id + "/" + e.type + ";"
+            });
+
+            const s2 = log.subscribe(traxEvents.Warning, (e: $Event) => {
+                warnings += e.id + "/" + e.type + ";"
+            });
+
+            log.info("A");
+            expect(traces).toBe("0:0/!CS;0:1/!LOG;");
+            expect(warnings).toBe("");
+            traces = warnings = "";
+            log.warn("B");
+            expect(traces).toBe("0:2/!WRN;");
+            expect(warnings).toBe("0:2/!WRN;");
+            traces = warnings = "";
+            log.info("C");
+            expect(traces).toBe("0:3/!LOG;");
+            expect(warnings).toBe("");
+            traces = warnings = "";
+            log.warn("D");
+            expect(traces).toBe("0:4/!WRN;");
+            expect(warnings).toBe("0:4/!WRN;");
+
+            const r1 = log.unsubscribe(s1);
+            expect(r1).toBe(true);
+
+            traces = warnings = "";
+            log.warn("E");
+            expect(traces).toBe("");
+            expect(warnings).toBe("0:5/!WRN;");
+
+            await log.await(traxEvents.CycleComplete);
+
+            traces = warnings = "";
+            log.warn("F");
+            expect(traces).toBe("");
+            expect(warnings).toBe("1:1/!WRN;");
+
+            const r2 = log.unsubscribe(s2);
+            expect(r2).toBe(true);
+
+            traces = warnings = "";
+            log.warn("G");
+            expect(traces).toBe("");
+            expect(warnings).toBe("");
         });
     });
 

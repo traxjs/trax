@@ -1,4 +1,4 @@
-import { $LogData, $StreamEntry, $Event, $EventStream } from "./types";
+import { $LogData, $StreamEntry, $Event, $EventStream, $SubscriptionId } from "./types";
 
 /**
  * Trax event types
@@ -38,6 +38,8 @@ export const traxEvents = Object.freeze({
     // TOOD: actions
 });
 
+
+
 /**
  * Create an event stream
  * The key passed as argument will be used to authorize events with reserved types
@@ -50,6 +52,7 @@ export function createEventStream(internalSrcKey: any): $EventStream {
     let head: $StreamEntry | undefined;
     let tail: $StreamEntry | undefined;
     const awaitMap = new Map<string, { p: Promise<$Event>, resolve: (e: $Event) => void }>();
+    const consumers: ((e: $Event) => void)[] = [];
 
     // ----------------------------------------------
     // cycle id managment
@@ -111,6 +114,11 @@ export function createEventStream(internalSrcKey: any): $EventStream {
                 tail!.next = itm;
                 tail = itm;
                 size++;
+            }
+            for (const c of consumers) {
+                try {
+                    c({ id: itm.id, type: itm.type, data: itm.data });
+                } catch (ex) { }
             }
             resolveAwaitPromises(itm.type, itm);
         }
@@ -189,6 +197,28 @@ export function createEventStream(internalSrcKey: any): $EventStream {
                 promiseData = pd;
             }
             return promiseData!.p;
+        },
+        subscribe(eventType: string | "*", callback: (e: $Event) => void): $SubscriptionId {
+            let fn: (e: $Event) => void;
+            if (eventType === "*") {
+                fn = (e: $Event) => callback(e);
+            } else {
+                fn = (e: $Event) => {
+                    if (e.type === eventType) {
+                        callback(e);
+                    }
+                };
+            }
+            consumers.push(fn);
+            return fn;
+        },
+        unsubscribe(subscriptionId: $SubscriptionId): boolean {
+            const idx = consumers.indexOf(subscriptionId as any);
+            if (idx > -1) {
+                consumers.splice(idx, 1);
+                return true;
+            }
+            return false;
         }
     }
 

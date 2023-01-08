@@ -28,6 +28,8 @@ export interface $StreamEntry extends $Event {
     next?: $StreamEntry;
 };
 
+export type $SubscriptionId = Object;
+
 export interface $EventStream {
     /**
      * Log an event
@@ -74,4 +76,17 @@ export interface $EventStream {
      * @param evenType 
      */
     await(evenType: string | "*"): Promise<$Event>;
+    /**
+     * Register an event consumer that will be synchronously called when a given event occurs
+     * @param eventType an event type or "*" to listen to all events
+     * @param callback 
+     * @returns a subcribtion id that will be used to unsubscribe
+     */
+    subscribe(eventType: string | "*", callback: (e: $Event) => void): $SubscriptionId;
+    /**
+     * Unregister an event consumer
+     * @param subscriptionId 
+     * @returns true if the consumer was found and succesfully unregistered
+     */
+    unsubscribe(subscriptionId: $SubscriptionId): boolean;
 }

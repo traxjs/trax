@@ -1,29 +1,44 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createLogStream, traxEvents } from '../logstream';
-import { $LogEntry, $LogStream } from '../types';
+import { createEventStream, traxEvents } from '../eventstream';
+import { $StreamEntry, $Event, $EventStream } from '../types';
 
-describe('LogStream', () => {
-    let log: $LogStream;
+describe('Event Stream', () => {
+    let log: $EventStream;
     let count = 0;
     const internalSrcKey = {};
 
-    function printLogs(ignoreTaskEvents = true): string[] {
+    function printLogs(ignoreCycleEvents = true): string[] {
         const arr: string[] = [];
         log.scan((itm) => {
-            if (!ignoreTaskEvents || (itm.type !== traxEvents.TaskStart && itm.type !== traxEvents.TaskComplete)) {
-                if ((itm.type === traxEvents.TaskStart || itm.type === traxEvents.TaskComplete)) {
+            if (!ignoreCycleEvents || (itm.type !== traxEvents.CycleStart && itm.type !== traxEvents.CycleComplete)) {
+                let data = itm.data;
+                if ((itm.type === traxEvents.CycleStart || itm.type === traxEvents.CycleComplete)) {
                     // item.data is a string - e.g.: '{"elapsedTime":0}'
-                    itm.data = ("" + itm.data).replace(/"elapsedTime":\n+/, 'elapsedTime":0');
+                    data = ("" + itm.data).replace(/"elapsedTime":\d+/, '"elapsedTime":0');
                 }
-                arr.push(`${itm.id} ${itm.type} - ${itm.data || "NO-DATA"}`);
+                arr.push(`${itm.id} ${itm.type} - ${data || "NO-DATA"}`);
             }
         });
         return arr;
     }
 
+    function getLogArray() {
+        const arr: $StreamEntry[] = [];
+        log.scan((itm) => {
+            arr.push(itm);
+        });
+        return arr;
+    }
+
+    async function pause(timeMs = 10) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, timeMs);
+        });
+    }
+
     beforeEach(() => {
         count = 0;
-        log = createLogStream(internalSrcKey);
+        log = createEventStream(internalSrcKey);
     });
 
     describe('LogFormatter', () => {
@@ -82,14 +97,14 @@ describe('LogStream', () => {
         it('should log internal and custom events', async () => {
             expect(log.size).toBe(0);
             log.event("foo.bar");
-            expect(log.size).toBe(2); // because of task start
+            expect(log.size).toBe(2); // because of cycle start
             log.event("blah", { v: "value" });
             expect(log.size).toBe(3);
             log.event(traxEvents.New, {}, internalSrcKey);
             expect(log.size).toBe(4);
 
             expect(printLogs(false)).toMatchObject([
-                "0:0 !TS - {\"elapsedTime\":0}",
+                "0:0 !CS - {\"elapsedTime\":0}",
                 "0:1 foo.bar - NO-DATA",
                 '0:2 blah - {"v":"value"}',
                 "0:3 !NEW - {}",
@@ -117,7 +132,7 @@ describe('LogStream', () => {
             expect(log.size).toBe(4 + 1);
 
             expect(printLogs2()).toMatchObject([
-                "0:0 !TS - {\"elapsedTime\":0}",
+                "0:0 !CS - {\"elapsedTime\":0}",
                 "0:1 foo.bar - NO-DATA",
                 "0:2 foo.bar - NO-DATA"
             ]);
@@ -147,8 +162,8 @@ describe('LogStream', () => {
         });
 
         it('should log info messages', async () => {
-            log.warning("A", 42, "x");
-            log.warning("B", false, null, 321);
+            log.warn("A", 42, "x");
+            log.warn("B", false, null, 321);
             expect(printLogs()).toMatchObject([
                 '0:1 !WRN - "A 42 x"',
                 '0:2 !WRN - "B false null 321"',
@@ -197,7 +212,7 @@ describe('LogStream', () => {
             log.info("C");
             expect(log.size).toBe(3 + 1);
             expect(printLogs(false)).toMatchObject([
-                '0:0 !TS - {"elapsedTime":0}',
+                '0:0 !CS - {"elapsedTime":0}',
                 '0:1 !LOG - "A"',
                 '0:2 !LOG - "B"',
                 '0:3 !LOG - "C"',
@@ -240,7 +255,7 @@ describe('LogStream', () => {
             log.info("C");
             expect(log.size).toBe(4);
             expect(printLogs(false)).toMatchObject([
-                '0:0 !TS - {"elapsedTime":0}',
+                '0:0 !CS - {"elapsedTime":0}',
                 '0:1 !LOG - "A"',
                 '0:2 !LOG - "B"',
                 '0:3 !LOG - "C"'
@@ -287,7 +302,7 @@ describe('LogStream', () => {
             await Promise.resolve();
             expect(log.size).toBe(7 + 2);
             expect(printLogs(false)).toMatchObject([
-                '0:0 !TS - {"elapsedTime":0}',
+                '0:0 !CS - {"elapsedTime":0}',
                 '0:1 !LOG - "A"',
                 '0:2 !LOG - "B"',
                 '0:3 !LOG - "C"',
@@ -295,36 +310,163 @@ describe('LogStream', () => {
                 '0:5 !LOG - "E"',
                 '0:6 !LOG - "F"',
                 '0:7 !LOG - "G"',
-                '0:8 !TC - {"elapsedTime":0}',
+                '0:8 !CC - {"elapsedTime":0}',
             ]);
 
         });
     });
 
-    describe('Task ids', () => {
-        it('should be incremented when a new task starts', async () => {
+    describe('Cycle ids', () => {
+        it('should incremented when a new cycle starts', async () => {
             log.info("A");
             log.info("B");
             await Promise.resolve();
             log.info("C");
             await Promise.resolve();
-            // nothing logged here, so no new task in the logger
+            // nothing logged here, so no new cycle in the logger
             await Promise.resolve();
-            log.warning("D");
+            log.warn("D");
             log.info("E");
 
             expect(printLogs(false)).toMatchObject([
-                '0:0 !TS - {"elapsedTime":0}',
+                '0:0 !CS - {"elapsedTime":0}',
                 '0:1 !LOG - "A"',
                 '0:2 !LOG - "B"',
-                '0:3 !TC - {"elapsedTime":0}',
-                '1:0 !TS - {"elapsedTime":0}',
+                '0:3 !CC - {"elapsedTime":0}',
+                '1:0 !CS - {"elapsedTime":0}',
                 '1:1 !LOG - "C"',
-                '1:2 !TC - {"elapsedTime":0}',
-                '2:0 !TS - {"elapsedTime":0}',
+                '1:2 !CC - {"elapsedTime":0}',
+                '2:0 !CS - {"elapsedTime":0}',
                 '2:1 !WRN - "D"',
                 '2:2 !LOG - "E"',
             ]);
+        });
+    });
+
+    describe('Cycle events', () => {
+        it('should give elapsed time on cycle start / end', async () => {
+            log.info("A");
+            log.info("B");
+            await pause(10);
+            log.info("C");
+            await Promise.resolve();
+            // nothing logged here, so no new cycle in the logger
+            await pause(20);
+            log.warn("D");
+            log.info("E");
+
+            expect(printLogs(false)).toMatchObject([
+                '0:0 !CS - {"elapsedTime":0}',
+                '0:1 !LOG - "A"',
+                '0:2 !LOG - "B"',
+                '0:3 !CC - {"elapsedTime":0}',
+                '1:0 !CS - {"elapsedTime":0}', // >= 10
+                '1:1 !LOG - "C"',
+                '1:2 !CC - {"elapsedTime":0}',
+                '2:0 !CS - {"elapsedTime":0}', // >= 20
+                '2:1 !WRN - "D"',
+                '2:2 !LOG - "E"',
+            ]);
+
+            const logs = getLogArray();
+            expect(elapsed(0)).toBe(0); // first is always 0
+            expect(elapsed(3)).toBeLessThan(10); // probably 0 or 1
+            expect(elapsed(4)).toBeGreaterThan(10 - 1)
+            expect(elapsed(6)).toBeLessThan(10); // probably 0 or 1
+            expect(elapsed(7)).toBeGreaterThan(20 - 1)
+
+            function elapsed(idx: number) {
+                return JSON.parse("" + logs[idx]!.data!).elapsedTime;
+            }
+        });
+    });
+
+    describe('Subscription', () => {
+        it('should allow to await a specific event', async () => {
+            let count = 0, lastEvent: $Event | null = null;
+
+            log.await(traxEvents.Warning).then((e) => {
+                count++;
+                lastEvent = e;
+            });
+
+            log.info("A");
+            log.info("B");
+            expect(count).toBe(0);
+            await Promise.resolve(); // cycle ended
+
+            expect(count).toBe(0);
+            log.warn("C");
+            expect(count).toBe(0);
+            log.info("D");
+            expect(count).toBe(0);
+            log.warn("E"); // 2nd warning but won't trigger any callback
+            expect(count).toBe(0);
+
+            await pause(1); // flushes all pending promises
+            expect(count).toBe(1);
+            expect(printLogs(false)).toMatchObject([
+                '0:0 !CS - {"elapsedTime":0}',
+                '0:1 !LOG - "A"',
+                '0:2 !LOG - "B"',
+                '0:3 !CC - {"elapsedTime":0}',
+                '1:0 !CS - {"elapsedTime":0}',
+                '1:1 !WRN - "C"',
+                '1:2 !LOG - "D"',
+                '1:3 !WRN - "E"',
+                '1:4 !CC - {"elapsedTime":0}',
+            ]);
+            expect(lastEvent).toMatchObject({
+                id: '1:1',
+                type: '!WRN',
+                data: '"C"' // JSON stringified
+            });
+        });
+
+        it('should allow to await cycle end', async () => {
+            log.info("A");
+            log.info("B");
+            await log.await(traxEvents.CycleComplete);
+
+
+            expect(printLogs(false)).toMatchObject([
+                '0:0 !CS - {"elapsedTime":0}',
+                '0:1 !LOG - "A"',
+                '0:2 !LOG - "B"',
+                '0:3 !CC - {"elapsedTime":0}'
+            ]);
+        });
+
+        it('should allow 2 listeners to await the same event', async () => {
+            let count1 = 0,
+                count2 = 0,
+                lastEvent1: $Event | null = null,
+                lastEvent2: $Event | null = null;
+
+            log.await(traxEvents.Warning).then((e) => {
+                count1++;
+                lastEvent1 = e;
+            });
+
+            log.await(traxEvents.Warning).then((e) => {
+                count2++;
+                lastEvent2 = e;
+            });
+
+            log.info("A");
+            log.info("B");
+            expect(count1).toBe(0);
+
+            await Promise.resolve(); // cycle ended
+            log.warn("C");
+            log.info("D");
+            log.warn("E"); // 2nd warning but won't trigger any callback
+            expect(count1).toBe(0);
+
+            await pause(1); // flushes all pending promises
+            expect(count1).toBe(1);
+            expect(count2).toBe(1);
+            expect(lastEvent1).toMatchObject(lastEvent2!);
         });
     });
 

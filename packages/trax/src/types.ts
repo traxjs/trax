@@ -9,10 +9,10 @@ export type $LogData = string | number | boolean | null | Object | $LogData[];
 /**
  * Log Evvent
  */
-export interface $LogEvent {
+export interface $Event {
     /** 
-     * Unique id composed of 2 numbers: task id and event count
-     * e.g. 42:12 where 42 is the task index and 12 the event count within task #42
+     * Unique id composed of 2 numbers: cycle id and event count
+     * e.g. 42:12 where 42 is the cycle index and 12 the event count within cycle #42
      */
     id: string;
     /** Event type - allows to determine how to interprete data */
@@ -24,11 +24,11 @@ export interface $LogEvent {
 /**
  * Log entry in the log stream
  */
-export interface $LogEntry extends $LogEvent {
-    next?: $LogEntry;
+export interface $StreamEntry extends $Event {
+    next?: $StreamEntry;
 };
 
-export interface $LogStream {
+export interface $EventStream {
     /**
      * Log an event
      * @param type unique event type - e.g. "namespace.name", cannot start with "!" (reserved for trax events)
@@ -45,7 +45,7 @@ export interface $LogStream {
      * Log warning data in the trax logs
      * @param data 
      */
-    warning(...data: $LogData[]): void;
+    warn(...data: $LogData[]): void;
     /**
      * Log error data in the trax logs
      * @param data 
@@ -67,5 +67,11 @@ export interface $LogStream {
      * (oldest to newest)
      * @param entryProcessor the function called for each entry - can return false to stop the scan
      */
-    scan(entryProcessor: (itm: $LogEntry) => void | boolean): void;
+    scan(entryProcessor: (itm: $StreamEntry) => void | boolean): void;
+    /**
+     * Await a certain event. Typical usage:
+     * await log.await(trxEvents.CycleComplete);
+     * @param evenType 
+     */
+    await(evenType: string | "*"): Promise<$Event>;
 }

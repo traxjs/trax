@@ -1,4 +1,4 @@
-import { $LogData, $LogEntry, $LogStream } from "./types";
+import { $LogData, $StreamEntry, $Event, $EventStream } from "./types";
 
 /**
  * Trax event types
@@ -12,10 +12,10 @@ export const traxEvents = Object.freeze({
     "Warning": "!WRN",
     /** When an error is logged */
     "Error": "!ERR",
-    /** When a task is created */
-    "TaskStart": "!TS",
-    /** When a task ends */
-    "TaskComplete": "!TC",
+    /** When a cycle is created */
+    "CycleStart": "!CS",
+    /** When a cycle ends */
+    "CycleComplete": "!CC",
 
     /** When a trax entity is created (e.g. object / processor / store)  */
     "New": "!NEW",
@@ -39,51 +39,52 @@ export const traxEvents = Object.freeze({
 });
 
 /**
- * Create a log stream
- * The key passed as argument will be used to authorize logs with reserved types
+ * Create an event stream
+ * The key passed as argument will be used to authorize events with reserved types
  * @param internalSrcKey 
  * @returns 
  */
-export function createLogStream(internalSrcKey: any): $LogStream {
+export function createEventStream(internalSrcKey: any): $EventStream {
     let size = 0;
     let maxSize = 500;
-    let head: $LogEntry | undefined;
-    let tail: $LogEntry | undefined;
+    let head: $StreamEntry | undefined;
+    let tail: $StreamEntry | undefined;
+    const awaitMap = new Map<string, { p: Promise<$Event>, resolve: (e: $Event) => void }>();
 
     // ----------------------------------------------
-    // task id managment
-    let taskCount = -1; // task counter, incremented for each new task
-    let logCount = -1; // log counter, incremented for each new log, reset for each new task
-    let taskCompletePromise: null | Promise<void> = null;
-    let taskTimeMs = 0; // Time stamp used to process elapsed time values
+    // cycle id managment
+    let cycleCount = -1; // cycle counter, incremented for each new cycle
+    let eventCount = -1; // event counter, incremented for each new event, reset for each new cycle
+    let cycleCompletePromise: null | Promise<void> = null;
+    let cycleTimeMs = 0; // Time stamp used to process elapsed time values
 
     function generateId() {
-        if (taskCompletePromise === null) {
-            // no current task defined
-            logCount = -1;
-            taskCount++;
-            taskCompletePromise = Promise.resolve().then(processTaskEnd);
-            logTaskEvent(traxEvents.TaskStart);
+        if (cycleCompletePromise === null) {
+            // no current cycle defined
+            eventCount = -1;
+            cycleCount++;
+            cycleCompletePromise = Promise.resolve().then(processCycleEnd);
+            logCycleEvent(traxEvents.CycleStart);
         }
-        logCount++;
-        return taskCount + ":" + logCount;
+        eventCount++;
+        return cycleCount + ":" + eventCount;
     }
 
-    function processTaskEnd() {
-        logTaskEvent(traxEvents.TaskComplete);
-        taskCompletePromise = null;
+    function processCycleEnd() {
+        logCycleEvent(traxEvents.CycleComplete);
+        cycleCompletePromise = null;
     }
 
-    function logTaskEvent(type: string) {
+    function logCycleEvent(type: string) {
         const ts = Date.now();
-        const elapsedTime = taskTimeMs !== 0 ? ts - taskTimeMs : 0;
-        taskTimeMs = ts;
+        const elapsedTime = cycleTimeMs !== 0 ? ts - cycleTimeMs : 0;
+        cycleTimeMs = ts;
         logEvent(type, { elapsedTime }, internalSrcKey);
     }
     // ----------------------------------------------
 
     function logEvent(type: string, data?: $LogData, src?: any) {
-        let itm: $LogEntry;
+        let itm: $StreamEntry;
         if (size >= maxSize && maxSize > 1) {
             itm = head!;
             head = head!.next;
@@ -100,7 +101,7 @@ export function createLogStream(internalSrcKey: any): $LogStream {
         if (itm.type === "") {
             // invalid formatter, there is nothing we can do here
             // as the formatter will also be called for errors
-            console.error("[trax/createLogStream] Invalid Event Formatter");
+            console.error("[trax/createEventStream] Invalid Event Formatter");
         } else {
             if (head === undefined) {
                 head = tail = itm;
@@ -111,19 +112,29 @@ export function createLogStream(internalSrcKey: any): $LogStream {
                 tail = itm;
                 size++;
             }
+            resolveAwaitPromises(itm.type, itm);
+        }
+    }
+
+    function resolveAwaitPromises(eventType: string, e: $Event) {
+        const pd = awaitMap.get(eventType);
+        if (pd) {
+            const r = pd.resolve;
+            awaitMap.delete(eventType);
+            r({ id: e.id, type: e.type, data: e.data });
         }
     }
 
     return {
         event: logEvent,
         info(...data: $LogData[]) {
-            this.event(traxEvents.Info, mergeMessageData(data));
+            logEvent(traxEvents.Info, mergeMessageData(data));
         },
-        warning(...data: $LogData[]) {
-            this.event(traxEvents.Warning, mergeMessageData(data));
+        warn(...data: $LogData[]) {
+            logEvent(traxEvents.Warning, mergeMessageData(data));
         },
         error(...data: $LogData[]) {
-            this.event(traxEvents.Error, mergeMessageData(data));
+            logEvent(traxEvents.Error, mergeMessageData(data));
         },
         set maxSize(sz: number) {
             const prev = maxSize;
@@ -150,7 +161,7 @@ export function createLogStream(internalSrcKey: any): $LogStream {
         get size() {
             return size;
         },
-        scan(entryProcessor: (itm: $LogEntry) => void | boolean) {
+        scan(entryProcessor: (itm: $StreamEntry) => void | boolean) {
             let itm = head, process = true;
             while (process && itm) {
                 try {
@@ -160,6 +171,24 @@ export function createLogStream(internalSrcKey: any): $LogStream {
                     itm = itm.next;
                 } catch (ex) { }
             }
+        },
+        async await(eventType: string): Promise<$Event> {
+            if (eventType === "" || eventType === "*") {
+                logEvent(traxEvents.Error, `[trax/eventStream.await] Invalid event type: '${eventType}'`);
+                return { id: tail!.id, type: tail!.type, data: tail!.data };
+            }
+            let promiseData = awaitMap.get(eventType);
+            if (promiseData === undefined) {
+                let r: any, pd: any = {
+                    p: new Promise((resolve: (e: $Event) => void) => {
+                        r = resolve;
+                    })
+                }
+                pd.resolve = r;
+                awaitMap.set(eventType, pd);
+                promiseData = pd;
+            }
+            return promiseData!.p;
         }
     }
 
@@ -194,7 +223,7 @@ function mergeMessageData(data: $LogData[]): $LogData | undefined {
     return output;
 }
 
-function format(internalSrcKey: any, entry: $LogEntry, type: string, data?: $LogData, src?: any) {
+function format(internalSrcKey: any, entry: $StreamEntry, type: string, data?: $LogData, src?: any) {
     let hasError = false;
     let errMsg = "";
     if (type === "") {

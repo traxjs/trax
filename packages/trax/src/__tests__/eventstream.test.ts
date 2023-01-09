@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createEventStream, traxEvents } from '../eventstream';
-import { $StreamEntry, $Event, $EventStream } from '../types';
+import { $StreamEvent, $Event, $EventStream } from '../types';
 
 describe('Event Stream', () => {
     let log: $EventStream;
@@ -9,21 +9,25 @@ describe('Event Stream', () => {
 
     function printLogs(ignoreCycleEvents = true): string[] {
         const arr: string[] = [];
-        log.scan((itm) => {
-            if (!ignoreCycleEvents || (itm.type !== traxEvents.CycleStart && itm.type !== traxEvents.CycleComplete)) {
-                let data = itm.data;
-                if ((itm.type === traxEvents.CycleStart || itm.type === traxEvents.CycleComplete)) {
+        log.scan((evt) => {
+            if (!ignoreCycleEvents || (evt.type !== traxEvents.CycleStart && evt.type !== traxEvents.CycleComplete)) {
+                let data = evt.data;
+                if ((evt.type === traxEvents.CycleStart || evt.type === traxEvents.CycleComplete)) {
                     // item.data is a string - e.g.: '{"elapsedTime":0}'
-                    data = ("" + itm.data).replace(/"elapsedTime":\d+/, '"elapsedTime":0');
+                    data = ("" + evt.data).replace(/"elapsedTime":\d+/, '"elapsedTime":0');
                 }
-                arr.push(`${itm.id} ${itm.type} - ${data || "NO-DATA"}`);
+                let pid = "";
+                if (evt.parentId) {
+                    pid = " - parentId=" + evt.parentId;
+                }
+                arr.push(`${evt.id} ${evt.type} - ${data || "NO-DATA"}${pid}`);
             }
         });
         return arr;
     }
 
     function getLogArray() {
-        const arr: $StreamEntry[] = [];
+        const arr: $StreamEvent[] = [];
         log.scan((itm) => {
             arr.push(itm);
         });
@@ -555,6 +559,260 @@ describe('Event Stream', () => {
             expect(traces).toBe("");
             expect(warnings).toBe("");
         });
+    });
+
+    describe('Processing Context', () => {
+        it('should support synchronous contexts', async () => {
+            log.info("A");
+            const c = log.startProcessingContext({ name: 'MyAction' });
+            log.info("B");
+            log.warn("C");
+            c.end();
+            log.info("D");
+
+            expect(printLogs()).toMatchObject([
+                '0:1 !LOG - "A"',
+                '0:2 !PCS - {"name":"MyAction"}',
+                '0:3 !LOG - "B"',
+                '0:4 !WRN - "C"',
+                '0:5 !PCE - "0:2"',
+                '0:6 !LOG - "D"',
+            ]);
+        });
+
+        it('should support async contexts', async () => {
+            log.info("A");
+            const c = log.startProcessingContext({ name: 'MyAsyncAction' });
+            log.info("B");
+            log.info("C");
+            c.pause();
+            log.info("D");
+
+            await log.await(traxEvents.CycleComplete);
+            c.resume();
+            log.info("E");
+            c.pause();
+
+            await log.await(traxEvents.CycleComplete);
+            c.resume();
+            log.info("F");
+            c.end();
+            log.info("G");
+
+            expect(printLogs()).toMatchObject([
+                '0:1 !LOG - "A"',
+                '0:2 !PCS - {"name":"MyAsyncAction"}',
+                '0:3 !LOG - "B"',
+                '0:4 !LOG - "C"',
+                '0:5 !PCP - "0:2"',
+                '0:6 !LOG - "D"',
+                '1:1 !PCR - "0:2"',
+                '1:2 !LOG - "E"',
+                '1:3 !PCP - "0:2"',
+                '2:1 !PCR - "0:2"',
+                '2:2 !LOG - "F"',
+                '2:3 !PCE - "0:2"',
+                '2:4 !LOG - "G"',
+            ]);
+        });
+
+        it('should support contexts into contexts (sync)', async () => {
+            log.info("A");
+            const c = log.startProcessingContext({ name: 'MyAction' });
+            log.info("B");
+            const sc = log.startProcessingContext({ name: 'SubAction' });
+            log.info("C");
+            sc.end()
+            c.end();
+            log.info("D");
+
+            expect(printLogs()).toMatchObject([
+                '0:1 !LOG - "A"',
+                '0:2 !PCS - {"name":"MyAction"}',
+                '0:3 !LOG - "B"',
+                '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                '0:5 !LOG - "C"',
+                '0:6 !PCE - "0:4"',
+                '0:7 !PCE - "0:2"',
+                '0:8 !LOG - "D"',
+            ]);
+        });
+
+        it('should support contexts into contexts (sync/async)', async () => {
+            log.info("A");
+            const c = log.startProcessingContext({ name: 'MyAction' });
+            log.info("B");
+            const sc = log.startProcessingContext({ name: 'SubAction' });
+            log.info("C");
+            sc.pause();
+            log.info("D");
+            c.end();
+            log.info("E");
+
+            expect(printLogs()).toMatchObject([
+                '0:1 !LOG - "A"',
+                '0:2 !PCS - {"name":"MyAction"}',
+                '0:3 !LOG - "B"',
+                '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                '0:5 !LOG - "C"',
+                '0:6 !PCP - "0:4"',
+                '0:7 !LOG - "D"',
+                '0:8 !PCE - "0:2"',
+                '0:9 !LOG - "E"',
+            ]);
+        });
+
+        it('should support contexts into contexts (async/async)', async () => {
+            log.info("A");
+            const c = log.startProcessingContext({ name: 'MyAction' });
+            log.info("B");
+            const sc = log.startProcessingContext({ name: 'SubAction' });
+            log.info("C");
+            sc.pause();
+            log.info("D");
+            c.pause();
+            log.info("E");
+
+            expect(printLogs()).toMatchObject([
+                '0:1 !LOG - "A"',
+                '0:2 !PCS - {"name":"MyAction"}',
+                '0:3 !LOG - "B"',
+                '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                '0:5 !LOG - "C"',
+                '0:6 !PCP - "0:4"',
+                '0:7 !LOG - "D"',
+                '0:8 !PCP - "0:2"',
+                '0:9 !LOG - "E"',
+            ]);
+        });
+
+        describe('Errors', () => {
+            it('should be raised if pause() is done after end()', async () => {
+                const c = log.startProcessingContext({ name: 'MyAction' });
+                log.info("A");
+                c.end();
+                log.info("B");
+                c.pause();
+
+                expect(printLogs()).toMatchObject([
+                    '0:1 !PCS - {"name":"MyAction"}',
+                    '0:2 !LOG - "A"',
+                    '0:3 !PCE - "0:1"',
+                    '0:4 !LOG - "B"',
+                    '0:5 !ERR - "[trax/processing context] Only started or resumed contexts can be paused: 0:1"',
+                ]);
+            });
+
+            it('should be raised if end() is done after end()', async () => {
+                const c = log.startProcessingContext({ name: 'MyAction' });
+                log.info("A");
+                c.end();
+                log.info("B");
+                c.end();
+
+                expect(printLogs()).toMatchObject([
+                    '0:1 !PCS - {"name":"MyAction"}',
+                    '0:2 !LOG - "A"',
+                    '0:3 !PCE - "0:1"',
+                    '0:4 !LOG - "B"',
+                    '0:5 !ERR - "[trax/processing context] Contexts cannot be ended twice: 0:1"',
+                ]);
+            });
+
+            it('should be raised if resume() is improperly called', async () => {
+                const c = log.startProcessingContext({ name: 'MyAction' });
+                log.info("A");
+                c.resume();
+                log.info("B");
+                c.end();
+                c.resume();
+
+                expect(printLogs()).toMatchObject([
+                    '0:1 !PCS - {"name":"MyAction"}',
+                    '0:2 !LOG - "A"',
+                    '0:3 !ERR - "[trax/processing context] Only paused contexts can be resumed: 0:1"',
+                    '0:4 !LOG - "B"',
+                    '0:5 !PCE - "0:1"',
+                    '0:6 !ERR - "[trax/processing context] Only paused contexts can be resumed: 0:1"',
+                ]);
+            });
+
+            it('should be raised is end() or pause() is not called at cycle end', async () => {
+                log.info("A");
+                const c = log.startProcessingContext({ name: 'MyAction' });
+                log.info("B");
+                log.warn("C");
+                await log.await(traxEvents.CycleComplete);
+
+                expect(printLogs()).toMatchObject([
+                    '0:1 !LOG - "A"',
+                    '0:2 !PCS - {"name":"MyAction"}',
+                    '0:3 !LOG - "B"',
+                    '0:4 !WRN - "C"',
+                    '0:5 !ERR - "[trax/processing context] Contexts must be ended or paused before cycle ends: 0:2"',
+                ]);
+            });
+
+            it('should be raised is end() or pause() is not called at cycle end (sub-processing context)', async () => {
+                log.info("A");
+                const c = log.startProcessingContext({ name: 'MyAction' });
+                log.info("B");
+                const cs = log.startProcessingContext({ name: 'SubAction' });
+                log.warn("C");
+                await log.await(traxEvents.CycleComplete);
+
+                expect(printLogs()).toMatchObject([
+                    '0:1 !LOG - "A"',
+                    '0:2 !PCS - {"name":"MyAction"}',
+                    '0:3 !LOG - "B"',
+                    '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                    '0:5 !WRN - "C"',
+                    '0:6 !ERR - "[trax/processing context] Contexts must be ended or paused before cycle ends: 0:4"',
+                    '0:7 !ERR - "[trax/processing context] Contexts must be ended or paused before cycle ends: 0:2"',
+                ]);
+            });
+
+            it('should be raised if sub-context is not closed before parent context (sync)', async () => {
+                log.info("A");
+                const c = log.startProcessingContext({ name: 'MyAction' });
+                log.info("B");
+                const cs = log.startProcessingContext({ name: 'SubAction' });
+                log.warn("C");
+                c.end();
+                await log.await(traxEvents.CycleComplete);
+
+                expect(printLogs()).toMatchObject([
+                    '0:1 !LOG - "A"',
+                    '0:2 !PCS - {"name":"MyAction"}',
+                    '0:3 !LOG - "B"',
+                    '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                    '0:5 !WRN - "C"',
+                    '0:6 !ERR - "[trax/processing context] Contexts must be ended or paused before parent: 0:4"',
+                    '0:7 !PCE - "0:2"'
+                ]);
+            });
+
+            it('should be raised if sub-context is not closed before parent context (async)', async () => {
+                log.info("A");
+                const c = log.startProcessingContext({ name: 'MyAction' });
+                log.info("B");
+                const cs = log.startProcessingContext({ name: 'SubAction' });
+                log.warn("C");
+                c.pause();
+                await log.await(traxEvents.CycleComplete);
+
+                expect(printLogs()).toMatchObject([
+                    '0:1 !LOG - "A"',
+                    '0:2 !PCS - {"name":"MyAction"}',
+                    '0:3 !LOG - "B"',
+                    '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                    '0:5 !WRN - "C"',
+                    '0:6 !ERR - "[trax/processing context] Contexts must be ended or paused before parent: 0:4"',
+                    '0:7 !PCP - "0:2"'
+                ]);
+            });
+        });
+
     });
 
 });

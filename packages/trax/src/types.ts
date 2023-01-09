@@ -19,14 +19,34 @@ export interface $Event {
     type: string;
     /** Event data */
     data?: $LogData;
+    /** Id of another event that the current event relates to */
+    parentId?: string;
 }
 
 /**
  * Log entry in the log stream
  */
-export interface $StreamEntry extends $Event {
-    next?: $StreamEntry;
+export interface $StreamEvent extends $Event {
+    next?: $StreamEvent;
 };
+
+/**
+ * Start a processing context that allows to virtually group events together
+ * The processing context can be either synchronous or asynchronous
+ * If synchronous, the end() method is expected to be called before the end of the current cycle
+ * If asynchronous, the pause() or the end() methods are expected to be called before the end of the current cycle
+ * If pause() is called, resume() may be called into another cycle (until end() is eventually called - but this
+ * is not mandatory as the async processing could be stopped)
+ */
+export interface $ProcessingContext {
+    id: string;
+    /** Raise a pause event in the event stream */
+    pause(): void;
+    /** Raise a resume event in the event stream */
+    resume(): void;
+    /** Raise an end event in the event stream */
+    end(): void;
+}
 
 export type $SubscriptionId = Object;
 
@@ -54,6 +74,12 @@ export interface $EventStream {
      */
     error(...data: $LogData[]): void;
     /**
+     * Create a processing context and raise a start event in the event stream
+     * Processing contexts are used to virtually regroup events that occur in a given context
+     * Processing contexts can be stacked
+     */
+    startProcessingContext(data?: $LogData): $ProcessingContext;
+    /**
      * Number of items in the stream
      */
     size: number;
@@ -67,9 +93,9 @@ export interface $EventStream {
     /**
      * Scan all current entries in the log stream
      * (oldest to newest)
-     * @param entryProcessor the function called for each entry - can return false to stop the scan
+     * @param eventProcessor the function called for each event - can return false to stop the scan
      */
-    scan(entryProcessor: (itm: $StreamEntry) => void | boolean): void;
+    scan(eventProcessor: (itm: $Event) => void | boolean): void;
     /**
      * Await a certain event. Typical usage:
      * await log.await(trxEvents.CycleComplete);

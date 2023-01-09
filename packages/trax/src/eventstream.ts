@@ -1,4 +1,5 @@
-import { $LogData, $StreamEntry, $Event, $EventStream, $SubscriptionId } from "./types";
+import { LinkedList } from "./linkedlist";
+import { $LogData, $StreamEvent, $Event, $EventStream, $SubscriptionId, $ProcessingContext } from "./types";
 
 /**
  * Trax event types
@@ -27,15 +28,15 @@ export const traxEvents = Object.freeze({
     "Get": "!GET",
     /** When a processor is set dirty */
     "ProcessorDirty": "!DRT",
-    /** When a compute process starts */
-    "ComputeStart": "!CMS",
-    /** When an async compute process pauses */
-    "ComputePause": "!CMP",
-    /** When an async compute process resumes */
-    "ComputeResume": "!CMR",
-    /** When a compute process ends */
-    "ComputeEnd": "!CME",
-    // TOOD: actions
+
+    /** When a processing context starts */
+    "ProcessingStart": "!PCS",
+    /** When an async  processing context pauses */
+    "ProcessingPause": "!PCP",
+    /** When an async  processing context resumes */
+    "ProcessingResume": "!PCR",
+    /** When a processing context ends */
+    "ProcessingeEnd": "!PCE"
 });
 
 
@@ -49,8 +50,8 @@ export const traxEvents = Object.freeze({
 export function createEventStream(internalSrcKey: any): $EventStream {
     let size = 0;
     let maxSize = 500;
-    let head: $StreamEntry | undefined;
-    let tail: $StreamEntry | undefined;
+    let head: $StreamEvent | undefined;
+    let tail: $StreamEvent | undefined;
     const awaitMap = new Map<string, { p: Promise<$Event>, resolve: (e: $Event) => void }>();
     const consumers: ((e: $Event) => void)[] = [];
 
@@ -74,6 +75,7 @@ export function createEventStream(internalSrcKey: any): $EventStream {
     }
 
     function processCycleEnd() {
+        emptyPcStack();
         logCycleEvent(traxEvents.CycleComplete);
         cycleCompletePromise = null;
     }
@@ -84,66 +86,142 @@ export function createEventStream(internalSrcKey: any): $EventStream {
         cycleTimeMs = ts;
         logEvent(type, { elapsedTime }, internalSrcKey);
     }
-    // ----------------------------------------------
 
-    function logEvent(type: string, data?: $LogData, src?: any) {
-        let itm: $StreamEntry;
+
+    // ----------------------------------------------
+    // Processing context
+
+    const START = 1, PAUSE = 2, END = 3;
+    // Processing context stack
+    const pcStack = new LinkedList<$ProcessingContext>();
+
+    function stackPc(pc: $ProcessingContext) {
+        pcStack.insert(pc);
+    }
+
+    function unstackPc(pc: $ProcessingContext) {
+        let last = pcStack.shift();
+        while (last && last!==pc) {
+            error("[trax/processing context] Contexts must be ended or paused before parent:", last.id);
+            last = pcStack.shift();
+        }
+    }
+
+    function emptyPcStack() {
+        // check that the Processing Context stack is empty at the end of a cycle
+        if (pcStack.size !== 0) {
+            let pc = pcStack.shift();
+            while (pc) {
+                error("[trax/processing context] Contexts must be ended or paused before cycle ends:", pc.id);
+                pc = pcStack.shift();
+            }
+        }
+    }
+
+    function createProcessingContext(id: string, parentId?: string): $ProcessingContext {
+        let state = START;
+        const pc = {
+            get id() {
+                return id;
+            },
+            get parentId() {
+                return parentId;
+            },
+            pause() {
+                if (state !== START) {
+                    error("[trax/processing context] Only started or resumed contexts can be paused:", id);
+                } else {
+                    unstackPc(pc);
+                    logEvent(traxEvents.ProcessingPause, id, internalSrcKey);
+                    state = PAUSE;
+                }
+            },
+            resume() {
+                if (state !== PAUSE) {
+                    error("[trax/processing context] Only paused contexts can be resumed:", id);
+                } else {
+                    stackPc(pc);
+                    logEvent(traxEvents.ProcessingResume, id, internalSrcKey);
+                    state = START;
+                }
+            },
+            end() {
+                if (state === END) {
+                    error("[trax/processing context] Contexts cannot be ended twice:", id);
+                } else {
+                    unstackPc(pc);
+                    logEvent(traxEvents.ProcessingeEnd, id, internalSrcKey);
+                    state = END;
+                }
+            }
+        }
+        stackPc(pc);
+        return pc;
+    }
+
+    function error(...data: $LogData[]) {
+        logEvent(traxEvents.Error, mergeMessageData(data));
+    }
+
+    function logEvent(type: string, data?: $LogData, src?: any, parentId?: string) {
+        let evt: $StreamEvent;
         if (size >= maxSize && maxSize > 1) {
-            itm = head!;
+            evt = head!;
             head = head!.next;
             size--;
-            itm.id = "";
-            itm.type = "";
-            itm.next = itm.data = undefined;
+            evt.id = "";
+            evt.type = "";
+            evt.next = evt.data = evt.parentId = undefined;
         } else {
-            itm = { id: "", type: "", data: null }
+            evt = { id: "", type: "" }
         }
 
-        format(internalSrcKey, itm, type, data, src);
-        itm.id = generateId();
-        if (itm.type === "") {
+        format(internalSrcKey, evt, type, data, src);
+        evt.id = generateId();
+        evt.parentId = parentId;
+        if (evt.type === "") {
             // invalid formatter, there is nothing we can do here
             // as the formatter will also be called for errors
             console.error("[trax/createEventStream] Invalid Event Formatter");
         } else {
             if (head === undefined) {
-                head = tail = itm;
+                head = tail = evt;
                 size = 1;
             } else {
                 // append to tail
-                tail!.next = itm;
-                tail = itm;
+                tail!.next = evt;
+                tail = evt;
                 size++;
             }
             for (const c of consumers) {
                 try {
-                    c({ id: itm.id, type: itm.type, data: itm.data });
+                    c({ id: evt.id, type: evt.type, data: evt.data });
                 } catch (ex) { }
             }
-            resolveAwaitPromises(itm.type, itm);
+            resolveAwaitPromises(evt.type, evt);
         }
+        return evt;
     }
 
     function resolveAwaitPromises(eventType: string, e: $Event) {
-        const pd = awaitMap.get(eventType);
-        if (pd) {
-            const r = pd.resolve;
+        const promiseData = awaitMap.get(eventType);
+        if (promiseData) {
             awaitMap.delete(eventType);
-            r({ id: e.id, type: e.type, data: e.data });
+            promiseData.resolve({ id: e.id, type: e.type, data: e.data, parentId: e.parentId });
         }
     }
 
     return {
-        event: logEvent,
+        event(type: string, data?: $LogData, src?: any) {
+            logEvent(type, data, src);
+        },
         info(...data: $LogData[]) {
             logEvent(traxEvents.Info, mergeMessageData(data));
         },
         warn(...data: $LogData[]) {
             logEvent(traxEvents.Warning, mergeMessageData(data));
         },
-        error(...data: $LogData[]) {
-            logEvent(traxEvents.Error, mergeMessageData(data));
-        },
+        error,
         set maxSize(sz: number) {
             const prev = maxSize;
             if (sz < 0) {
@@ -163,17 +241,23 @@ export function createEventStream(internalSrcKey: any): $EventStream {
                 }
             }
         },
+        startProcessingContext(data?: $LogData): $ProcessingContext {
+            const last = pcStack.peek();
+            const parentId = last ? last.id : undefined;
+            const evt = logEvent(traxEvents.ProcessingStart, data, internalSrcKey, parentId);
+            return createProcessingContext(evt.id, parentId);
+        },
         get maxSize(): number {
             return maxSize;
         },
         get size() {
             return size;
         },
-        scan(entryProcessor: (itm: $StreamEntry) => void | boolean) {
+        scan(eventProcessor: (itm: $Event) => void | boolean) {
             let itm = head, process = true;
             while (process && itm) {
                 try {
-                    if (entryProcessor(itm) === false) {
+                    if (eventProcessor(itm) === false) {
                         process = false;
                     };
                     itm = itm.next;
@@ -253,7 +337,7 @@ function mergeMessageData(data: $LogData[]): $LogData | undefined {
     return output;
 }
 
-function format(internalSrcKey: any, entry: $StreamEntry, type: string, data?: $LogData, src?: any) {
+function format(internalSrcKey: any, entry: $StreamEvent, type: string, data?: $LogData, src?: any) {
     let hasError = false;
     let errMsg = "";
     if (type === "") {

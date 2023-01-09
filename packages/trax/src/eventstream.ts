@@ -1,44 +1,5 @@
 import { LinkedList } from "./linkedlist";
-import { $LogData, $StreamEvent, $Event, $EventStream, $SubscriptionId, $ProcessingContext } from "./types";
-
-/**
- * Trax event types
- * Internal code start with "!" to avoid collisions with external events
- * (not an enum to avoid potential minifier issues)
- */
-export const traxEvents = Object.freeze({
-    /** When info data are logged */
-    "Info": "!LOG",
-    /** When a warning is logged */
-    "Warning": "!WRN",
-    /** When an error is logged */
-    "Error": "!ERR",
-    /** When a cycle is created */
-    "CycleStart": "!CS",
-    /** When a cycle ends */
-    "CycleComplete": "!CC",
-
-    /** When a trax entity is created (e.g. object / processor / store)  */
-    "New": "!NEW",
-    /** When a trax entity is disposed (e.g. object / processor / store)  */
-    "Dispose": "!DEL",
-    /** When an object property is set (changed) */
-    "Set": "!SET",
-    /** When an object property is read */
-    "Get": "!GET",
-    /** When a processor is set dirty */
-    "ProcessorDirty": "!DRT",
-
-    /** When a processing context starts */
-    "ProcessingStart": "!PCS",
-    /** When an async  processing context pauses */
-    "ProcessingPause": "!PCP",
-    /** When an async  processing context resumes */
-    "ProcessingResume": "!PCR",
-    /** When a processing context ends */
-    "ProcessingeEnd": "!PCE"
-});
-
+import { $LogData, $StreamEvent, $Event, $EventStream, $SubscriptionId, $ProcessingContext, traxEvents } from "./types";
 
 
 /**

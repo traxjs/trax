@@ -1,10 +1,220 @@
 
 /**
+ * Object Id - can be either a string or an array that will be joined to produce a unique id
+ * e.g. ["foo",42] -> will generate id "foo:42" if used on the root store or "contextid/foo:42"
+ * if used on a sub-store
+ */
+export type $TraxIdDef = string | (string | number | boolean)[];
+
+export interface $Trax {
+    /**
+     * Create a root store
+     * @param idPrefix the store id - if this id is already in use, a suffix will be automatically added
+     * @param initFunction the function that will be called to initialize the store. This function must 
+     * define the store "root" object otherwise an error will be generated
+     */
+    createStore<R extends Object>(
+        idPrefix: $TraxIdDef,
+        initFunction: (store: $Store<any>) => R
+    ): R & { dispose: () => void };
+    /**
+     * The trax event logs
+     */
+    log: $EventStream;
+    /**
+     * Tell if an object is a trax object
+     */
+    // isTraxObject(obj: any): boolean;
+    /**
+     * Get the unique id associated to a trax object
+     * Return an empty string if the object is not a trax object
+     * @param obj 
+     */
+    // getTraxId(obj: any): string;
+    /**
+     * Tell is some changes are pending (i.e. dirty processors)
+     * Return true if there are some dirty processors - which means that all computed values
+     * can be safely read with no risks of invalid value
+     */
+    readonly pendingChanges: boolean;
+    /**
+     * Process the pending changes - i.e. run the dirty processors dependency chain
+     * This function will be automatically asynchronously called at the end of each trax cycle
+     * but it can be also explictly called if a synchronous behaviour is required
+     */
+    processChanges(): void;
+    /**
+     * Get a promise that will be fulfilled when the current trax cycle completes
+     * If no cycle is on-going, the promise will be immediately fulfilled
+     */
+    cycleComplete(): Promise<void>;
+    /**
+     * Helper function to pdate the content of an array without changing its reference
+     * Must be used in processors generating computed array collections
+     * @param array 
+     * @param newContent 
+     */
+    // updateArray(array: any[], newContent: any[]): void;
+}
+
+
+/**
+ * Trax Store
+ * Gather trax objects in a same namespace (i.e. objects, arrays, dictionaries, processors and stores).
+ * Allow to :
+ * - create multiple instances of the same store type with no risks of id collisions
+ * - manage local ids instead of global ids
+ * - simplify troubleshooting
+ * - easily dispose group of objects to make them ready for garbage collection
+ */
+export interface $Store<T> {
+    /**
+     * Store root data object
+     * All objects, arrays and dictionaries that are not reachable through this object will be
+     * automatically garbage-collected
+     */
+    readonly root: T,
+    /**
+     * Create a sub-store
+     * @param id the store id - must be unique with the parent store scope
+     * @param initFunction the function that will be called to initialize the store. This function must 
+     * define the store "root" object otherwise an error will be generated
+     */
+    // createStore<R extends Object>(
+    //     id: $TraxIdDef,
+    //     initFunction: (store: $Store<any>) => R
+    // ): R & { dispose: () => void };
+    /**
+     * Get or create a trax object associated to the given id
+     * @param id the object id - must be unique with the store scope
+     * @param initValue the object init value (empty object if nothing is provided)
+     */
+    getObject<T extends Object>(id: $TraxIdDef, initValue?: T): T;
+    /**
+     * Get or create a trax array associated to the given id
+     * @param id the array id - must be unique with the store scope
+     * @param initValue the array init value (empty array if nothing is provided)
+     */
+    // getArray<T extends Array<any>>(id: $TraxIdDef, initValue?: T): T;
+    /**
+     * Get or create a trax dictionary associated to the given id
+     * (Dictionaries are JS objects used as Map<string,any>)
+     * @param id the dictionary id - must be unique with the store scope
+     * @param initValue the dictionary init value (empty object if nothing is provided)
+     */
+    // getDictionary<T extends Record<string, any>>(id: $TraxIdDef, initValue?: T): T;
+    /**
+     * Create a compute processor
+     * Processor may be synchronous or asynchronous (cf. $TraxComputeFn)
+     * @param id the processor id - must be unique with the store scope
+     * @param compute the compute function
+     * @param autoUpdate if true (default) the processor will be automatically called after getting dirty. 
+     *                   (i.e. at the end of a cycle when trax.processChanges() is called)
+     *                   If false, the process function will need to be explicitely called (useful for React renderers for instance)
+     */
+    // compute(id: $TraxIdDef, compute: $TraxComputeFn, autoUpdate?: boolean): $TraxProcessor;
+    /**
+     * Dispose the current store
+     * Main actions: de-reference the root object and allow for transparent garbage collection,
+     * de-reference the store in its parent collection
+     */
+    // dispose(): void;
+}
+
+/**
+ * Trax compute function
+ * Define the processing instructions associated to a processor
+ * Asynchronous compute functions must return a Generator, whereas synchronous
+ * compute functions shall not return anything
+ */
+export type $TraxComputeFn = () => (void | Generator<Promise<any>, void, any>);
+
+/**
+ * Trax processor
+ * This object track the dependencies of its compute function and will automatically
+ * re-call the compute function in case of dependency changes
+ */
+export interface $TraxProcessor {
+    /**
+     * Processor priority - tell how/when this processor should be called
+     * compared to other processors (in practice priority = creation order)
+     */
+    readonly priority: number;
+    /**
+     * Compute count - tell how many times the processor compute function was called
+     */
+    readonly computeCount: number;
+    /**
+     * Tell if the processor internal value is dirty and if it must be reprocessed
+     */
+    readonly isDirty: boolean;
+    /**
+    * Tell if the processor was labeled as a renderer (debug info)
+    */
+    readonly isRenderer: boolean;
+    /**
+     * Tell if the processor is disposed and should be ignored
+     */
+    readonly isDisposed: boolean;
+    /**
+     * Callback to call when the processor value gets dirty
+     * This callback is called synchronously, right after the processor gets dirty
+     * Only one callback can be defined
+     */
+    onDirty: (() => void) | null;
+    /**
+     * Execute the compute function if the processor is dirty
+     */
+    process(): void;
+    /**
+     * Dispose the processor so that it can't be executed anymore
+     */
+    dispose(): void;
+}
+
+/**
+ * Trax event types
+ * Internal code start with "!" to avoid collisions with external events
+ * (not an enum to avoid potential minifier issues)
+ */
+export const traxEvents = Object.freeze({
+    /** When info data are logged */
+    "Info": "!LOG",
+    /** When a warning is logged */
+    "Warning": "!WRN",
+    /** When an error is logged */
+    "Error": "!ERR",
+    /** When a cycle is created */
+    "CycleStart": "!CS",
+    /** When a cycle ends */
+    "CycleComplete": "!CC",
+
+    /** When a trax entity is created (e.g. object / processor / store)  */
+    "New": "!NEW",
+    /** When a trax entity is disposed (e.g. object / processor / store)  */
+    "Dispose": "!DEL",
+    /** When an object property is set (changed) */
+    "Set": "!SET",
+    /** When an object property is read */
+    "Get": "!GET",
+    /** When a processor is set dirty */
+    "ProcessorDirty": "!DRT",
+
+    /** When a processing context starts */
+    "ProcessingStart": "!PCS",
+    /** When an async  processing context pauses */
+    "ProcessingPause": "!PCP",
+    /** When an async  processing context resumes */
+    "ProcessingResume": "!PCR",
+    /** When a processing context ends */
+    "ProcessingeEnd": "!PCE"
+});
+
+/**
  * Data type that can be used in logs
  * Must be a valid parameter for JSON.stringify()
  */
 export type $LogData = string | number | boolean | null | Object | $LogData[];
-
 
 /**
  * Log Evvent

@@ -11,6 +11,18 @@ export type $StoreWrapper = {
     dispose: () => void;
 }
 
+/**
+ * Trax object types
+ */
+export enum $TrxObjectType {
+    NotATraxObject = "",
+    Object = "O",
+    Array = "A",
+    Dictionary = "D",
+    Store = "S",
+    Processor = "P"
+}
+
 export interface $Trax {
     /**
      * Create a root store
@@ -18,10 +30,10 @@ export interface $Trax {
      * @param initFunction the function that will be called to initialize the store. This function must 
      * define the store "root" object otherwise an error will be generated
      */
-    createStore<R>(
+    createStore<R, T extends Object>(
         idPrefix: $TraxIdDef,
-        initFunction: (store: $Store<any>) => R
-    ): R & $StoreWrapper;
+        initFunction: (store: $Store<T>) => R
+    ): R extends void ? $Store<T> : R & $StoreWrapper;
     /**
      * The trax event logs
      */
@@ -29,13 +41,18 @@ export interface $Trax {
     /**
      * Tell if an object is a trax object
      */
-    // isTraxObject(obj: any): boolean;
+    isTraxObject(obj: any): boolean;
     /**
      * Get the unique id associated to a trax object
      * Return an empty string if the object is not a trax object
      * @param obj 
      */
-    // getTraxId(obj: any): string;
+    getTraxId(obj: any): string;
+    /**
+     * Get the trax type associated to an object
+     * @param obj 
+     */
+    getTraxObjectType(obj: any): $TrxObjectType;
     /**
      * Tell is some changes are pending (i.e. dirty processors)
      * Return true if there are some dirty processors - which means that all computed values
@@ -84,6 +101,11 @@ export interface $Store<T> {
      */
     readonly root: T,
     /**
+     * Initialize the root object - must be only called in the store init function
+     * @param root 
+     */
+    initRoot(root: T): void;
+    /**
      * Create a sub-store
      * @param id the store id - must be unique with the parent store scope
      * @param initFunction the function that will be called to initialize the store. This function must 
@@ -98,7 +120,7 @@ export interface $Store<T> {
      * @param id the object id - must be unique with the store scope
      * @param initValue the object init value (empty object if nothing is provided)
      */
-    getObject<T extends Object>(id: $TraxIdDef, initValue?: T): T;
+    get<T extends Object | undefined>(id: $TraxIdDef, initValue?: T): T extends void ? T | undefined : T;
     /**
      * Get or create a trax array associated to the given id
      * @param id the array id - must be unique with the store scope
@@ -219,14 +241,44 @@ export const traxEvents = Object.freeze({
     "ProcessingeEnd": "!PCE"
 });
 
+export interface $TrxLogObjectLifeCycle {
+    type: "!NEW" | "!DEL",
+    objectId: string;
+    objectType: $TrxObjectType
+}
+
+export interface $TrxLogPropGet {
+    type: "!GET",
+    objectId: string;
+    propName: string;
+    propValue: any;
+}
+
+export interface $TrxLogPropSet {
+    type: "!SET",
+    objectId: string;
+    propName: string;
+    fromValue: any;
+    toValue: any;
+}
+
+export interface $TrxLogProcessStart {
+    type: "!PCS";
+    name: "StoreInit";
+    id: string;
+}
+
+/** JSON type */
+type $JSONValue = string | number | boolean | null | { [key: string]: $JSONValue } | Array<$JSONValue>;
+
 /**
  * Data type that can be used in logs
  * Must be a valid parameter for JSON.stringify()
  */
-export type $LogData = string | number | boolean | null | Object | $LogData[];
+export type $LogData = $JSONValue;
 
 /**
- * Log Evvent
+ * Log Event
  */
 export interface $Event {
     /** 

@@ -76,7 +76,7 @@ describe('Event Stream', () => {
         });
 
         it('should generate error in case of stringification problem', async () => {
-            log.event(traxEvents.New, { foo: "bar", fn: BigInt(42) }, internalSrcKey);
+            log.event(traxEvents.New, { foo: "bar", fn: BigInt(42) } as any, internalSrcKey);
             expect(printLogs()).toMatchObject([
                 '0:1 !ERR - Event strinfication error: TypeError: Do not know how to serialize a BigInt',
             ]);
@@ -558,7 +558,7 @@ describe('Event Stream', () => {
 
             expect(printLogs()).toMatchObject([
                 '0:1 !LOG - "A"',
-                '0:2 !PCS - {"name":"MyAction"}',
+                '0:2 !PCS - MyAction',
                 '0:3 !LOG - "B"',
                 '0:4 !WRN - "C"',
                 '0:5 !PCE - "0:2"',
@@ -587,7 +587,7 @@ describe('Event Stream', () => {
 
             expect(printLogs()).toMatchObject([
                 '0:1 !LOG - "A"',
-                '0:2 !PCS - {"name":"MyAsyncAction"}',
+                '0:2 !PCS - MyAsyncAction',
                 '0:3 !LOG - "B"',
                 '0:4 !LOG - "C"',
                 '0:5 !PCP - "0:2"',
@@ -614,9 +614,9 @@ describe('Event Stream', () => {
 
             expect(printLogs()).toMatchObject([
                 '0:1 !LOG - "A"',
-                '0:2 !PCS - {"name":"MyAction"}',
+                '0:2 !PCS - MyAction',
                 '0:3 !LOG - "B"',
-                '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                '0:4 !PCS - SubAction - parentId=0:2',
                 '0:5 !LOG - "C"',
                 '0:6 !PCE - "0:4"',
                 '0:7 !PCE - "0:2"',
@@ -637,9 +637,9 @@ describe('Event Stream', () => {
 
             expect(printLogs()).toMatchObject([
                 '0:1 !LOG - "A"',
-                '0:2 !PCS - {"name":"MyAction"}',
+                '0:2 !PCS - MyAction',
                 '0:3 !LOG - "B"',
-                '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                '0:4 !PCS - SubAction - parentId=0:2',
                 '0:5 !LOG - "C"',
                 '0:6 !PCP - "0:4"',
                 '0:7 !LOG - "D"',
@@ -661,9 +661,9 @@ describe('Event Stream', () => {
 
             expect(printLogs()).toMatchObject([
                 '0:1 !LOG - "A"',
-                '0:2 !PCS - {"name":"MyAction"}',
+                '0:2 !PCS - MyAction',
                 '0:3 !LOG - "B"',
-                '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                '0:4 !PCS - SubAction - parentId=0:2',
                 '0:5 !LOG - "C"',
                 '0:6 !PCP - "0:4"',
                 '0:7 !LOG - "D"',
@@ -681,7 +681,7 @@ describe('Event Stream', () => {
                 c.pause();
 
                 expect(printLogs()).toMatchObject([
-                    '0:1 !PCS - {"name":"MyAction"}',
+                    '0:1 !PCS - MyAction',
                     '0:2 !LOG - "A"',
                     '0:3 !PCE - "0:1"',
                     '0:4 !LOG - "B"',
@@ -697,7 +697,7 @@ describe('Event Stream', () => {
                 c.end();
 
                 expect(printLogs()).toMatchObject([
-                    '0:1 !PCS - {"name":"MyAction"}',
+                    '0:1 !PCS - MyAction',
                     '0:2 !LOG - "A"',
                     '0:3 !PCE - "0:1"',
                     '0:4 !LOG - "B"',
@@ -714,7 +714,7 @@ describe('Event Stream', () => {
                 c.resume();
 
                 expect(printLogs()).toMatchObject([
-                    '0:1 !PCS - {"name":"MyAction"}',
+                    '0:1 !PCS - MyAction',
                     '0:2 !LOG - "A"',
                     '0:3 !ERR - "[trax/processing context] Only paused contexts can be resumed: 0:1"',
                     '0:4 !LOG - "B"',
@@ -732,7 +732,7 @@ describe('Event Stream', () => {
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !LOG - "A"',
-                    '0:2 !PCS - {"name":"MyAction"}',
+                    '0:2 !PCS - MyAction',
                     '0:3 !LOG - "B"',
                     '0:4 !WRN - "C"',
                     '0:5 !ERR - "[trax/processing context] Contexts must be ended or paused before cycle ends: 0:2"',
@@ -749,9 +749,9 @@ describe('Event Stream', () => {
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !LOG - "A"',
-                    '0:2 !PCS - {"name":"MyAction"}',
+                    '0:2 !PCS - MyAction',
                     '0:3 !LOG - "B"',
-                    '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                    '0:4 !PCS - SubAction - parentId=0:2',
                     '0:5 !WRN - "C"',
                     '0:6 !ERR - "[trax/processing context] Contexts must be ended or paused before cycle ends: 0:4"',
                     '0:7 !ERR - "[trax/processing context] Contexts must be ended or paused before cycle ends: 0:2"',
@@ -769,9 +769,9 @@ describe('Event Stream', () => {
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !LOG - "A"',
-                    '0:2 !PCS - {"name":"MyAction"}',
+                    '0:2 !PCS - MyAction',
                     '0:3 !LOG - "B"',
-                    '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                    '0:4 !PCS - SubAction - parentId=0:2',
                     '0:5 !WRN - "C"',
                     '0:6 !ERR - "[trax/processing context] Contexts must be ended or paused before parent: 0:4"',
                     '0:7 !PCE - "0:2"'
@@ -789,9 +789,9 @@ describe('Event Stream', () => {
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !LOG - "A"',
-                    '0:2 !PCS - {"name":"MyAction"}',
+                    '0:2 !PCS - MyAction',
                     '0:3 !LOG - "B"',
-                    '0:4 !PCS - {"name":"SubAction"} - parentId=0:2',
+                    '0:4 !PCS - SubAction - parentId=0:2',
                     '0:5 !WRN - "C"',
                     '0:6 !ERR - "[trax/processing context] Contexts must be ended or paused before parent: 0:4"',
                     '0:7 !PCP - "0:2"'

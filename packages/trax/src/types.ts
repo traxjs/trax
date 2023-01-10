@@ -6,6 +6,11 @@
  */
 export type $TraxIdDef = string | (string | number | boolean)[];
 
+export type $StoreWrapper = {
+    readonly id: string;
+    dispose: () => void;
+}
+
 export interface $Trax {
     /**
      * Create a root store
@@ -13,10 +18,10 @@ export interface $Trax {
      * @param initFunction the function that will be called to initialize the store. This function must 
      * define the store "root" object otherwise an error will be generated
      */
-    createStore<R extends Object>(
+    createStore<R>(
         idPrefix: $TraxIdDef,
         initFunction: (store: $Store<any>) => R
-    ): R & { dispose: () => void };
+    ): R & $StoreWrapper;
     /**
      * The trax event logs
      */
@@ -68,6 +73,10 @@ export interface $Trax {
  * - easily dispose group of objects to make them ready for garbage collection
  */
 export interface $Store<T> {
+    /**
+     * The store id
+     */
+    readonly id: string;
     /**
      * Store root data object
      * All objects, arrays and dictionaries that are not reachable through this object will be

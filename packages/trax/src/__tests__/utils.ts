@@ -1,9 +1,17 @@
+import { e } from "vitest/dist/index-761e769b";
 import { traxMD } from "../core";
-import { $EventStream, $TrxLogObjectLifeCycle, $TrxLogProcessStart, $TrxLogPropGet, traxEvents } from "../types";
+import { $EventStream, $TrxLogObjectLifeCycle, $TrxLogProcessStart, $TrxLogPropGet, $TrxLogPropSet, traxEvents } from "../types";
 
-export function printEvents(log: $EventStream, ignoreCycleEvents = true): string[] {
+export function printEvents(log: $EventStream, ignoreCycleEvents = true, minCycleId = 0): string[] {
     const arr: string[] = [];
     log.scan((evt) => {
+        const m = evt.id.match(/^\d+/);
+        if (m) {
+            const cycleId = parseInt(m[0], 10);
+            if (cycleId < minCycleId) {
+                return; // move next
+            }
+        }
         if (!ignoreCycleEvents || (evt.type !== traxEvents.CycleStart && evt.type !== traxEvents.CycleComplete)) {
             let data = evt.data;
             if ((evt.type === traxEvents.CycleStart || evt.type === traxEvents.CycleComplete)) {
@@ -29,15 +37,22 @@ function formatData(eventType: string, data?: any) {
 
         if (eventType === traxEvents.ProcessingStart) {
             const d = sd as $TrxLogProcessStart;
-            const id = d.id? " ("+d.id+")" : "";
+            const id = d.id ? " (" + d.id + ")" : "";
             return `${d.name}${id}`;
         } else if (eventType === traxEvents.New) {
             const d = sd as $TrxLogObjectLifeCycle;
             if (d.objectId === undefined) return data;
             return `${d.objectType}: ${d.objectId}`;
+        } else if (eventType === traxEvents.Dispose) {
+            const d = sd as $TrxLogObjectLifeCycle;
+            if (d.objectId === undefined) return data;
+            return `${d.objectType ? d.objectType + ": " : ""}${d.objectId}`;
         } else if (eventType === traxEvents.Get) {
             const d = sd as $TrxLogPropGet;
-            return `${d.objectId}.${d.propName} -> ${ stringify(d.propValue)}`;
+            return `${d.objectId}.${d.propName} -> ${stringify(d.propValue)}`;
+        } else if (eventType === traxEvents.Set) {
+            const d = sd as $TrxLogPropSet;
+            return `${d.objectId}.${d.propName} = ${stringify(d.toValue)} (prev: ${stringify(d.fromValue)})`;
         }
     } catch (ex) { }
     return data;

@@ -4,6 +4,7 @@ import { $Store, $StoreWrapper, $Trax, $TraxIdDef, $TraxProcessor, $TrxLogObject
 
 export const traxMD = Symbol("trax.md");
 const RX_INVALID_ID = /(\/)/g;
+const ROOT = "root";
 
 /**
  * Meta-data object attached to each trax object (object, array, dictionary, processor, store)
@@ -104,6 +105,11 @@ export function createTraxEnv(): $Trax {
 
                 if (md) {
                     // TODO
+
+                    if (v !== value) {
+                        target[prop] = value;
+                        logTraxEvent({ type: "!SET", objectId: md.id, propName: prop as string, fromValue: v, toValue: value });
+                    }
                 } else {
                     // object is disposed
                     target[prop] = value;
@@ -173,26 +179,31 @@ export function createTraxEnv(): $Trax {
             },
             initRoot(r: T) {
                 if (initPhase) {
-                    root = this.get("root", r)
+                    root = getOrAdd(ROOT, r, true);
                 } else {
                     error(`(${storeId}) Store.initRoot can only be called during the store init phase`);
                 }
                 return root;
             },
-            get<T extends Object | undefined>(id: $TraxIdDef, o?: T): T extends void ? T | undefined : T {
-                if (checkNotDisposed()) {
-                    if (o !== undefined) {
-                        if (o === null || typeof (o) !== "object") {
-                            error(`(${storeId}) Store.get: Invalid init object parameter: ${o}`);
-                            o = {} as T;
-                        } else if (isArray(o)) {
-                            console.log("TODO : call getArray() + warning")
-                        }
-                    }
-                    return getProxy(buildId(id, storeId), o);
+            get<T extends Object>(id: $TraxIdDef): T | void {
+                return getDataObject(buildId(id, storeId));
+            },
+            add<T extends Object>(id: $TraxIdDef, o: T): T {
+                return getOrAdd(id, o, false);
+            },
+            delete<T extends Object>(idOrObject: $TraxIdDef | T): boolean {
+                const md = tmd(idOrObject);
+                let id = "";
+                if (md) {
+                    id = md.id;
                 } else {
-                    return o as any;
+                    try {
+                        id = buildId(idOrObject as $TraxIdDef, storeId);
+                    } catch (ex) {
+                        return false;
+                    }
                 }
+                return removeDataObject(id);
             }
         };
         // attach meta data
@@ -251,7 +262,7 @@ export function createTraxEnv(): $Trax {
         function checkRoot() {
             if (root == undefined) {
                 error(`(${storeId}) createStore init must define a root object - see also: initRoot()`);
-                root = store.get("root", {});
+                root = getOrAdd(ROOT, {}, true);
             }
         }
 
@@ -272,6 +283,32 @@ export function createTraxEnv(): $Trax {
                 st = st = storeMap.get(storeId + suffix);
             }
             return storeId + suffix;
+        }
+
+        /**
+         * Function behind store.add - support an extra argument to prevent ROOT id
+         * @param id 
+         * @param o 
+         * @reeturns 
+         */
+        function getOrAdd<T extends Object>(id: $TraxIdDef, o: T, acceptRootId: boolean): T {
+            if (!acceptRootId) {
+                const idSuffix = buildId(id);
+                if (idSuffix === ROOT) {
+                    error("Store.add: Invalid id 'root' (reserved)");
+                }
+            }
+            if (checkNotDisposed()) {
+                if (o === undefined || o === null || typeof (o) !== "object") {
+                    error(`(${storeId}) Store.get: Invalid init object parameter: ${o}`);
+                    o = {} as T;
+                } else if (isArray(o)) {
+                    console.log("TODO : call getArray() + warning")
+                }
+                return getProxy(buildId(id, storeId), o);
+            } else {
+                return o as any;
+            }
         }
 
         /**
@@ -297,6 +334,25 @@ export function createTraxEnv(): $Trax {
         function storeDataObject(id: string, data: Object) {
             dataRefs.set(id, new WeakRef(data));
             // TODO: store object id in the store -> extract the store id from the id
+        }
+
+        function removeDataObject(id: string): boolean {
+            const ref = dataRefs.get(id);
+            if (ref) {
+                const o = ref.deref() || null;
+                let objectType = $TrxObjectType.NotATraxObject;
+                if (o) {
+                    const md = tmd(o);
+                    if (md) {
+                        // TODO: dirty all processor dependencies
+                        o[traxMD] = undefined;
+                        objectType = md.type;
+                    }
+                }
+                logTraxEvent({ type: "!DEL", objectId: id, objectType });
+                return dataRefs.delete(id);
+            }
+            return false;
         }
 
         function getProxy(id: string, obj?: any, generateNewId = false, lazyCreation = false) {

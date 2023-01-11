@@ -116,24 +116,37 @@ export interface $Store<T> {
     //     initFunction: (store: $Store<any>) => R
     // ): R & { dispose: () => void };
     /**
-     * Get or create a trax object associated to the given id
+     * Retrieve a data object/array/dictionary that has been previously created
+     * (Doesn't work for processors or stores)
+     * Note: if this object is not indirectly referenced by the root object, it may habe been garbage collected
+     * @returns the tracked object or undefined if not found
+     */
+    get<T extends Object>(id: $TraxIdDef): T | void;
+    /**
+     * Get or create a data object associated to the given id
      * @param id the object id - must be unique with the store scope
      * @param initValue the object init value (empty object if nothing is provided)
      */
-    get<T extends Object | undefined>(id: $TraxIdDef, initValue?: T): T extends void ? T | undefined : T;
+    add<T extends Object>(id: $TraxIdDef, initValue: T): T;
     /**
-     * Get or create a trax array associated to the given id
+     * Delete a data object from the store
+     * @param idOrObject 
+     * @returns true if an object was successfully deleted
+     */
+    delete<T extends Object>(idOrObject: $TraxIdDef | T): boolean;
+    /**
+     * Get or create a data array associated to the given id
      * @param id the array id - must be unique with the store scope
      * @param initValue the array init value (empty array if nothing is provided)
      */
-    // getArray<T extends Array<any>>(id: $TraxIdDef, initValue?: T): T;
+    // addArray<T extends Array<any>>(id: $TraxIdDef, initValue?: T): T;
     /**
-     * Get or create a trax dictionary associated to the given id
+     * Get or create a data dictionary associated to the given id
      * (Dictionaries are JS objects used as Map<string,any>)
      * @param id the dictionary id - must be unique with the store scope
      * @param initValue the dictionary init value (empty object if nothing is provided)
      */
-    // getDictionary<T extends Record<string, any>>(id: $TraxIdDef, initValue?: T): T;
+    // addDictionary<T extends Record<string, any>>(id: $TraxIdDef, initValue?: T): T;
     /**
      * Create a compute processor
      * Processor may be synchronous or asynchronous (cf. $TraxComputeFn)

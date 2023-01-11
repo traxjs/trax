@@ -139,7 +139,7 @@ describe('Trax Core', () => {
                 store.initRoot({ msg: "Hello" });
             });
             expect(st.id).toBe("MyStore");
-            expect(typeof st.get).toBe("function");
+            expect(typeof st.add).toBe("function");
             expect(trax.isTraxObject(st)).toBe(true);
             expect(trax.getTraxId(st)).toBe("MyStore");
         });
@@ -147,7 +147,7 @@ describe('Trax Core', () => {
         describe('Errors', () => {
             it('must be raised when initRoot is not called during the store initialization', async () => {
                 const st = trax.createStore("MyStore", (store: $Store<any>) => {
-                    store.get("foo", { msg: "Hello" });
+                    store.add("foo", { msg: "Hello" });
                 });
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
@@ -251,7 +251,7 @@ describe('Trax Core', () => {
             it('must be raised in case of invalid get parameter', async () => {
                 const st = trax.createStore("MyStore", (store: $Store<any>) => {
                     store.initRoot({ msg: "Hello" });
-                    store.get("abc", 42);
+                    store.add("abc", 42);
                 });
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
@@ -260,6 +260,21 @@ describe('Trax Core', () => {
                     '0:4 !NEW - O: MyStore/abc',
                     '0:5 !PCE - "0:1"'
                 ]);
+            });
+
+            it('must be raised if "root" is used as an id for a new object', async () => {
+                const st = trax.createStore("MyStore", (store: $Store<any>) => {
+                    store.initRoot({ msg: "Hello" });
+                });
+                st.add("root", {msg: "abc"});
+
+                expect(printLogs()).toMatchObject([
+                    '0:1 !PCS - StoreInit (MyStore)',
+                    '0:2 !NEW - O: MyStore/root',
+                    '0:3 !PCE - "0:1"',
+                    '0:4 !ERR - "[trax] Store.add: Invalid id \'root\' (reserved)"'
+                ]);
+
             });
         });
     });

@@ -51,16 +51,50 @@ export class LinkedList<T> {
     }
 
     /**
-     * Insert a new value at the head of the list
+     * Add a new value at the head of the list
      * @param value 
      * @returns the list item
      */
-    insert(value: T): $ListItem<T> {
+    add(value: T): $ListItem<T> {
         const h = this._head;
         let itm: $ListItem<T> = getItemFromPool(value, h) || { value, next: h };
         this._head = itm;
         this._size++;
         return itm;
+    }
+
+    /**
+     * Insert an item in the lhe linked list
+     * @param fn function that decides where to insert the item. 
+     * Once the function returns an item, the iteration will stop
+     */
+    insert(fn: (prev?: T, next?: T) => T | void) {
+        let nd = this._head;
+        let v: T | undefined;
+        if (!nd) {
+            v = fn() || undefined;
+            if (v !== undefined) {
+                this.add(v);
+            }
+        } else {
+            let prev: $ListItem<T> | undefined;
+            while (prev || nd) {
+                v = fn(prev?.value, nd?.value) || undefined;
+                if (v !== undefined) {
+                    // insert the item
+                    let itm: $ListItem<T> = getItemFromPool(v, nd) || { value: v, next: nd };
+                    if (prev) {
+                        prev.next = itm;
+                    } else {
+                        this._head = itm;
+                    }
+                    this._size++;
+                    return;
+                }
+                prev = nd
+                nd = nd?.next;
+            }
+        }
     }
 
     /**

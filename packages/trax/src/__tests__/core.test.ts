@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { $Store, $Trax, $TrxObjectType } from '../types';
 import { createTraxEnv } from '../core';
-import { printEvents } from './utils';
+import { $Person, printEvents } from './utils';
 
 describe('Trax Core', () => {
     let trax: $Trax;
@@ -23,30 +23,30 @@ describe('Trax Core', () => {
             expect(trax.pendingChanges).toBe(false);
 
             expect(printLogs(false)).toMatchObject([
-                '0:0 !CS - {"elapsedTime":0}',
-                '0:1 !LOG - "A"',
-                '0:2 !CC - {"elapsedTime":0}',
+                '0:0 !CS - 0',
+                '0:1 !LOG - A',
+                '0:2 !CC - 0',
             ]);
 
             // no changes
             await trax.cycleComplete();
             expect(trax.pendingChanges).toBe(false);
             expect(printLogs(false)).toMatchObject([
-                '0:0 !CS - {"elapsedTime":0}',
-                '0:1 !LOG - "A"',
-                '0:2 !CC - {"elapsedTime":0}',
+                '0:0 !CS - 0',
+                '0:1 !LOG - A',
+                '0:2 !CC - 0',
             ]);
 
             trax.log.info("B");
             await trax.cycleComplete();
             expect(trax.pendingChanges).toBe(false);
             expect(printLogs(false)).toMatchObject([
-                '0:0 !CS - {"elapsedTime":0}',
-                '0:1 !LOG - "A"',
-                '0:2 !CC - {"elapsedTime":0}',
-                '1:0 !CS - {"elapsedTime":0}',
-                '1:1 !LOG - "B"',
-                '1:2 !CC - {"elapsedTime":0}',
+                '0:0 !CS - 0',
+                '0:1 !LOG - A',
+                '0:2 !CC - 0',
+                '1:0 !CS - 0',
+                '1:1 !LOG - B',
+                '1:2 !CC - 0',
             ]);
 
         });
@@ -152,9 +152,9 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/foo',
-                    '0:3 !ERR - "[trax] (MyStore) createStore init must define a root object - see also: initRoot()"',
+                    '0:3 !ERR - [trax] (MyStore) createStore init must define a root object - see also: initRoot()',
                     '0:4 !NEW - O: MyStore/root',
-                    '0:5 !PCE - "0:1"',
+                    '0:5 !PCE - 0:1',
                 ]);
             });
 
@@ -165,14 +165,14 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !PCE - "0:1"',
+                    '0:3 !PCE - 0:1',
                 ]);
                 st.initRoot({ msg: "abc" });
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !PCE - "0:1"',
-                    '0:4 !ERR - "[trax] (MyStore) Store.initRoot can only be called during the store init phase"',
+                    '0:3 !PCE - 0:1',
+                    '0:4 !ERR - [trax] (MyStore) Store.initRoot can only be called during the store init phase',
                 ]);
             });
 
@@ -184,8 +184,8 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !ERR - "[trax] createStore init function must return a valid object (MyStore)"',
-                    '0:4 !PCE - "0:1"',
+                    '0:3 !ERR - [trax] createStore init function must return a valid object (MyStore)',
+                    '0:4 !PCE - 0:1',
                 ]);
             });
 
@@ -197,8 +197,8 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !ERR - "[trax] createStore init error (MyStore): Error: Unexpected error"',
-                    '0:4 !PCE - "0:1"',
+                    '0:3 !ERR - [trax] createStore init error (MyStore): Error: Unexpected error',
+                    '0:4 !PCE - 0:1',
                 ]);
             });
 
@@ -215,8 +215,8 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !PCE - "0:1"',
-                    '0:4 !ERR - "[trax] Store.dispose error (MyStore): Error: Unexpected dispose error"',
+                    '0:3 !PCE - 0:1',
+                    '0:4 !ERR - [trax] Store.dispose error (MyStore): Error: Unexpected dispose error',
                 ]);
             });
 
@@ -230,8 +230,8 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !ERR - "[trax] Store id will be overridden and must not be provided by init function (MyStore)"',
-                    '0:4 !PCE - "0:1"'
+                    '0:3 !ERR - [trax] Store id will be overridden and must not be provided by init function (MyStore)',
+                    '0:4 !PCE - 0:1'
                 ]);
             });
 
@@ -241,10 +241,10 @@ describe('Trax Core', () => {
                 });
                 expect(st.id).toBe("MyStoreABC");
                 expect(printLogs()).toMatchObject([
-                    '0:1 !ERR - "[trax] Invalid trax id: My/Store/ABC (changed into MyStoreABC)"',
+                    '0:1 !ERR - [trax] Invalid trax id: My/Store/ABC (changed into MyStoreABC)',
                     '0:2 !PCS - StoreInit (MyStoreABC)',
                     '0:3 !NEW - O: MyStoreABC/root',
-                    '0:4 !PCE - "0:2"'
+                    '0:4 !PCE - 0:2'
                 ]);
             });
 
@@ -256,9 +256,9 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !ERR - "[trax] (MyStore) Store.get: Invalid init object parameter: 42"',
+                    '0:3 !ERR - [trax] (MyStore) Store.get: Invalid init object parameter: 42',
                     '0:4 !NEW - O: MyStore/abc',
-                    '0:5 !PCE - "0:1"'
+                    '0:5 !PCE - 0:1'
                 ]);
             });
 
@@ -266,16 +266,147 @@ describe('Trax Core', () => {
                 const st = trax.createStore("MyStore", (store: $Store<any>) => {
                     store.initRoot({ msg: "Hello" });
                 });
-                st.add("root", {msg: "abc"});
+                st.add("root", { msg: "abc" });
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !PCE - "0:1"',
-                    '0:4 !ERR - "[trax] Store.add: Invalid id \'root\' (reserved)"'
+                    '0:3 !PCE - 0:1',
+                    '0:4 !ERR - [trax] Store.add: Invalid id \'root\' (reserved)'
                 ]);
 
             });
+        });
+    });
+
+    describe('Reconciliation', () => {
+        it('should support manual trigger (sync)', async () => {
+            const st = trax.createStore("MyStore", (store: $Store<$Person>) => {
+                const p = store.initRoot({ firstName: "Homer", lastName: "Simpson" });
+                store.compute("PrettyName", () => {
+                    const nm = p.firstName + " " + p.lastName;
+                    p.prettyName = nm;
+                    p.prettyNameLength = nm.length;
+                });
+            });
+
+            trax.log.info("A");
+            expect(trax.pendingChanges).toBe(false);
+            trax.processChanges(); // no effect (no changes)
+            trax.log.info("B");
+
+            st.root.lastName = "SIMPSON";
+            trax.log.info("C");
+            expect(trax.pendingChanges).toBe(true);
+            trax.processChanges();
+            expect(trax.pendingChanges).toBe(false);
+            trax.log.info("D");
+            trax.processChanges(); // no effect (no changes)
+
+            await trax.cycleComplete();
+
+            expect(printLogs(false)).toMatchObject([
+                "0:0 !CS - 0",
+                "0:1 !PCS - StoreInit (MyStore)",
+                "0:2 !NEW - O: MyStore/root",
+                "0:3 !NEW - P: MyStore/PrettyName",
+                "0:4 !PCS - Compute #1 (MyStore/PrettyName) P1 Init - parentId=0:1",
+                "0:5 !GET - MyStore/root.firstName -> 'Homer'",
+                "0:6 !GET - MyStore/root.lastName -> 'Simpson'",
+                "0:7 !SET - MyStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
+                "0:8 !SET - MyStore/root.prettyNameLength = 13 (prev: undefined)",
+                "0:9 !PCE - 0:4",
+                "0:10 !PCE - 0:1",
+                "0:11 !LOG - A",
+                "0:12 !LOG - B",
+                "0:13 !SET - MyStore/root.lastName = 'SIMPSON' (prev: 'Simpson')",
+                "0:14 !DRT - MyStore/PrettyName <- MyStore/root.lastName",
+                "0:15 !LOG - C",
+                "0:16 !PCS - Reconciliation #1 - 0 processors",
+                "0:17 !PCS - Compute #2 (MyStore/PrettyName) P1 Reconciliation - parentId=0:16",
+                "0:18 !GET - MyStore/root.firstName -> 'Homer'",
+                "0:19 !GET - MyStore/root.lastName -> 'SIMPSON'",
+                "0:20 !SET - MyStore/root.prettyName = 'Homer SIMPSON' (prev: 'Homer Simpson')",
+                "0:21 !PCE - 0:17",
+                "0:22 !PCE - 0:16",
+                "0:23 !LOG - D",
+                "0:24 !CC - 0",
+            ]);
+
+        });
+
+        it('should support automatic trigger (async)', async () => {
+            const st = trax.createStore("MyStore", (store: $Store<$Person>) => {
+                const p = store.initRoot({ firstName: "Homer", lastName: "Simpson" });
+                store.compute("PrettyName", () => {
+                    const nm = p.firstName + " " + p.lastName;
+                    p.prettyName = nm;
+                    p.prettyNameLength = nm.length;
+                });
+            });
+
+            const p = st.root;
+
+            trax.log.info("A");
+            expect(trax.pendingChanges).toBe(false);
+            p.lastName = "SIMPSON";
+            expect(trax.pendingChanges).toBe(true);
+
+            trax.log.info("B");
+            await trax.cycleComplete();
+            trax.log.info("C");
+
+            expect(trax.pendingChanges).toBe(false);
+            p.firstName = "Bart";
+            expect(trax.pendingChanges).toBe(true);
+            p.lastName = "Simpson";
+
+            await trax.cycleComplete();
+            expect(p.prettyName).toBe("Bart Simpson");
+
+
+            expect(printLogs(false)).toMatchObject([
+                "0:0 !CS - 0",
+                "0:1 !PCS - StoreInit (MyStore)",
+                "0:2 !NEW - O: MyStore/root",
+                "0:3 !NEW - P: MyStore/PrettyName",
+                "0:4 !PCS - Compute #1 (MyStore/PrettyName) P1 Init - parentId=0:1",
+                "0:5 !GET - MyStore/root.firstName -> 'Homer'",
+                "0:6 !GET - MyStore/root.lastName -> 'Simpson'",
+                "0:7 !SET - MyStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
+                "0:8 !SET - MyStore/root.prettyNameLength = 13 (prev: undefined)",
+                "0:9 !PCE - 0:4",
+                "0:10 !PCE - 0:1",
+                "0:11 !LOG - A",
+                "0:12 !SET - MyStore/root.lastName = 'SIMPSON' (prev: 'Simpson')",
+                "0:13 !DRT - MyStore/PrettyName <- MyStore/root.lastName",
+                "0:14 !LOG - B",
+                "0:15 !PCS - Reconciliation #1 - 0 processors",
+                "0:16 !PCS - Compute #2 (MyStore/PrettyName) P1 Reconciliation - parentId=0:15",
+                "0:17 !GET - MyStore/root.firstName -> 'Homer'",
+                "0:18 !GET - MyStore/root.lastName -> 'SIMPSON'",
+                "0:19 !SET - MyStore/root.prettyName = 'Homer SIMPSON' (prev: 'Homer Simpson')",
+                "0:20 !PCE - 0:16",
+                "0:21 !PCE - 0:15",
+                "0:22 !CC - 0",
+                "1:0 !CS - 0",
+                "1:1 !LOG - C",
+                "1:2 !SET - MyStore/root.firstName = 'Bart' (prev: 'Homer')",
+                "1:3 !DRT - MyStore/PrettyName <- MyStore/root.firstName",
+                "1:4 !SET - MyStore/root.lastName = 'Simpson' (prev: 'SIMPSON')",
+                "1:5 !PCS - Reconciliation #2 - 0 processors",
+                "1:6 !PCS - Compute #3 (MyStore/PrettyName) P1 Reconciliation - parentId=1:5",
+                "1:7 !GET - MyStore/root.firstName -> 'Bart'",
+                "1:8 !GET - MyStore/root.lastName -> 'Simpson'",
+                "1:9 !SET - MyStore/root.prettyName = 'Bart Simpson' (prev: 'Homer SIMPSON')",
+                "1:10 !SET - MyStore/root.prettyNameLength = 12 (prev: 13)",
+                "1:11 !PCE - 1:6",
+                "1:12 !PCE - 1:5",
+                "1:13 !CC - 0",
+                "2:0 !CS - 0",
+                "2:1 !GET - MyStore/root.prettyName -> 'Bart Simpson'",
+            ]);
+
         });
     });
 });

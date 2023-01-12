@@ -1,6 +1,13 @@
 import { e } from "vitest/dist/index-761e769b";
 import { traxMD } from "../core";
-import { $EventStream, $TrxLogObjectLifeCycle, $TrxLogProcessStart, $TrxLogPropGet, $TrxLogPropSet, traxEvents } from "../types";
+import { $EventStream, $TraxLogObjectLifeCycle, $TraxLogProcDirty, $TraxLogProcessStart, $TraxLogPropGet, $TraxLogPropSet, traxEvents } from "../types";
+
+export interface $Person {
+    firstName: string;
+    lastName: string;
+    prettyName?: string;
+    prettyNameLength?: number;
+}
 
 export function printEvents(log: $EventStream, ignoreCycleEvents = true, minCycleId = 0): string[] {
     const arr: string[] = [];
@@ -13,13 +20,7 @@ export function printEvents(log: $EventStream, ignoreCycleEvents = true, minCycl
             }
         }
         if (!ignoreCycleEvents || (evt.type !== traxEvents.CycleStart && evt.type !== traxEvents.CycleComplete)) {
-            let data = evt.data;
-            if ((evt.type === traxEvents.CycleStart || evt.type === traxEvents.CycleComplete)) {
-                // item.data is a string - e.g.: '{"elapsedTime":0}'
-                data = ("" + evt.data).replace(/"elapsedTime":\d+/, '"elapsedTime":0');
-            } else {
-                data = formatData(evt.type, evt.data);
-            }
+            let data = formatData(evt.type, evt.data);
             let pid = "";
             if (evt.parentId) {
                 pid = " - parentId=" + evt.parentId;
@@ -35,24 +36,44 @@ function formatData(eventType: string, data?: any) {
     try {
         const sd = JSON.parse("" + data);
 
-        if (eventType === traxEvents.ProcessingStart) {
-            const d = sd as $TrxLogProcessStart;
-            const id = d.id ? " (" + d.id + ")" : "";
-            return `${d.name}${id}`;
+        if (eventType === traxEvents.CycleStart || eventType === traxEvents.CycleComplete) {
+            return `0`; // 0 = elapsedTime
+        } else if (eventType === traxEvents.Info
+            || eventType === traxEvents.Warning
+            || eventType === traxEvents.Error
+            || eventType === traxEvents.ProcessingPause
+            || eventType === traxEvents.ProcessingResume
+            || eventType === traxEvents.ProcessingeEnd) {
+            return `${data.replace(/"/g, "")}`;
+        } else if (eventType === traxEvents.ProcessingStart) {
+            const d = sd as $TraxLogProcessStart;
+            if (d.name === "StoreInit") {
+                return `${d.name} (${d.storeId})`;
+            } else if (d.name === "Compute") {
+                const R = d.isRenderer ? " R" : "";
+                return `${d.name} #${d.computeCount} (${d.processorId}) P${d.processorPriority} ${d.trigger}${R}`;
+            } else if (d.name === "Reconciliation") {
+                return `${d.name} #${d.index} - ${d.processorCount} processors`;
+            } else {
+                return `${(d as any).name}`;
+            }
         } else if (eventType === traxEvents.New) {
-            const d = sd as $TrxLogObjectLifeCycle;
+            const d = sd as $TraxLogObjectLifeCycle;
             if (d.objectId === undefined) return data;
             return `${d.objectType}: ${d.objectId}`;
         } else if (eventType === traxEvents.Dispose) {
-            const d = sd as $TrxLogObjectLifeCycle;
+            const d = sd as $TraxLogObjectLifeCycle;
             if (d.objectId === undefined) return data;
             return `${d.objectType ? d.objectType + ": " : ""}${d.objectId}`;
         } else if (eventType === traxEvents.Get) {
-            const d = sd as $TrxLogPropGet;
+            const d = sd as $TraxLogPropGet;
             return `${d.objectId}.${d.propName} -> ${stringify(d.propValue)}`;
         } else if (eventType === traxEvents.Set) {
-            const d = sd as $TrxLogPropSet;
+            const d = sd as $TraxLogPropSet;
             return `${d.objectId}.${d.propName} = ${stringify(d.toValue)} (prev: ${stringify(d.fromValue)})`;
+        } else if (eventType === traxEvents.ProcessorDirty) {
+            const d = sd as $TraxLogProcDirty;
+            return `${d.processorId} <- ${d.objectId}.${d.propName}`;
         }
     } catch (ex) { }
     return data;
@@ -67,7 +88,7 @@ function stringify(v: any) {
         if (v[traxMD]) return v[traxMD].id;
         return JSON.stringify(v);
     } else if (typeof v === "string") {
-        return "\"" + v.replace(/"/g, '\\"') + "\""
+        return "'" + v.replace(/\'/g, "\\'") + "'"
     } else {
         return "" + v;
     }

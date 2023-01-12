@@ -58,9 +58,9 @@ describe('Event Stream', () => {
             log.event(traxEvents.Warning, { foo: "bar" });
             log.event(traxEvents.Error, { foo: "bar" });
             expect(printLogs()).toMatchObject([
-                '0:1 !LOG - {"foo":"bar"}',
-                '0:2 !WRN - {"foo":"bar"}',
-                '0:3 !ERR - {"foo":"bar"}',
+                '0:1 !LOG - {foo:bar}',
+                '0:2 !WRN - {foo:bar}',
+                '0:3 !ERR - {foo:bar}',
             ]);
         });
 
@@ -69,9 +69,9 @@ describe('Event Stream', () => {
             log.event(traxEvents.Warning, { foo: "bar" }, internalSrcKey);
             log.event(traxEvents.Error, { foo: "bar" }, internalSrcKey);
             expect(printLogs()).toMatchObject([
-                '0:1 !LOG - {"foo":"bar"}',
-                '0:2 !WRN - {"foo":"bar"}',
-                '0:3 !ERR - {"foo":"bar"}',
+                '0:1 !LOG - {foo:bar}',
+                '0:2 !WRN - {foo:bar}',
+                '0:3 !ERR - {foo:bar}',
             ]);
         });
 
@@ -94,7 +94,7 @@ describe('Event Stream', () => {
             expect(log.size).toBe(4);
 
             expect(printLogs(false)).toMatchObject([
-                "0:0 !CS - {\"elapsedTime\":0}",
+                "0:0 !CS - 0",
                 "0:1 foo.bar - NO-DATA",
                 '0:2 blah - {"v":"value"}',
                 "0:3 !NEW - {}",
@@ -146,8 +146,8 @@ describe('Event Stream', () => {
             log.info("Hello", "World");
             log.info("Hello", "Trax", "!");
             expect(printLogs()).toMatchObject([
-                '0:1 !LOG - "Hello World"',
-                '0:2 !LOG - "Hello Trax !"',
+                '0:1 !LOG - Hello World',
+                '0:2 !LOG - Hello Trax !',
             ]);
         });
 
@@ -155,8 +155,8 @@ describe('Event Stream', () => {
             log.warn("A", 42, "x");
             log.warn("B", false, null, 321);
             expect(printLogs()).toMatchObject([
-                '0:1 !WRN - "A 42 x"',
-                '0:2 !WRN - "B false null 321"',
+                '0:1 !WRN - A 42 x',
+                '0:2 !WRN - B false null 321',
             ]);
         });
 
@@ -166,10 +166,10 @@ describe('Event Stream', () => {
             log.error();
             log.error("Unexpected error");
             expect(printLogs()).toMatchObject([
-                '0:1 !ERR - ["Some error",{"description":"!!!"}]',
-                '0:2 !ERR - {"desc":"Some Error"}',
+                '0:1 !ERR - [Some error,{description:!!!}]',
+                '0:2 !ERR - {desc:Some Error}',
                 '0:3 !ERR - NO-DATA',
-                '0:4 !ERR - "Unexpected error"',
+                '0:4 !ERR - Unexpected error',
             ]);
         });
     });
@@ -202,18 +202,18 @@ describe('Event Stream', () => {
             log.info("C");
             expect(log.size).toBe(3 + 1);
             expect(printLogs(false)).toMatchObject([
-                '0:0 !CS - {"elapsedTime":0}',
-                '0:1 !LOG - "A"',
-                '0:2 !LOG - "B"',
-                '0:3 !LOG - "C"',
+                '0:0 !CS - 0',
+                '0:1 !LOG - A',
+                '0:2 !LOG - B',
+                '0:3 !LOG - C',
             ]);
             log.info("D");
             expect(log.size).toBe(3 + 1);
             expect(printLogs(false)).toMatchObject([
-                '0:1 !LOG - "A"',
-                '0:2 !LOG - "B"',
-                '0:3 !LOG - "C"',
-                '0:4 !LOG - "D"',
+                '0:1 !LOG - A',
+                '0:2 !LOG - B',
+                '0:3 !LOG - C',
+                '0:4 !LOG - D',
             ]);
         });
 
@@ -230,11 +230,11 @@ describe('Event Stream', () => {
             log.info("G");
             expect(log.size).toBe(5);
             expect(printLogs(false)).toMatchObject([
-                '0:3 !LOG - "C"',
-                '0:4 !LOG - "D"',
-                '0:5 !LOG - "E"',
-                '0:6 !LOG - "F"',
-                '0:7 !LOG - "G"',
+                '0:3 !LOG - C',
+                '0:4 !LOG - D',
+                '0:5 !LOG - E',
+                '0:6 !LOG - F',
+                '0:7 !LOG - G',
             ]);
         });
 
@@ -245,16 +245,16 @@ describe('Event Stream', () => {
             log.info("C");
             expect(log.size).toBe(4);
             expect(printLogs(false)).toMatchObject([
-                '0:0 !CS - {"elapsedTime":0}',
-                '0:1 !LOG - "A"',
-                '0:2 !LOG - "B"',
-                '0:3 !LOG - "C"'
+                '0:0 !CS - 0',
+                '0:1 !LOG - A',
+                '0:2 !LOG - B',
+                '0:3 !LOG - C'
             ]);
             log.maxSize = 2;
             expect(log.size).toBe(2);
             expect(printLogs(false)).toMatchObject([
-                '0:2 !LOG - "B"',
-                '0:3 !LOG - "C"'
+                '0:2 !LOG - B',
+                '0:3 !LOG - C'
             ]);
         });
 
@@ -271,9 +271,9 @@ describe('Event Stream', () => {
             log.maxSize = 3;
             expect(log.size).toBe(3);
             expect(printLogs(false)).toMatchObject([
-                '0:5 !LOG - "E"',
-                '0:6 !LOG - "F"',
-                '0:7 !LOG - "G"'
+                '0:5 !LOG - E',
+                '0:6 !LOG - F',
+                '0:7 !LOG - G'
             ]);
         });
 
@@ -292,15 +292,15 @@ describe('Event Stream', () => {
             await Promise.resolve();
             expect(log.size).toBe(7 + 2);
             expect(printLogs(false)).toMatchObject([
-                '0:0 !CS - {"elapsedTime":0}',
-                '0:1 !LOG - "A"',
-                '0:2 !LOG - "B"',
-                '0:3 !LOG - "C"',
-                '0:4 !LOG - "D"',
-                '0:5 !LOG - "E"',
-                '0:6 !LOG - "F"',
-                '0:7 !LOG - "G"',
-                '0:8 !CC - {"elapsedTime":0}',
+                '0:0 !CS - 0',
+                '0:1 !LOG - A',
+                '0:2 !LOG - B',
+                '0:3 !LOG - C',
+                '0:4 !LOG - D',
+                '0:5 !LOG - E',
+                '0:6 !LOG - F',
+                '0:7 !LOG - G',
+                '0:8 !CC - 0',
             ]);
 
         });
@@ -319,21 +319,28 @@ describe('Event Stream', () => {
             log.info("E");
 
             expect(printLogs(false)).toMatchObject([
-                '0:0 !CS - {"elapsedTime":0}',
-                '0:1 !LOG - "A"',
-                '0:2 !LOG - "B"',
-                '0:3 !CC - {"elapsedTime":0}',
-                '1:0 !CS - {"elapsedTime":0}',
-                '1:1 !LOG - "C"',
-                '1:2 !CC - {"elapsedTime":0}',
-                '2:0 !CS - {"elapsedTime":0}',
-                '2:1 !WRN - "D"',
-                '2:2 !LOG - "E"',
+                '0:0 !CS - 0',
+                '0:1 !LOG - A',
+                '0:2 !LOG - B',
+                '0:3 !CC - 0',
+                '1:0 !CS - 0',
+                '1:1 !LOG - C',
+                '1:2 !CC - 0',
+                '2:0 !CS - 0',
+                '2:1 !WRN - D',
+                '2:2 !LOG - E',
             ]);
         });
     });
 
     describe('Cycle events', () => {
+        beforeEach(() => {
+            count = 0;
+            log = createEventStream(internalSrcKey, () => {
+                log.info("BEFORE CC");
+            });
+        });
+
         it('should give elapsed time on cycle start / end', async () => {
             log.info("A");
             log.info("B");
@@ -346,24 +353,26 @@ describe('Event Stream', () => {
             log.info("E");
 
             expect(printLogs(false)).toMatchObject([
-                '0:0 !CS - {"elapsedTime":0}',
-                '0:1 !LOG - "A"',
-                '0:2 !LOG - "B"',
-                '0:3 !CC - {"elapsedTime":0}',
-                '1:0 !CS - {"elapsedTime":0}', // >= 10
-                '1:1 !LOG - "C"',
-                '1:2 !CC - {"elapsedTime":0}',
-                '2:0 !CS - {"elapsedTime":0}', // >= 20
-                '2:1 !WRN - "D"',
-                '2:2 !LOG - "E"',
+                '0:0 !CS - 0',
+                '0:1 !LOG - A',
+                '0:2 !LOG - B',
+                '0:3 !LOG - BEFORE CC',
+                '0:4 !CC - 0',
+                '1:0 !CS - 0', // >= 10
+                '1:1 !LOG - C',
+                '1:2 !LOG - BEFORE CC',
+                '1:3 !CC - 0',
+                '2:0 !CS - 0', // >= 20
+                '2:1 !WRN - D',
+                '2:2 !LOG - E',
             ]);
 
             const logs = getLogArray();
             expect(elapsed(0)).toBe(0); // first is always 0
-            expect(elapsed(3)).toBeLessThan(10); // probably 0 or 1
-            expect(elapsed(4)).toBeGreaterThan(10 - 2)
-            expect(elapsed(6)).toBeLessThan(10); // probably 0 or 1
-            expect(elapsed(7)).toBeGreaterThan(20 - 2)
+            expect(elapsed(4)).toBeLessThan(10); // probably 0 or 1
+            expect(elapsed(5)).toBeGreaterThan(10 - 2)
+            expect(elapsed(8)).toBeLessThan(10); // probably 0 or 1
+            expect(elapsed(9)).toBeGreaterThan(20 - 2)
 
             function elapsed(idx: number) {
                 return JSON.parse("" + logs[idx]!.data!).elapsedTime;
@@ -396,15 +405,15 @@ describe('Event Stream', () => {
             await pause(1); // flushes all pending promises
             expect(count).toBe(1);
             expect(printLogs(false)).toMatchObject([
-                '0:0 !CS - {"elapsedTime":0}',
-                '0:1 !LOG - "A"',
-                '0:2 !LOG - "B"',
-                '0:3 !CC - {"elapsedTime":0}',
-                '1:0 !CS - {"elapsedTime":0}',
-                '1:1 !WRN - "C"',
-                '1:2 !LOG - "D"',
-                '1:3 !WRN - "E"',
-                '1:4 !CC - {"elapsedTime":0}',
+                '0:0 !CS - 0',
+                '0:1 !LOG - A',
+                '0:2 !LOG - B',
+                '0:3 !CC - 0',
+                '1:0 !CS - 0',
+                '1:1 !WRN - C',
+                '1:2 !LOG - D',
+                '1:3 !WRN - E',
+                '1:4 !CC - 0',
             ]);
             expect(lastEvent).toMatchObject({
                 id: '1:1',
@@ -420,10 +429,10 @@ describe('Event Stream', () => {
 
 
             expect(printLogs(false)).toMatchObject([
-                '0:0 !CS - {"elapsedTime":0}',
-                '0:1 !LOG - "A"',
-                '0:2 !LOG - "B"',
-                '0:3 !CC - {"elapsedTime":0}'
+                '0:0 !CS - 0',
+                '0:1 !LOG - A',
+                '0:2 !LOG - B',
+                '0:3 !CC - 0'
             ]);
         });
 
@@ -557,12 +566,12 @@ describe('Event Stream', () => {
             log.info("D");
 
             expect(printLogs()).toMatchObject([
-                '0:1 !LOG - "A"',
+                '0:1 !LOG - A',
                 '0:2 !PCS - MyAction',
-                '0:3 !LOG - "B"',
-                '0:4 !WRN - "C"',
-                '0:5 !PCE - "0:2"',
-                '0:6 !LOG - "D"',
+                '0:3 !LOG - B',
+                '0:4 !WRN - C',
+                '0:5 !PCE - 0:2',
+                '0:6 !LOG - D',
             ]);
         });
 
@@ -586,19 +595,19 @@ describe('Event Stream', () => {
             log.info("G");
 
             expect(printLogs()).toMatchObject([
-                '0:1 !LOG - "A"',
+                '0:1 !LOG - A',
                 '0:2 !PCS - MyAsyncAction',
-                '0:3 !LOG - "B"',
-                '0:4 !LOG - "C"',
-                '0:5 !PCP - "0:2"',
-                '0:6 !LOG - "D"',
-                '1:1 !PCR - "0:2"',
-                '1:2 !LOG - "E"',
-                '1:3 !PCP - "0:2"',
-                '2:1 !PCR - "0:2"',
-                '2:2 !LOG - "F"',
-                '2:3 !PCE - "0:2"',
-                '2:4 !LOG - "G"',
+                '0:3 !LOG - B',
+                '0:4 !LOG - C',
+                '0:5 !PCP - 0:2',
+                '0:6 !LOG - D',
+                '1:1 !PCR - 0:2',
+                '1:2 !LOG - E',
+                '1:3 !PCP - 0:2',
+                '2:1 !PCR - 0:2',
+                '2:2 !LOG - F',
+                '2:3 !PCE - 0:2',
+                '2:4 !LOG - G',
             ]);
         });
 
@@ -613,14 +622,14 @@ describe('Event Stream', () => {
             log.info("D");
 
             expect(printLogs()).toMatchObject([
-                '0:1 !LOG - "A"',
+                '0:1 !LOG - A',
                 '0:2 !PCS - MyAction',
-                '0:3 !LOG - "B"',
+                '0:3 !LOG - B',
                 '0:4 !PCS - SubAction - parentId=0:2',
-                '0:5 !LOG - "C"',
-                '0:6 !PCE - "0:4"',
-                '0:7 !PCE - "0:2"',
-                '0:8 !LOG - "D"',
+                '0:5 !LOG - C',
+                '0:6 !PCE - 0:4',
+                '0:7 !PCE - 0:2',
+                '0:8 !LOG - D',
             ]);
         });
 
@@ -636,15 +645,15 @@ describe('Event Stream', () => {
             log.info("E");
 
             expect(printLogs()).toMatchObject([
-                '0:1 !LOG - "A"',
+                '0:1 !LOG - A',
                 '0:2 !PCS - MyAction',
-                '0:3 !LOG - "B"',
+                '0:3 !LOG - B',
                 '0:4 !PCS - SubAction - parentId=0:2',
-                '0:5 !LOG - "C"',
-                '0:6 !PCP - "0:4"',
-                '0:7 !LOG - "D"',
-                '0:8 !PCE - "0:2"',
-                '0:9 !LOG - "E"',
+                '0:5 !LOG - C',
+                '0:6 !PCP - 0:4',
+                '0:7 !LOG - D',
+                '0:8 !PCE - 0:2',
+                '0:9 !LOG - E',
             ]);
         });
 
@@ -660,15 +669,15 @@ describe('Event Stream', () => {
             log.info("E");
 
             expect(printLogs()).toMatchObject([
-                '0:1 !LOG - "A"',
+                '0:1 !LOG - A',
                 '0:2 !PCS - MyAction',
-                '0:3 !LOG - "B"',
+                '0:3 !LOG - B',
                 '0:4 !PCS - SubAction - parentId=0:2',
-                '0:5 !LOG - "C"',
-                '0:6 !PCP - "0:4"',
-                '0:7 !LOG - "D"',
-                '0:8 !PCP - "0:2"',
-                '0:9 !LOG - "E"',
+                '0:5 !LOG - C',
+                '0:6 !PCP - 0:4',
+                '0:7 !LOG - D',
+                '0:8 !PCP - 0:2',
+                '0:9 !LOG - E',
             ]);
         });
 
@@ -682,10 +691,10 @@ describe('Event Stream', () => {
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - MyAction',
-                    '0:2 !LOG - "A"',
-                    '0:3 !PCE - "0:1"',
-                    '0:4 !LOG - "B"',
-                    '0:5 !ERR - "[trax/processing context] Only started or resumed contexts can be paused: 0:1"',
+                    '0:2 !LOG - A',
+                    '0:3 !PCE - 0:1',
+                    '0:4 !LOG - B',
+                    '0:5 !ERR - [trax/processing context] Only started or resumed contexts can be paused: 0:1',
                 ]);
             });
 
@@ -698,10 +707,10 @@ describe('Event Stream', () => {
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - MyAction',
-                    '0:2 !LOG - "A"',
-                    '0:3 !PCE - "0:1"',
-                    '0:4 !LOG - "B"',
-                    '0:5 !ERR - "[trax/processing context] Contexts cannot be ended twice: 0:1"',
+                    '0:2 !LOG - A',
+                    '0:3 !PCE - 0:1',
+                    '0:4 !LOG - B',
+                    '0:5 !ERR - [trax/processing context] Contexts cannot be ended twice: 0:1',
                 ]);
             });
 
@@ -715,11 +724,11 @@ describe('Event Stream', () => {
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - MyAction',
-                    '0:2 !LOG - "A"',
-                    '0:3 !ERR - "[trax/processing context] Only paused contexts can be resumed: 0:1"',
-                    '0:4 !LOG - "B"',
-                    '0:5 !PCE - "0:1"',
-                    '0:6 !ERR - "[trax/processing context] Only paused contexts can be resumed: 0:1"',
+                    '0:2 !LOG - A',
+                    '0:3 !ERR - [trax/processing context] Only paused contexts can be resumed: 0:1',
+                    '0:4 !LOG - B',
+                    '0:5 !PCE - 0:1',
+                    '0:6 !ERR - [trax/processing context] Only paused contexts can be resumed: 0:1',
                 ]);
             });
 
@@ -731,11 +740,11 @@ describe('Event Stream', () => {
                 await log.await(traxEvents.CycleComplete);
 
                 expect(printLogs()).toMatchObject([
-                    '0:1 !LOG - "A"',
+                    '0:1 !LOG - A',
                     '0:2 !PCS - MyAction',
-                    '0:3 !LOG - "B"',
-                    '0:4 !WRN - "C"',
-                    '0:5 !ERR - "[trax/processing context] Contexts must be ended or paused before cycle ends: 0:2"',
+                    '0:3 !LOG - B',
+                    '0:4 !WRN - C',
+                    '0:5 !ERR - [trax/processing context] Contexts must be ended or paused before cycle ends: 0:2',
                 ]);
             });
 
@@ -748,13 +757,13 @@ describe('Event Stream', () => {
                 await log.await(traxEvents.CycleComplete);
 
                 expect(printLogs()).toMatchObject([
-                    '0:1 !LOG - "A"',
+                    '0:1 !LOG - A',
                     '0:2 !PCS - MyAction',
-                    '0:3 !LOG - "B"',
+                    '0:3 !LOG - B',
                     '0:4 !PCS - SubAction - parentId=0:2',
-                    '0:5 !WRN - "C"',
-                    '0:6 !ERR - "[trax/processing context] Contexts must be ended or paused before cycle ends: 0:4"',
-                    '0:7 !ERR - "[trax/processing context] Contexts must be ended or paused before cycle ends: 0:2"',
+                    '0:5 !WRN - C',
+                    '0:6 !ERR - [trax/processing context] Contexts must be ended or paused before cycle ends: 0:4',
+                    '0:7 !ERR - [trax/processing context] Contexts must be ended or paused before cycle ends: 0:2',
                 ]);
             });
 
@@ -768,13 +777,13 @@ describe('Event Stream', () => {
                 await log.await(traxEvents.CycleComplete);
 
                 expect(printLogs()).toMatchObject([
-                    '0:1 !LOG - "A"',
+                    '0:1 !LOG - A',
                     '0:2 !PCS - MyAction',
-                    '0:3 !LOG - "B"',
+                    '0:3 !LOG - B',
                     '0:4 !PCS - SubAction - parentId=0:2',
-                    '0:5 !WRN - "C"',
-                    '0:6 !ERR - "[trax/processing context] Contexts must be ended or paused before parent: 0:4"',
-                    '0:7 !PCE - "0:2"'
+                    '0:5 !WRN - C',
+                    '0:6 !ERR - [trax/processing context] Contexts must be ended or paused before parent: 0:4',
+                    '0:7 !PCE - 0:2'
                 ]);
             });
 
@@ -788,13 +797,13 @@ describe('Event Stream', () => {
                 await log.await(traxEvents.CycleComplete);
 
                 expect(printLogs()).toMatchObject([
-                    '0:1 !LOG - "A"',
+                    '0:1 !LOG - A',
                     '0:2 !PCS - MyAction',
-                    '0:3 !LOG - "B"',
+                    '0:3 !LOG - B',
                     '0:4 !PCS - SubAction - parentId=0:2',
-                    '0:5 !WRN - "C"',
-                    '0:6 !ERR - "[trax/processing context] Contexts must be ended or paused before parent: 0:4"',
-                    '0:7 !PCP - "0:2"'
+                    '0:5 !WRN - C',
+                    '0:6 !ERR - [trax/processing context] Contexts must be ended or paused before parent: 0:4',
+                    '0:7 !PCP - 0:2'
                 ]);
             });
         });

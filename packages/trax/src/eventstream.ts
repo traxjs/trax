@@ -8,7 +8,7 @@ import { $LogData, $StreamEvent, $Event, $EventStream, $SubscriptionId, $Process
  * @param internalSrcKey 
  * @returns 
  */
-export function createEventStream(internalSrcKey: any): $EventStream {
+export function createEventStream(internalSrcKey: any, onCycleComplete?: () => void): $EventStream {
     let size = 0;
     let maxSize = 500;
     let head: $StreamEvent | undefined;
@@ -41,13 +41,15 @@ export function createEventStream(internalSrcKey: any): $EventStream {
         cycleCompletePromise = null;
     }
 
-    function logCycleEvent(type: string) {
+    function logCycleEvent(type: "!CS" | "!CC") {
+        if (type === traxEvents.CycleComplete && onCycleComplete) {
+            onCycleComplete();
+        }
         const ts = Date.now();
         const elapsedTime = cycleTimeMs !== 0 ? ts - cycleTimeMs : 0;
         cycleTimeMs = ts;
         logEvent(type, { elapsedTime }, internalSrcKey);
     }
-
 
     // ----------------------------------------------
     // Processing context
@@ -57,12 +59,12 @@ export function createEventStream(internalSrcKey: any): $EventStream {
     const pcStack = new LinkedList<$ProcessingContext>();
 
     function stackPc(pc: $ProcessingContext) {
-        pcStack.insert(pc);
+        pcStack.add(pc);
     }
 
     function unstackPc(pc: $ProcessingContext) {
         let last = pcStack.shift();
-        while (last && last!==pc) {
+        while (last && last !== pc) {
             error("[trax/processing context] Contexts must be ended or paused before parent:", last.id);
             last = pcStack.shift();
         }

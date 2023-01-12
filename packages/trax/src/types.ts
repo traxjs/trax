@@ -54,7 +54,7 @@ export interface $Trax {
      */
     getTraxObjectType(obj: any): $TrxObjectType;
     /**
-     * Tell is some changes are pending (i.e. dirty processors)
+     * Tell if some changes are pending (i.e. dirty processors)
      * Return true if there are some dirty processors - which means that all computed values
      * can be safely read with no risks of invalid value
      */
@@ -104,7 +104,7 @@ export interface $Store<T> {
      * Initialize the root object - must be only called in the store init function
      * @param root 
      */
-    initRoot(root: T): void;
+    initRoot(root: T): T;
     /**
      * Create a sub-store
      * @param id the store id - must be unique with the parent store scope
@@ -156,7 +156,7 @@ export interface $Store<T> {
      *                   (i.e. at the end of a cycle when trax.processChanges() is called)
      *                   If false, the process function will need to be explicitely called (useful for React renderers for instance)
      */
-    // compute(id: $TraxIdDef, compute: $TraxComputeFn, autoUpdate?: boolean): $TraxProcessor;
+    compute(id: $TraxIdDef, compute: $TraxComputeFn, autoUpdate?: boolean): $TraxProcessor;
     /**
      * Dispose the current store
      * Main actions: de-reference the root object and allow for transparent garbage collection,
@@ -174,11 +174,23 @@ export interface $Store<T> {
 export type $TraxComputeFn = () => (void | Generator<Promise<any>, void, any>);
 
 /**
+ * Processor id
+ */
+export type $TraxProcessorId = string;
+
+/**
  * Trax processor
  * This object track the dependencies of its compute function and will automatically
  * re-call the compute function in case of dependency changes
  */
 export interface $TraxProcessor {
+    readonly id: $TraxProcessorId;
+    /**
+     * Tell if the processor should automatically re-run the compute function
+     * when it gets dirty or not (in which case the processor creator should use
+     * the onDirty callback and call process() explicitely)
+     */
+    readonly autoCompute: boolean;
     /**
      * Processor priority - tell how/when this processor should be called
      * compared to other processors (in practice priority = creation order)
@@ -209,7 +221,7 @@ export interface $TraxProcessor {
     /**
      * Execute the compute function if the processor is dirty
      */
-    process(): void;
+    compute(): void;
     /**
      * Dispose the processor so that it can't be executed anymore
      */
@@ -254,31 +266,70 @@ export const traxEvents = Object.freeze({
     "ProcessingeEnd": "!PCE"
 });
 
-export interface $TrxLogObjectLifeCycle {
-    type: "!NEW" | "!DEL",
+export type $TraxEvent = $TraxLogError | $TraxLogObjectLifeCycle | $TraxLogPropGet | $TraxLogPropSet | $TraxLogProcDirty;
+
+/** Reason that triggered a call to a processor's compute function */
+export type $TraxComputeTrigger = "Init" | "Reconciliation" | "DirectCall";
+
+export interface $TraxLogObjectLifeCycle {
+    type: "!NEW" | "!DEL";
     objectId: string;
     objectType: $TrxObjectType
 }
 
-export interface $TrxLogPropGet {
-    type: "!GET",
+export interface $TraxLogPropGet {
+    type: "!GET";
     objectId: string;
     propName: string;
     propValue: any;
 }
 
-export interface $TrxLogPropSet {
-    type: "!SET",
+export interface $TraxLogPropSet {
+    type: "!SET";
     objectId: string;
     propName: string;
     fromValue: any;
     toValue: any;
 }
 
-export interface $TrxLogProcessStart {
+export interface $TraxLogProcDirty {
+    type: "!DRT";
+    processorId: string;
+    /** Object holding the value that triggered the dirty event */
+    objectId: string;
+    propName: string;
+}
+
+export interface $TraxLogError {
+    type: "!ERR";
+    data: $JSONValue
+}
+
+export type $TraxLogProcessStart = $TraxLogProcessStoreInit | $TraxLogProcessCompute | $TraxLogReconciliation;
+
+export interface $TraxLogProcessStoreInit {
     type: "!PCS";
     name: "StoreInit";
-    id: string;
+    storeId: string;
+}
+
+export interface $TraxLogProcessCompute {
+    type: "!PCS";
+    name: "Compute";
+    processorId: string;
+    processorPriority: number;
+    trigger: $TraxComputeTrigger;
+    isRenderer: boolean;
+    computeCount: number;
+}
+
+export interface $TraxLogReconciliation {
+    type: "!PCS";
+    name: "Reconciliation";
+    /** Counter incremeneted everytime a reconciliation runs */
+    index: number;
+    /** Number of active processors when a reconciliation starts (allows to track memory leaks) */
+    processorCount: number;
 }
 
 /** JSON type */

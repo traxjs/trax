@@ -51,10 +51,10 @@ describe('Trax Objects', () => {
             expect(printLogs(true, 0)).toMatchObject([
                 '0:1 !PCS - StoreInit (SimpleFamilyStore)',
                 '0:2 !NEW - O: SimpleFamilyStore/root',
-                '0:3 !PCE - "0:1"',
+                '0:3 !PCE - 0:1',
                 // Note: the following logs are on cycle 1 because the store was initialised in beforeEach
                 '1:1 !GET - SimpleFamilyStore/root.father -> {"name":"Homer"}',
-                '1:2 !GET - SimpleFamilyStore/root.name -> ""'
+                '1:2 !GET - SimpleFamilyStore/root.name -> \'\''
             ]);
         });
 
@@ -137,11 +137,11 @@ describe('Trax Objects', () => {
 
             expect(printLogs()).toMatchObject([
                 '1:1 !NEW - O: SimpleFamilyStore/HS',
-                '1:2 !GET - SimpleFamilyStore/HS.firstName -> "Homer"',
-                '1:3 !GET - SimpleFamilyStore/HS.lastName -> "Simpson"',
-                '1:4 !SET - SimpleFamilyStore/HS.lastName = "SIMPSON" (prev: "Simpson")',
+                '1:2 !GET - SimpleFamilyStore/HS.firstName -> \'Homer\'',
+                '1:3 !GET - SimpleFamilyStore/HS.lastName -> \'Simpson\'',
+                '1:4 !SET - SimpleFamilyStore/HS.lastName = \'SIMPSON\' (prev: \'Simpson\')',
                 '1:5 !DEL - O: SimpleFamilyStore/HS',
-                '1:6 !LOG - "END"'
+                '1:6 !LOG - END'
             ]);
         });
     });

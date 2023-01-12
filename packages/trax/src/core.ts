@@ -1,5 +1,7 @@
 import { createEventStream } from "./eventstream";
-import { $Store, $StoreWrapper, $Trax, $TraxIdDef, $TraxProcessor, $TrxLogObjectLifeCycle, $TrxLogPropGet, $TrxLogPropSet, $TrxObjectType, $TrxLogProcessStart, traxEvents } from "./types";
+import { LinkedList } from "./linkedlist";
+import { $TraxInternalProcessor, createTraxProcessor } from "./processor";
+import { $Store, $StoreWrapper, $Trax, $TraxIdDef, $TraxProcessor, $TrxObjectType, $TraxLogProcessStart, traxEvents, $TraxComputeFn, $TraxEvent, $ProcessingContext, $TraxProcessorId } from "./types";
 
 
 export const traxMD = Symbol("trax.md");
@@ -15,25 +17,50 @@ interface $TraxMd {
     /** The object type */
     type: $TrxObjectType;
     /**
-     * Used by value objects (objects / array / dictionary) to track processors that have a dependency
-     * on this object
+     * Used by data objects (objects / array / dictionary) to track processors that have a dependency on their properties
      */
-    // processors?: Set<$TraxProcessor>;
+    propListeners?: Set<$TraxInternalProcessor>;
+    /**
+     * Map of computed properties and their associated processor
+     * Allows to detect if a computed property is illegaly changed
+     */
+    computedProps?: { [propName: string]: $TraxProcessorId };
+}
+
+/**
+ * Get the trax meta data associated to an object
+ * @param o 
+ * @returns 
+ */
+export function tmd(o: any): $TraxMd | undefined {
+    return o ? o[traxMD] : undefined;
 }
 
 /**
  * Create a trax environment
  */
 export function createTraxEnv(): $Trax {
+    /** Private key to authorize reserved events in the log stream */
     const privateEventKey = {};
-    const log = createEventStream(privateEventKey);
-    let pendingChanges = false;
-    let dupeCount = 0; // counter used to de-dupe auto-generated ids
+    /** Log stream */
+    const log = createEventStream(privateEventKey, () => {
+        trx.processChanges();
+    });
+    /** counter used to de-dupe auto-generated ids */
+    let dupeCount = 0;
     /** Global map containing all stores */
     const storeMap = new Map<string, $Store<any>>();
     /** Global map containing weakrefs to all data */
     const dataRefs = new Map<string, WeakRef<any>>();
     const isArray = Array.isArray;
+    /** Count of processors that have been created - used to set processor priorities */
+    let processorCount = 0;
+    /** Call stack of the processors in compute mode */
+    let processorStack = new LinkedList<$TraxInternalProcessor>();
+    /** Reconciliation linked list: list of processors that need to be reconciled */
+    let reconciliationList = new LinkedList<$TraxInternalProcessor>();
+    /** Count the number of reconciliation executions */
+    let reconciliationCount = 0;
 
     const trx = {
         log,
@@ -44,13 +71,32 @@ export function createTraxEnv(): $Trax {
             return createStore(idPrefix, initFunction, storeMap);
         },
         get pendingChanges() {
-            return pendingChanges;
+            return reconciliationList.size > 0;
         },
         processChanges(): void {
-
+            // reconciliation
+            if (reconciliationList.size > 0) {
+                reconciliationCount++;
+                const recLog = startProcessingContext({
+                    type: "!PCS",
+                    name: "Reconciliation",
+                    index: reconciliationCount,
+                    processorCount: 0 // TODO
+                });
+                let p = reconciliationList.shift();
+                while (p) {
+                    if (p.reconciliationId === reconciliationCount) {
+                        error(`(${p.id}) Processors cannot be called twice during reconciliation`);
+                    } else {
+                        p.compute("Reconciliation", reconciliationCount);
+                    }
+                    p = reconciliationList.shift();
+                }
+                recLog.end();
+            }
         },
         async cycleComplete(): Promise<void> {
-            if (pendingChanges) {
+            if (reconciliationList.size > 0) {
                 await log.await(traxEvents.CycleComplete);
             }
         },
@@ -79,9 +125,18 @@ export function createTraxEnv(): $Trax {
                 let v: any;
                 let addLog = false;
 
-                v = target[prop];
                 if (md) {
-                    logTraxEvent({ type: "!GET", objectId: md.id, propName: prop as string, propValue: v });
+                    // registerDependency
+                    const pr = processorStack.peek();
+                    if (pr) {
+                        pr.registerDependency(target, md.id, prop);
+                    }
+                    // don't add log if prop is then and value undefined
+                    addLog = (prop !== "then" || v !== undefined);
+                    v = target[prop];
+                    addLog && logTraxEvent({ type: "!GET", objectId: md.id, propName: prop as string, propValue: v });
+                } else {
+                    v = target[prop];
                 }
                 return v;
             }
@@ -101,14 +156,35 @@ export function createTraxEnv(): $Trax {
             } else if (typeof prop !== "symbol") {
                 const v = target[prop];
                 const md = tmd(target);
-                let isTargetCollection = false;
 
                 if (md) {
-                    // TODO
+                    // Register computed props
+                    const pr = processorStack.peek();
+                    if (pr) {
+                        // this is a computed property
+                        let computedProps = md.computedProps;
+                        if (!computedProps) {
+                            computedProps = md.computedProps = {};
+                        }
+                        const cpId = computedProps[prop];
+                        if (cpId) {
+                            // a processor is already defined for the current property
+                            if (cpId !== pr.id) {
+                                // illegal change unless the previous processor has been disposed
+
+                                console.error("TODO");
+                            }
+                        } else {
+                            computedProps[prop] = pr.id;
+                        }
+                    }
 
                     if (v !== value) {
                         target[prop] = value;
                         logTraxEvent({ type: "!SET", objectId: md.id, propName: prop as string, fromValue: v, toValue: value });
+                        if (typeof prop === "string") {
+                            notifyPropChange(md, prop);
+                        }
                     }
                 } else {
                     // object is disposed
@@ -133,13 +209,13 @@ export function createTraxEnv(): $Trax {
 
     return trx;
 
-
-    function tmd(o: any): $TraxMd | undefined {
-        return o ? o[traxMD] : undefined;
-    }
-
-    function error(msg: string) {
-        trx.log.error('[trax] ' + msg);
+    function registerProcessorForReconciliation(pr: $TraxInternalProcessor) {
+        const prio = pr.priority;
+        reconciliationList.insert((prev?: $TraxInternalProcessor, next?: $TraxInternalProcessor) => {
+            if (!next || prio <= next.priority) {
+                return pr;
+            }
+        });
     }
 
     function buildId(id: $TraxIdDef, storeId?: string) {
@@ -153,8 +229,64 @@ export function createTraxEnv(): $Trax {
         return `${prefix}${suffix}`;
     }
 
-    function logTraxEvent(e: $TrxLogObjectLifeCycle | $TrxLogPropGet | $TrxLogPropSet) {
+    function error(msg: string) {
+        log.error('[trax] ' + msg);
+    }
+
+    function logTraxEvent(e: $TraxEvent) {
         log.event(e.type, e as any, privateEventKey);
+    }
+
+    function startProcessingContext(event: $TraxLogProcessStart): $ProcessingContext {
+        return log.startProcessingContext(event as any);
+    }
+
+    function notifyPropChange(md: $TraxMd, propName: string) {
+        // set processor dirty if they depend on this property
+        const processors = md.propListeners;
+        if (processors) {
+            for (const pr of processors) {
+                if (pr.notifyChange(md.id, propName)) {
+                    // this processor turned dirty
+                    registerProcessorForReconciliation(pr);
+                }
+            }
+        }
+    }
+
+    /** 
+         * Return objects, arrays or dictionaries 
+         */
+    function getDataObject(id: string): any {
+        const ref = dataRefs.get(id);
+        if (ref) {
+            return ref.deref() || null;
+        }
+        return null;
+    }
+
+    function storeDataObject(id: string, data: Object) {
+        dataRefs.set(id, new WeakRef(data));
+        // TODO: store object id in the store -> extract the store id from the id
+    }
+
+    function removeDataObject(id: string): boolean {
+        const ref = dataRefs.get(id);
+        if (ref) {
+            const o = ref.deref() || null;
+            let objectType = $TrxObjectType.NotATraxObject;
+            if (o) {
+                const md = tmd(o);
+                if (md) {
+                    // TODO: dirty all processor dependencies
+                    o[traxMD] = undefined;
+                    objectType = md.type;
+                }
+            }
+            logTraxEvent({ type: "!DEL", objectId: id, objectType });
+            return dataRefs.delete(id);
+        }
+        return false;
     }
 
     function createStore<R, T extends Object>(
@@ -165,9 +297,8 @@ export function createTraxEnv(): $Trax {
         const storeId = buildStoreId();
         let root: any;
         let initPhase = true;
-        let isDisposed = false;
-        const storeInitData: $TrxLogProcessStart = { type: "!PCS", name: "StoreInit", id: storeId };
-        const storeInit = log.startProcessingContext({ ...storeInitData });
+        let disposed = false;
+        const storeInit = startProcessingContext({ type: "!PCS", name: "StoreInit", storeId: storeId });
 
         const store: $Store<T> = {
             get id() {
@@ -204,6 +335,13 @@ export function createTraxEnv(): $Trax {
                     }
                 }
                 return removeDataObject(id);
+            },
+            compute(id: $TraxIdDef, compute: $TraxComputeFn, autoProcess?: boolean): $TraxProcessor {
+                const pid = buildId(id, storeId); // TODO: processor prefix?
+                processorCount++;
+                const pr = createTraxProcessor(pid, processorCount, compute, processorStack, getDataObject, logTraxEvent, startProcessingContext, autoProcess);
+                // TODO log NEW PR
+                return pr;
             }
         };
         // attach meta data
@@ -215,7 +353,7 @@ export function createTraxEnv(): $Trax {
         function dispose() {
             // unregiser store in parent
             storeMap.delete(storeId);
-            isDisposed = true;
+            disposed = true;
         }
 
         let r: R;
@@ -267,7 +405,7 @@ export function createTraxEnv(): $Trax {
         }
 
         function checkNotDisposed() {
-            if (isDisposed) {
+            if (disposed) {
                 error(`(${storeId}) Stores cannot be used after being disposed`);
                 return false;
             }
@@ -318,41 +456,6 @@ export function createTraxEnv(): $Trax {
             const md: $TraxMd = { id, type };
             (o as any)[traxMD] = md;
             return md;
-        }
-
-        /** 
-         * Return objects, arrays or dictionaries 
-         */
-        function getDataObject(id: string) {
-            const ref = dataRefs.get(id);
-            if (ref) {
-                return ref.deref() || null;
-            }
-            return null;
-        }
-
-        function storeDataObject(id: string, data: Object) {
-            dataRefs.set(id, new WeakRef(data));
-            // TODO: store object id in the store -> extract the store id from the id
-        }
-
-        function removeDataObject(id: string): boolean {
-            const ref = dataRefs.get(id);
-            if (ref) {
-                const o = ref.deref() || null;
-                let objectType = $TrxObjectType.NotATraxObject;
-                if (o) {
-                    const md = tmd(o);
-                    if (md) {
-                        // TODO: dirty all processor dependencies
-                        o[traxMD] = undefined;
-                        objectType = md.type;
-                    }
-                }
-                logTraxEvent({ type: "!DEL", objectId: id, objectType });
-                return dataRefs.delete(id);
-            }
-            return false;
         }
 
         function getProxy(id: string, obj?: any, generateNewId = false, lazyCreation = false) {

@@ -35,6 +35,11 @@ export interface $TraxInternalProcessor extends $TraxProcessor {
      * - DirectCall = explicit call (usually made by processors that are not auto-computed)
      */
     compute(trigger?: "Init" | "Reconciliation" | "DirectCall", reconciliationIdx?: number): void;
+    /**
+     * Dispose the processor so that it can't be executed anymore
+     * Called by the parent store when store.delete() is called
+     */
+    dispose(): void;
 }
 
 export function createTraxProcessor(
@@ -68,7 +73,7 @@ export function createTraxProcessor(
     let reconciliationId = -1;
 
     function error(msg: string) {
-        logTraxEvent({ type: "!ERR", data: '[trax] ' + msg });
+        logTraxEvent({ type: "!ERR", data: msg });
     }
 
     const pr: $TraxInternalProcessor = {
@@ -96,15 +101,23 @@ export function createTraxProcessor(
         get isDisposed() {
             return disposed;
         },
+        get dependencies() {
+            if (disposed) return [];
+            return Array.from(propDependencies).sort();
+        },
         onDirty: null,
         notifyChange(objectId: string, propName: string): boolean {
             if (disposed || computing) return false; // a processor cannot setitself dirty
             if (!dirty && propDependencies.has(propKey(objectId, propName))) {
                 dirty = true;
-
-                // TODO: onDirty
-
                 logTraxEvent({ type: "!DRT", processorId, objectId, propName });
+                if (this.onDirty) {
+                    try {
+                        this.onDirty();
+                    } catch (ex) {
+                        error(`(${processorId}) onDirty callback execution error: ${ex}`);
+                    }
+                }
                 return true;
             }
             return false;
@@ -154,6 +167,9 @@ export function createTraxProcessor(
                 processingContext = null;
 
                 updateDependencies(oldObjectDependencies);
+                if (autoCompute && propDependencies.size === 0) {
+                    error(`(${processorId}) No dependencies found: processor will never be re-executed`);
+                }
             }
         },
         dispose() {
@@ -168,6 +184,7 @@ export function createTraxProcessor(
                     md.propListeners.delete(pr);
                 }
             }
+            logTraxEvent({ type: "!DEL", objectId: processorId, objectType: $TrxObjectType.Processor });
         }
     }
 
@@ -201,7 +218,6 @@ export function createTraxProcessor(
     // initialization
     logTraxEvent({ type: "!NEW", objectId: processorId, objectType: $TrxObjectType.Processor });
     pr.compute("Init");
-    // TODO: update global processor count
 
     return pr;
 }

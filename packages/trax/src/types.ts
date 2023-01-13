@@ -66,10 +66,11 @@ export interface $Trax {
      */
     processChanges(): void;
     /**
-     * Get a promise that will be fulfilled when the current trax cycle completes
-     * If no cycle is on-going, the promise will be immediately fulfilled
+     * Get a promise that will be fulfilled when trax reconciliation is complete 
+     * (i.e. at the end of the current cycle)
+     * If there is no cycle on-going, the promise will be immediately fulfilled
      */
-    cycleComplete(): Promise<void>;
+    reconciliation(): Promise<void>;
     /**
      * Helper function to pdate the content of an array without changing its reference
      * Must be used in processors generating computed array collections
@@ -121,7 +122,8 @@ export interface $Store<T> {
      * Note: if this object is not indirectly referenced by the root object, it may habe been garbage collected
      * @returns the tracked object or undefined if not found
      */
-    get<T extends Object>(id: $TraxIdDef): T | void;
+    get(id: $TraxIdDef, isProcessor: true): $TraxProcessor;
+    get<T extends Object>(id: $TraxIdDef, isProcessor?: boolean): T | void;
     /**
      * Get or create a data object associated to the given id
      * @param id the object id - must be unique with the store scope
@@ -133,7 +135,8 @@ export interface $Store<T> {
      * @param idOrObject 
      * @returns true if an object was successfully deleted
      */
-    delete<T extends Object>(idOrObject: $TraxIdDef | T): boolean;
+    delete(p: $TraxProcessor): boolean;
+    delete<T extends Object>(dataObject: T): boolean;
     /**
      * Get or create a data array associated to the given id
      * @param id the array id - must be unique with the store scope
@@ -152,17 +155,11 @@ export interface $Store<T> {
      * Processor may be synchronous or asynchronous (cf. $TraxComputeFn)
      * @param id the processor id - must be unique with the store scope
      * @param compute the compute function
-     * @param autoUpdate if true (default) the processor will be automatically called after getting dirty. 
+     * @param autoCompute if true (default) the processor will be automatically called after getting dirty. 
      *                   (i.e. at the end of a cycle when trax.processChanges() is called)
      *                   If false, the process function will need to be explicitely called (useful for React renderers for instance)
      */
-    compute(id: $TraxIdDef, compute: $TraxComputeFn, autoUpdate?: boolean): $TraxProcessor;
-    /**
-     * Dispose the current store
-     * Main actions: de-reference the root object and allow for transparent garbage collection,
-     * de-reference the store in its parent collection
-     */
-    // dispose(): void;
+    compute(id: $TraxIdDef, compute: $TraxComputeFn, autoCompute?: boolean): $TraxProcessor;
 }
 
 /**
@@ -212,6 +209,8 @@ export interface $TraxProcessor {
      * Tell if the processor is disposed and should be ignored
      */
     readonly isDisposed: boolean;
+    /** Get the processor current dependencies */
+    readonly dependencies: string[];
     /**
      * Callback to call when the processor value gets dirty
      * This callback is called synchronously, right after the processor gets dirty
@@ -222,10 +221,6 @@ export interface $TraxProcessor {
      * Execute the compute function if the processor is dirty
      */
     compute(): void;
-    /**
-     * Dispose the processor so that it can't be executed anymore
-     */
-    dispose(): void;
 }
 
 /**
@@ -431,6 +426,10 @@ export interface $EventStream {
      * @param eventProcessor the function called for each event - can return false to stop the scan
      */
     scan(eventProcessor: (itm: $Event) => void | boolean): void;
+    /**
+     * Return the last event added to the stream
+     */
+    lastEvent(): $Event | undefined;
     /**
      * Await a certain event. Typical usage:
      * await log.await(trxEvents.CycleComplete);

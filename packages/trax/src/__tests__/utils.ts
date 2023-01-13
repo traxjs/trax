@@ -9,6 +9,15 @@ export interface $Person {
     prettyNameLength?: number;
 }
 
+export interface $SimpleFamilyStore {
+    childNames?: string; // computed
+    father?: $Person;
+    mother?: $Person;
+    child1?: $Person;
+    child2?: $Person;
+    child3?: $Person;
+}
+
 export function printEvents(log: $EventStream, ignoreCycleEvents = true, minCycleId = 0): string[] {
     const arr: string[] = [];
     log.scan((evt) => {
@@ -53,7 +62,8 @@ function formatData(eventType: string, data?: any) {
                 const R = d.isRenderer ? " R" : "";
                 return `${d.name} #${d.computeCount} (${d.processorId}) P${d.processorPriority} ${d.trigger}${R}`;
             } else if (d.name === "Reconciliation") {
-                return `${d.name} #${d.index} - ${d.processorCount} processors`;
+
+                return `${d.name} #${d.index} - ${d.processorCount} processor${d.processorCount !== 1 ? "s" : ""}`;
             } else {
                 return `${(d as any).name}`;
             }

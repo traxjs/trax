@@ -1,22 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { $Store, $Trax } from '../types';
 import { createTraxEnv } from '../core';
-import { printEvents } from './utils';
+import { $Person, $SimpleFamilyStore, printEvents } from './utils';
 
-interface $Person {
-    name: string;
-    age?: number;
-    displayName?: string;
-}
-
-interface $SimpleFamilyStore {
-    name: string; // computed
-    father?: $Person;
-    mother?: $Person;
-    child1?: $Person;
-    child2?: $Person;
-    child3?: $Person;
-}
 
 describe('Trax Objects', () => {
     let trax: $Trax, fst: $Store<$SimpleFamilyStore>;
@@ -25,9 +11,10 @@ describe('Trax Objects', () => {
         trax = createTraxEnv();
         fst = trax.createStore("SimpleFamilyStore", (store: $Store<$SimpleFamilyStore>) => {
             store.initRoot({
-                name: "",
+                childNames: "",
                 father: {
-                    name: "Homer"
+                    firstName: "Homer",
+                    lastName: ""
                 }
             });
         });
@@ -38,13 +25,13 @@ describe('Trax Objects', () => {
     }
 
     describe('Basics', () => {
-        it('must get the root object', async () => {
+        it('must get the root object and wrap sub-objects', async () => {
             const r1 = fst.get<$SimpleFamilyStore>("root")!;
-            expect(r1.father!.name).toBe("Homer");
+            expect(r1.father!.firstName).toBe("Homer");
 
             const r2 = fst.get<$SimpleFamilyStore>("root")!;
             expect(r1).toBe(r2);
-            expect(r2.name).toBe("");
+            expect(r2.childNames).toBe("");
 
             expect(trax.getTraxId(r1)).toBe("SimpleFamilyStore/root");
 
@@ -53,8 +40,10 @@ describe('Trax Objects', () => {
                 '0:2 !NEW - O: SimpleFamilyStore/root',
                 '0:3 !PCE - 0:1',
                 // Note: the following logs are on cycle 1 because the store was initialised in beforeEach
-                '1:1 !GET - SimpleFamilyStore/root.father -> {"name":"Homer"}',
-                '1:2 !GET - SimpleFamilyStore/root.name -> \'\''
+                "1:1 !NEW - O: SimpleFamilyStore/root*father",
+                "1:2 !GET - SimpleFamilyStore/root.father -> 'TRAX[SimpleFamilyStore/root*father]'",
+                "1:3 !GET - SimpleFamilyStore/root*father.firstName -> 'Homer'",
+                "1:4 !GET - SimpleFamilyStore/root.childNames -> ''",
             ]);
         });
 
@@ -88,9 +77,9 @@ describe('Trax Objects', () => {
 
         it('must support delete and create new objects if previous id was deleted', async () => {
             let o1 = fst.add("foo", { foo: "bar" });
-            let dr = fst.delete("foo");
+            let dr = fst.delete(o1);
             expect(dr).toBe(true);
-            dr = fst.delete("foo");
+            dr = fst.delete(o1);
             expect(dr).toBe(false);
 
             let o2 = fst.add(["foo", "bar"], { foo: "bar" });
@@ -100,21 +89,23 @@ describe('Trax Objects', () => {
             expect(dr).toBe(false);
 
             dr = fst.delete(["foo", "bar"]);
+            expect(dr).toBe(false);
+            dr = fst.delete(o2);
             expect(dr).toBe(true);
 
             let o3 = fst.add("x", { foo: 123 });
-            dr = fst.delete("x");
+            dr = fst.delete(o3);
             expect(dr).toBe(true);
-            let o4 = fst.add("x", { foo: 123 });
+            fst.add("x", { foo: 123 });
 
             expect(printLogs()).toMatchObject([
-                '1:1 !NEW - O: SimpleFamilyStore/foo',
-                '1:2 !DEL - O: SimpleFamilyStore/foo',
-                '1:3 !NEW - O: SimpleFamilyStore/foo:bar',
-                '1:4 !DEL - O: SimpleFamilyStore/foo:bar',
-                '1:5 !NEW - O: SimpleFamilyStore/x',
-                '1:6 !DEL - O: SimpleFamilyStore/x',
-                '1:7 !NEW - O: SimpleFamilyStore/x',
+                "1:1 !NEW - O: SimpleFamilyStore/foo",
+                "1:2 !DEL - O: SimpleFamilyStore/foo",
+                "1:3 !NEW - O: SimpleFamilyStore/foo:bar",
+                "1:4 !DEL - O: SimpleFamilyStore/foo:bar",
+                "1:5 !NEW - O: SimpleFamilyStore/x",
+                "1:6 !DEL - O: SimpleFamilyStore/x",
+                "1:7 !NEW - O: SimpleFamilyStore/x",
             ]);
         });
 

@@ -5,8 +5,12 @@ import { $Store, $StoreWrapper, $Trax, $TraxIdDef, $TraxProcessor, $TrxObjectTyp
 
 
 export const traxMD = Symbol("trax.md");
-const RX_INVALID_ID = /(\/)/g;
+const RX_INVALID_ID = /(\/|\>)/g;
 const ROOT = "root";
+/** Separator used to join array id definitions */
+const ID_SEPARATOR1 = ":";
+/** Separator used to create automatic ids while navigating JSON objects */
+const ID_SEPARATOR2 = "*";
 
 /**
  * Meta-data object attached to each trax object (object, array, dictionary, processor, store)
@@ -37,15 +41,20 @@ export function tmd(o: any): $TraxMd | undefined {
 }
 
 /**
+ * Create and attach meta data to a given object
+*/
+function attachMetaData(o: Object, id: string, type: $TrxObjectType): $TraxMd {
+    const md: $TraxMd = { id, type };
+    (o as any)[traxMD] = md;
+    return md;
+}
+
+/**
  * Create a trax environment
  */
 export function createTraxEnv(): $Trax {
     /** Private key to authorize reserved events in the log stream */
     const privateEventKey = {};
-    /** Log stream */
-    const log = createEventStream(privateEventKey, () => {
-        trx.processChanges();
-    });
     /** counter used to de-dupe auto-generated ids */
     let dupeCount = 0;
     /** Global map containing all stores */
@@ -54,6 +63,8 @@ export function createTraxEnv(): $Trax {
     const dataRefs = new Map<string, WeakRef<any>>();
     const isArray = Array.isArray;
     /** Count of processors that have been created - used to set processor priorities */
+    let processorPriorityCounter = 0;
+    /** Total number of active processors */
     let processorCount = 0;
     /** Call stack of the processors in compute mode */
     let processorStack = new LinkedList<$TraxInternalProcessor>();
@@ -61,6 +72,19 @@ export function createTraxEnv(): $Trax {
     let reconciliationList = new LinkedList<$TraxInternalProcessor>();
     /** Count the number of reconciliation executions */
     let reconciliationCount = 0;
+    /** Log stream */
+    const jsonReplacer = (d: any) => {
+        return JSON.stringify(d, (key: string, value: any) => {
+            if (typeof value === "object") {
+                const md = tmd(value);
+                return md ? `TRAX[${md.id}]` : value;
+            }
+            return value;
+        });
+    }
+    const log = createEventStream(privateEventKey, jsonReplacer, () => {
+        trx.processChanges();
+    });
 
     const trx = {
         log,
@@ -81,12 +105,12 @@ export function createTraxEnv(): $Trax {
                     type: "!PCS",
                     name: "Reconciliation",
                     index: reconciliationCount,
-                    processorCount: 0 // TODO
+                    processorCount
                 });
                 let p = reconciliationList.shift();
                 while (p) {
                     if (p.reconciliationId === reconciliationCount) {
-                        error(`(${p.id}) Processors cannot be called twice during reconciliation`);
+                        error(`(${p.id}) Circular reference: Processors cannot run twice during reconciliation`);
                     } else {
                         p.compute("Reconciliation", reconciliationCount);
                     }
@@ -95,8 +119,11 @@ export function createTraxEnv(): $Trax {
                 recLog.end();
             }
         },
-        async cycleComplete(): Promise<void> {
-            if (reconciliationList.size > 0) {
+        async reconciliation(): Promise<void> {
+            const lastEvent = log.lastEvent();
+            // wait for the end of the current cycle if a cycle already started
+            // (reconcilation will be automatically triggered at the end of the cycle)
+            if (lastEvent && lastEvent.type !== traxEvents.CycleComplete) {
                 await log.await(traxEvents.CycleComplete);
             }
         },
@@ -131,9 +158,10 @@ export function createTraxEnv(): $Trax {
                     if (pr) {
                         pr.registerDependency(target, md.id, prop);
                     }
-                    // don't add log if prop is then and value undefined
-                    addLog = (prop !== "then" || v !== undefined);
-                    v = target[prop];
+                    // don't add log if prop is then or toJSON and value undefined
+                    addLog = ((prop !== "then" && prop !== "toJSON") || v !== undefined);
+                    v = target[prop] = wrapPropObject(target[prop], target, prop, md);
+
                     addLog && logTraxEvent({ type: "!GET", objectId: md.id, propName: prop as string, propValue: v });
                 } else {
                     v = target[prop];
@@ -171,8 +199,8 @@ export function createTraxEnv(): $Trax {
                             // a processor is already defined for the current property
                             if (cpId !== pr.id) {
                                 // illegal change unless the previous processor has been disposed
-
-                                console.error("TODO");
+                                error(`Computed property conflict: ${md.id}.${prop} can only be set by ${cpId}`);
+                                value = v;
                             }
                         } else {
                             computedProps[prop] = pr.id;
@@ -180,7 +208,8 @@ export function createTraxEnv(): $Trax {
                     }
 
                     if (v !== value) {
-                        target[prop] = value;
+                        value = target[prop] = wrapPropObject(value, target, "" + prop, md);
+
                         logTraxEvent({ type: "!SET", objectId: md.id, propName: prop as string, fromValue: v, toValue: value });
                         if (typeof prop === "string") {
                             notifyPropChange(md, prop);
@@ -207,6 +236,58 @@ export function createTraxEnv(): $Trax {
         }
     };
 
+    function wrapPropObject(v: any, target: any, propName: string, targetMd: $TraxMd) {
+        if (v !== null && typeof v === "object") {
+            // automatically wrap sub-objects
+            let vmd = tmd(v); // value md
+            if (!vmd) {
+                // this value object is not wrapped yet
+                v = getProxy(targetMd.id + ID_SEPARATOR2 + propName, v, true);
+            }
+        }
+        return v;
+    }
+
+    function getProxy(id: string, obj?: any, generateNewId = false) {
+        const p = getDataObject(id);
+        if (p) {
+            // generateId is false when called from get() or getArray()
+            // but true when called from getters (to generate proxies for sub-properties/sub-objects)
+            if (obj && generateNewId) {
+                // a new id must be generated because this is a new object
+                // but an item with this id already exists
+                // so we have to create a unique id thanks to the dupeCount counter
+                const initId = id;
+                while (true) {
+                    dupeCount++;
+                    id = initId + "#" + dupeCount;
+                    if (!dataRefs.get(id)) {
+                        break;
+                    }
+                }
+            } else {
+                return p;
+            }
+        }
+        if (obj === undefined) {
+            // object not found, no default provided
+            return undefined;
+        }
+
+        // create a new proxy
+        let md: $TraxMd;
+        if (isArray(obj)) {
+            // TODO
+            md = attachMetaData(obj, id, $TrxObjectType.Array);
+        } else {
+            md = attachMetaData(obj, id, $TrxObjectType.Object);
+        }
+        logTraxEvent({ type: "!NEW", objectId: id, objectType: md.type });
+        const prx = new Proxy(obj, proxyHandler);
+        storeDataObject(id, prx);
+        return prx;
+    }
+
     return trx;
 
     function registerProcessorForReconciliation(pr: $TraxInternalProcessor) {
@@ -218,15 +299,20 @@ export function createTraxEnv(): $Trax {
         });
     }
 
-    function buildId(id: $TraxIdDef, storeId?: string) {
-        let prefix = storeId ? storeId + "/" : "";
-        let suffix = isArray(id) ? id.join(":") : id;
+    function buildIdSuffix(id: $TraxIdDef) {
+        let suffix = isArray(id) ? id.join(ID_SEPARATOR1) : id;
         if (suffix.match(RX_INVALID_ID)) {
             const newSuffix = suffix.replace(RX_INVALID_ID, "");
             error(`Invalid trax id: ${suffix} (changed into ${newSuffix})`);
             suffix = newSuffix;
         }
-        return `${prefix}${suffix}`;
+        return suffix;
+    }
+
+    function buildId(id: $TraxIdDef, storeId: string, isProcessor: boolean) {
+        let suffix = buildIdSuffix(id);
+        if (isProcessor) return storeId + "/%" + suffix;
+        return storeId + "/" + suffix;;
     }
 
     function error(msg: string) {
@@ -234,7 +320,11 @@ export function createTraxEnv(): $Trax {
     }
 
     function logTraxEvent(e: $TraxEvent) {
-        log.event(e.type, e as any, privateEventKey);
+        if (e.type === traxEvents.Error) {
+            error("" + e.data);
+        } else {
+            log.event(e.type, e as any, privateEventKey);
+        }
     }
 
     function startProcessingContext(event: $TraxLogProcessStart): $ProcessingContext {
@@ -255,8 +345,8 @@ export function createTraxEnv(): $Trax {
     }
 
     /** 
-         * Return objects, arrays or dictionaries 
-         */
+     * Return objects, arrays or dictionaries 
+     */
     function getDataObject(id: string): any {
         const ref = dataRefs.get(id);
         if (ref) {
@@ -267,7 +357,6 @@ export function createTraxEnv(): $Trax {
 
     function storeDataObject(id: string, data: Object) {
         dataRefs.set(id, new WeakRef(data));
-        // TODO: store object id in the store -> extract the store id from the id
     }
 
     function removeDataObject(id: string): boolean {
@@ -299,6 +388,7 @@ export function createTraxEnv(): $Trax {
         let initPhase = true;
         let disposed = false;
         const storeInit = startProcessingContext({ type: "!PCS", name: "StoreInit", storeId: storeId });
+        const processors = new Map<string, $TraxInternalProcessor>();
 
         const store: $Store<T> = {
             get id() {
@@ -316,31 +406,45 @@ export function createTraxEnv(): $Trax {
                 }
                 return root;
             },
-            get<T extends Object>(id: $TraxIdDef): T | void {
-                return getDataObject(buildId(id, storeId));
+            get<T extends Object>(id: $TraxIdDef, isProcessor = false): T | void {
+                const sid = buildId(id, storeId, isProcessor);
+                if (isProcessor) {
+                    return processors.get(sid) as any;
+                }
+                return getDataObject(sid) || undefined;
             },
             add<T extends Object>(id: $TraxIdDef, o: T): T {
                 return getOrAdd(id, o, false);
             },
-            delete<T extends Object>(idOrObject: $TraxIdDef | T): boolean {
-                const md = tmd(idOrObject);
+            delete<T extends Object>(o: T): boolean {
+                const md = tmd(o);
                 let id = "";
                 if (md) {
                     id = md.id;
-                } else {
-                    try {
-                        id = buildId(idOrObject as $TraxIdDef, storeId);
-                    } catch (ex) {
-                        return false;
+                    if (md.type === $TrxObjectType.Processor) {
+                        return deleteProcessor(o as any as $TraxInternalProcessor);
+                    } else if (md.type !== $TrxObjectType.Store) {
+                        return removeDataObject(id);
                     }
                 }
-                return removeDataObject(id);
+                return false;
             },
-            compute(id: $TraxIdDef, compute: $TraxComputeFn, autoProcess?: boolean): $TraxProcessor {
-                const pid = buildId(id, storeId); // TODO: processor prefix?
-                processorCount++;
-                const pr = createTraxProcessor(pid, processorCount, compute, processorStack, getDataObject, logTraxEvent, startProcessingContext, autoProcess);
-                // TODO log NEW PR
+            compute(id: $TraxIdDef, compute: $TraxComputeFn, autoCompute?: boolean): $TraxProcessor {
+                const pid = buildId(id, storeId, true);
+                // check if id is already used by an object
+                if (getDataObject(pid)) {
+                    error(`Invalid compute call: id already in use: ${pid}`);
+                    return null as any;
+                }
+                let pr = processors.get(pid);
+                if (pr) {
+                    return pr;
+                }
+                processorPriorityCounter++; // used for priorities
+                processorCount++; // used to track potential memory leaks
+                pr = createTraxProcessor(pid, processorPriorityCounter, compute, processorStack, getDataObject, logTraxEvent, startProcessingContext, autoCompute);
+                attachMetaData(pr, pid, $TrxObjectType.Processor);
+                processors.set(pid, pr);
                 return pr;
             }
         };
@@ -354,6 +458,15 @@ export function createTraxEnv(): $Trax {
             // unregiser store in parent
             storeMap.delete(storeId);
             disposed = true;
+        }
+
+        function deleteProcessor(pr: $TraxInternalProcessor) {
+            const ok = processors.delete(pr.id);
+            if (ok) {
+                pr.dispose();
+                processorCount--;
+            }
+            return ok;
         }
 
         let r: R;
@@ -413,7 +526,7 @@ export function createTraxEnv(): $Trax {
         }
 
         function buildStoreId() {
-            let storeId = buildId(idPrefix);
+            let storeId = buildIdSuffix(idPrefix);
             let st = storeMap.get(storeId);
             let count = 0, suffix = "";
             while (st) {
@@ -431,7 +544,7 @@ export function createTraxEnv(): $Trax {
          */
         function getOrAdd<T extends Object>(id: $TraxIdDef, o: T, acceptRootId: boolean): T {
             if (!acceptRootId) {
-                const idSuffix = buildId(id);
+                const idSuffix = buildIdSuffix(id);
                 if (idSuffix === ROOT) {
                     error("Store.add: Invalid id 'root' (reserved)");
                 }
@@ -441,62 +554,14 @@ export function createTraxEnv(): $Trax {
                     error(`(${storeId}) Store.get: Invalid init object parameter: ${o}`);
                     o = {} as T;
                 } else if (isArray(o)) {
-                    console.log("TODO : call getArray() + warning")
+                    console.log("TODO : call addArray() + warning")
                 }
-                return getProxy(buildId(id, storeId), o);
+                return getProxy(buildId(id, storeId, false), o);
             } else {
                 return o as any;
             }
         }
 
-        /**
-         * Create an attach meta data to a given object
-         */
-        function attachMetaData(o: Object, id: string, type: $TrxObjectType): $TraxMd {
-            const md: $TraxMd = { id, type };
-            (o as any)[traxMD] = md;
-            return md;
-        }
-
-        function getProxy(id: string, obj?: any, generateNewId = false, lazyCreation = false) {
-            const p = getDataObject(id);
-            if (p) {
-                // generateId is false when called from get() or getArray()
-                // but true when called from getters (to generate proxies for sub-properties/sub-objects)
-                if (obj && generateNewId) {
-                    // a new id must be generated because this is a new object
-                    // but an item with this id already exists
-                    // so we have to create a unique id thanks to the dupeCount counter
-                    const initId = id;
-                    while (true) {
-                        dupeCount++;
-                        id = initId + "#" + dupeCount;
-                        if (!dataRefs.get(id)) {
-                            break;
-                        }
-                    }
-                } else {
-                    return p;
-                }
-            }
-            if (obj === undefined) {
-                // object not found, no default provided
-                return undefined;
-            }
-
-            // create a new proxy
-            let md: $TraxMd;
-            if (isArray(obj)) {
-                // TODO
-                md = attachMetaData(obj, id, $TrxObjectType.Array);
-            } else {
-                md = attachMetaData(obj, id, $TrxObjectType.Object);
-            }
-            logTraxEvent({ type: "!NEW", objectId: id, objectType: md.type });
-            const prx = new Proxy(obj, proxyHandler);
-            storeDataObject(id, prx);
-            return prx;
-        }
     }
 }
 

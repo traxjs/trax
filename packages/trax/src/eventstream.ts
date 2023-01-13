@@ -8,7 +8,7 @@ import { $LogData, $StreamEvent, $Event, $EventStream, $SubscriptionId, $Process
  * @param internalSrcKey 
  * @returns 
  */
-export function createEventStream(internalSrcKey: any, onCycleComplete?: () => void): $EventStream {
+export function createEventStream(internalSrcKey: any, dataStringifier?: (data: any) => string, onCycleComplete?: () => void): $EventStream {
     let size = 0;
     let maxSize = 500;
     let head: $StreamEvent | undefined;
@@ -139,7 +139,7 @@ export function createEventStream(internalSrcKey: any, onCycleComplete?: () => v
             evt = { id: "", type: "" }
         }
 
-        format(internalSrcKey, evt, type, data, src);
+        format(internalSrcKey, evt, type, dataStringifier, data, src);
         evt.id = generateId();
         evt.parentId = parentId;
         if (evt.type === "") {
@@ -227,6 +227,9 @@ export function createEventStream(internalSrcKey: any, onCycleComplete?: () => v
                 } catch (ex) { }
             }
         },
+        lastEvent(): $Event | undefined {
+            return tail;
+        },
         async await(eventType: string): Promise<$Event> {
             if (eventType === "" || eventType === "*") {
                 logEvent(traxEvents.Error, `[trax/eventStream.await] Invalid event type: '${eventType}'`);
@@ -300,7 +303,7 @@ function mergeMessageData(data: $LogData[]): $LogData | undefined {
     return output;
 }
 
-function format(internalSrcKey: any, entry: $StreamEvent, type: string, data?: $LogData, src?: any) {
+function format(internalSrcKey: any, entry: $StreamEvent, type: string, dataStringifier?: (data: any) => string, data?: $LogData, src?: any) {
     let hasError = false;
     let errMsg = "";
     if (type === "") {
@@ -319,7 +322,11 @@ function format(internalSrcKey: any, entry: $StreamEvent, type: string, data?: $
             entry.type = type;
             if (data !== undefined) {
                 try {
-                    entry.data = JSON.stringify(data);
+                    if (dataStringifier) {
+                        entry.data = dataStringifier(data);
+                    } else {
+                        entry.data = JSON.stringify(data);
+                    }
                 } catch (ex) {
                     hasError = true;
                     errMsg = "Event strinfication error: " + ex;

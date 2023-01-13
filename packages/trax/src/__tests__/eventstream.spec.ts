@@ -336,7 +336,7 @@ describe('Event Stream', () => {
     describe('Cycle events', () => {
         beforeEach(() => {
             count = 0;
-            log = createEventStream(internalSrcKey, () => {
+            log = createEventStream(internalSrcKey, undefined, () => {
                 log.info("BEFORE CC");
             });
         });
@@ -377,6 +377,16 @@ describe('Event Stream', () => {
             function elapsed(idx: number) {
                 return JSON.parse("" + logs[idx]!.data!).elapsedTime;
             }
+        });
+
+        it('should return the last stream event', async () => {
+            expect(log.lastEvent()).toBe(undefined);
+
+            log.info("A");
+            expect(log.lastEvent()!.type).toBe(traxEvents.Info);
+
+            await log.await(traxEvents.CycleComplete);
+            expect(log.lastEvent()!.type).toBe(traxEvents.CycleComplete);
         });
     });
 

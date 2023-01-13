@@ -19,7 +19,7 @@ describe('Trax Core', () => {
             expect(trax.pendingChanges).toBe(false);
             trax.log.info("A");
             expect(trax.pendingChanges).toBe(false);
-            await trax.cycleComplete();
+            await trax.reconciliation();
             expect(trax.pendingChanges).toBe(false);
 
             expect(printLogs(false)).toMatchObject([
@@ -29,7 +29,7 @@ describe('Trax Core', () => {
             ]);
 
             // no changes
-            await trax.cycleComplete();
+            await trax.reconciliation();
             expect(trax.pendingChanges).toBe(false);
             expect(printLogs(false)).toMatchObject([
                 '0:0 !CS - 0',
@@ -38,7 +38,7 @@ describe('Trax Core', () => {
             ]);
 
             trax.log.info("B");
-            await trax.cycleComplete();
+            await trax.reconciliation();
             expect(trax.pendingChanges).toBe(false);
             expect(printLogs(false)).toMatchObject([
                 '0:0 !CS - 0',
@@ -154,7 +154,7 @@ describe('Trax Core', () => {
                     '0:2 !NEW - O: MyStore/foo',
                     '0:3 !ERR - [trax] (MyStore) createStore init must define a root object - see also: initRoot()',
                     '0:4 !NEW - O: MyStore/root',
-                    '0:5 !PCE - 0:1',
+                    '0:5 !PCE - 0:1', 
                 ]);
             });
 
@@ -303,14 +303,14 @@ describe('Trax Core', () => {
             trax.log.info("D");
             trax.processChanges(); // no effect (no changes)
 
-            await trax.cycleComplete();
+            await trax.reconciliation();
 
             expect(printLogs(false)).toMatchObject([
                 "0:0 !CS - 0",
                 "0:1 !PCS - StoreInit (MyStore)",
                 "0:2 !NEW - O: MyStore/root",
-                "0:3 !NEW - P: MyStore/PrettyName",
-                "0:4 !PCS - Compute #1 (MyStore/PrettyName) P1 Init - parentId=0:1",
+                "0:3 !NEW - P: MyStore/%PrettyName",
+                "0:4 !PCS - Compute #1 (MyStore/%PrettyName) P1 Init - parentId=0:1",
                 "0:5 !GET - MyStore/root.firstName -> 'Homer'",
                 "0:6 !GET - MyStore/root.lastName -> 'Simpson'",
                 "0:7 !SET - MyStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
@@ -320,10 +320,10 @@ describe('Trax Core', () => {
                 "0:11 !LOG - A",
                 "0:12 !LOG - B",
                 "0:13 !SET - MyStore/root.lastName = 'SIMPSON' (prev: 'Simpson')",
-                "0:14 !DRT - MyStore/PrettyName <- MyStore/root.lastName",
+                "0:14 !DRT - MyStore/%PrettyName <- MyStore/root.lastName",
                 "0:15 !LOG - C",
-                "0:16 !PCS - Reconciliation #1 - 0 processors",
-                "0:17 !PCS - Compute #2 (MyStore/PrettyName) P1 Reconciliation - parentId=0:16",
+                "0:16 !PCS - Reconciliation #1 - 1 processor",
+                "0:17 !PCS - Compute #2 (MyStore/%PrettyName) P1 Reconciliation - parentId=0:16",
                 "0:18 !GET - MyStore/root.firstName -> 'Homer'",
                 "0:19 !GET - MyStore/root.lastName -> 'SIMPSON'",
                 "0:20 !SET - MyStore/root.prettyName = 'Homer SIMPSON' (prev: 'Homer Simpson')",
@@ -353,7 +353,7 @@ describe('Trax Core', () => {
             expect(trax.pendingChanges).toBe(true);
 
             trax.log.info("B");
-            await trax.cycleComplete();
+            await trax.reconciliation();
             trax.log.info("C");
 
             expect(trax.pendingChanges).toBe(false);
@@ -361,7 +361,7 @@ describe('Trax Core', () => {
             expect(trax.pendingChanges).toBe(true);
             p.lastName = "Simpson";
 
-            await trax.cycleComplete();
+            await trax.reconciliation();
             expect(p.prettyName).toBe("Bart Simpson");
 
 
@@ -369,8 +369,8 @@ describe('Trax Core', () => {
                 "0:0 !CS - 0",
                 "0:1 !PCS - StoreInit (MyStore)",
                 "0:2 !NEW - O: MyStore/root",
-                "0:3 !NEW - P: MyStore/PrettyName",
-                "0:4 !PCS - Compute #1 (MyStore/PrettyName) P1 Init - parentId=0:1",
+                "0:3 !NEW - P: MyStore/%PrettyName",
+                "0:4 !PCS - Compute #1 (MyStore/%PrettyName) P1 Init - parentId=0:1",
                 "0:5 !GET - MyStore/root.firstName -> 'Homer'",
                 "0:6 !GET - MyStore/root.lastName -> 'Simpson'",
                 "0:7 !SET - MyStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
@@ -379,10 +379,10 @@ describe('Trax Core', () => {
                 "0:10 !PCE - 0:1",
                 "0:11 !LOG - A",
                 "0:12 !SET - MyStore/root.lastName = 'SIMPSON' (prev: 'Simpson')",
-                "0:13 !DRT - MyStore/PrettyName <- MyStore/root.lastName",
+                "0:13 !DRT - MyStore/%PrettyName <- MyStore/root.lastName",
                 "0:14 !LOG - B",
-                "0:15 !PCS - Reconciliation #1 - 0 processors",
-                "0:16 !PCS - Compute #2 (MyStore/PrettyName) P1 Reconciliation - parentId=0:15",
+                "0:15 !PCS - Reconciliation #1 - 1 processor",
+                "0:16 !PCS - Compute #2 (MyStore/%PrettyName) P1 Reconciliation - parentId=0:15",
                 "0:17 !GET - MyStore/root.firstName -> 'Homer'",
                 "0:18 !GET - MyStore/root.lastName -> 'SIMPSON'",
                 "0:19 !SET - MyStore/root.prettyName = 'Homer SIMPSON' (prev: 'Homer Simpson')",
@@ -392,10 +392,10 @@ describe('Trax Core', () => {
                 "1:0 !CS - 0",
                 "1:1 !LOG - C",
                 "1:2 !SET - MyStore/root.firstName = 'Bart' (prev: 'Homer')",
-                "1:3 !DRT - MyStore/PrettyName <- MyStore/root.firstName",
+                "1:3 !DRT - MyStore/%PrettyName <- MyStore/root.firstName",
                 "1:4 !SET - MyStore/root.lastName = 'Simpson' (prev: 'SIMPSON')",
-                "1:5 !PCS - Reconciliation #2 - 0 processors",
-                "1:6 !PCS - Compute #3 (MyStore/PrettyName) P1 Reconciliation - parentId=1:5",
+                "1:5 !PCS - Reconciliation #2 - 1 processor",
+                "1:6 !PCS - Compute #3 (MyStore/%PrettyName) P1 Reconciliation - parentId=1:5",
                 "1:7 !GET - MyStore/root.firstName -> 'Bart'",
                 "1:8 !GET - MyStore/root.lastName -> 'Simpson'",
                 "1:9 !SET - MyStore/root.prettyName = 'Bart Simpson' (prev: 'Homer SIMPSON')",

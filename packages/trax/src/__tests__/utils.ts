@@ -7,6 +7,7 @@ export interface $Person {
     lastName: string;
     prettyName?: string;
     prettyNameLength?: number;
+    avatar?: string;
 }
 
 export interface $SimpleFamilyStore {
@@ -16,6 +17,12 @@ export interface $SimpleFamilyStore {
     child1?: $Person;
     child2?: $Person;
     child3?: $Person;
+}
+
+export async function pause(timeMs = 10) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, timeMs);
+    });
 }
 
 export function printEvents(log: $EventStream, ignoreCycleEvents = true, minCycleId = 0): string[] {

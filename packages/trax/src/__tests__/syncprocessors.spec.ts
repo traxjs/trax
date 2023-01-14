@@ -744,7 +744,7 @@ describe('Sync Processors', () => {
                 "1:1 !NEW - P: PStore/%Render",
                 "1:2 !PCS - Compute #1 (PStore/%Render) P1 Init",
                 "1:3 !GET - PStore/root.firstName -> 'Homer'",
-                "1:4 !ERR - [trax] (PStore/%Render) Processing error: Error: Unexpected error",
+                "1:4 !ERR - [trax] (PStore/%Render) Compute error: Error: Unexpected error",
                 "1:5 !PCE - 1:2",
             ]);
         });

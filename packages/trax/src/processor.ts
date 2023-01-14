@@ -70,7 +70,10 @@ export function createTraxProcessor(
     let objectDependencies = new Set<string>();
     /** Log processing context */
     let processingContext: $ProcessingContext | null = null;
+    /** Reconciliation id used during the last compute() call - used to track invalid cycles */
     let reconciliationId = -1;
+    /** Generator returned by the compute function in case of async processors */
+    let generator: Generator<Promise<any>, void, any> | undefined;
 
     function error(msg: string) {
         logTraxEvent({ type: "!ERR", data: msg });
@@ -156,15 +159,29 @@ export function createTraxProcessor(
                 });
                 reconciliationId = reconciliationIdx;
 
+                let itr: IteratorResult<Promise<any>, void> | undefined;
+                let done = true;
                 try {
-                    compute(); // execution will call registerDependency() through proxy getters
+                    // compute will indirectly call registerDependency() through proxy getters
+                    const v = compute();
+                    if (!!v && v.next && typeof v.next === "function") {
+                        generator = v;
+                        // get the first iterator value
+                        itr = v.next();
+                        done = !!itr.done;
+                    }
                 } catch (ex) {
-                    error(`(${processorId}) Processing error: ${ex}`);
+                    error(`(${processorId}) Compute error: ${ex}`);
                 }
                 processorStack.shift();
                 computing = false;
-                processingContext.end();
-                processingContext = null;
+                if (done) {
+                    processingContext.end();
+                    processingContext = null;
+                } else {
+                    processingContext.pause();
+                    processIteratorPromise(itr, generator!);
+                }
 
                 updateDependencies(oldObjectDependencies);
                 if (autoCompute && propDependencies.size === 0) {
@@ -176,6 +193,7 @@ export function createTraxProcessor(
             if (disposed) return;
             disposed = true;
             computing = false;
+            generator = undefined;
 
             // unregister current dependencies
             for (const objectId of objectDependencies) {
@@ -187,6 +205,12 @@ export function createTraxProcessor(
             logTraxEvent({ type: "!DEL", objectId: processorId, objectType: $TrxObjectType.Processor });
         }
     }
+
+    // initialization
+    logTraxEvent({ type: "!NEW", objectId: processorId, objectType: $TrxObjectType.Processor });
+    pr.compute("Init");
+
+    return pr;
 
     function propKey(objectId: string, propName: string) {
         return objectId + "." + propName;
@@ -214,10 +238,54 @@ export function createTraxProcessor(
         }
     }
 
+    function processIteratorPromise(itr: IteratorResult<Promise<any>, void> | undefined, g: Generator<Promise<any>>) {
+        if (itr && !itr.done) {
+            const yieldValue = itr.value;
+            const logError = (err: any) => {
+                error(`(${processorId}) Compute error: ${err}`);
+            }
 
-    // initialization
-    logTraxEvent({ type: "!NEW", objectId: processorId, objectType: $TrxObjectType.Processor });
-    pr.compute("Init");
+            if (!!yieldValue && (yieldValue as any).then) {
+                // yield returned a promise
+                yieldValue.then((v) => {
+                    computeNext(v, g);
+                }).catch(logError);
+            } else {
+                // yield did not return a promise - let's create one
+                Promise.resolve().then(() => {
+                    computeNext(yieldValue, g);
+                }).catch(logError);
+            }
+        }
+    }
 
-    return pr;
+    function computeNext(nextValue: any, g: Generator<Promise<any>, void, any>) {
+        if (disposed || g !== generator || !processingContext) return;
+        // note: g !==generator when compute() was called before the previous generator processing ended
+
+        processorStack.add(pr);
+        computing = true;
+        processingContext.resume();
+
+        let itr: IteratorResult<Promise<any>, void> | undefined;
+        let done = true;
+
+        try {
+            // compute will indirectly call registerDependency() through proxy getters
+            itr = g.next(nextValue);
+            done = !!itr.done;
+        } catch (ex) {
+            error(`(${processorId}) Compute error: ${ex}`);
+            done = true;
+        }
+
+        processorStack.shift();
+        computing = false;
+        if (done) {
+            processingContext.end();
+        } else {
+            processingContext.pause();
+            processIteratorPromise(itr, g);
+        }
+    }
 }

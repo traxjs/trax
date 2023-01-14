@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { LinkedList } from '../linkedlist';
 
 describe('Linked List', () => {
-
     function toString(list: LinkedList<string>) {
         const arr: string[] = [];
         let item = list.head;

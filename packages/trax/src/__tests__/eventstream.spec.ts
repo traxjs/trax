@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createEventStream } from '../eventstream';
 import { $StreamEvent, $Event, $EventStream, traxEvents } from '../types';
-import { printEvents } from './utils';
+import { pause, printEvents } from './utils';
 
 describe('Event Stream', () => {
     let log: $EventStream;
@@ -20,11 +20,7 @@ describe('Event Stream', () => {
         return arr;
     }
 
-    async function pause(timeMs = 10) {
-        return new Promise((resolve) => {
-            setTimeout(resolve, timeMs);
-        });
-    }
+    
 
     beforeEach(() => {
         count = 0;

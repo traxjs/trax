@@ -78,8 +78,9 @@ function formatData(eventType: string, data?: any) {
                 const R = d.isRenderer ? " R" : "";
                 return `${d.name} #${d.computeCount} (${d.processorId}) P${d.processorPriority} ${d.trigger}${R}`;
             } else if (d.name === "Reconciliation") {
-
                 return `${d.name} #${d.index} - ${d.processorCount} processor${d.processorCount !== 1 ? "s" : ""}`;
+            } else if (d.name === "ArrayUpdate") {
+                return `${d.name} (${d.objectId})`;
             } else {
                 return `${(d as any).name}`;
             }

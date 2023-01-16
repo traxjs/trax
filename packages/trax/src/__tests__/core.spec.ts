@@ -152,7 +152,7 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/foo',
-                    '0:3 !ERR - [trax] (MyStore) createStore init must define a root object - see also: initRoot()',
+                    '0:3 !ERR - [TRAX] (MyStore) createStore init must define a root object - see also: initRoot()',
                     '0:4 !NEW - O: MyStore/root',
                     '0:5 !PCE - 0:1', 
                 ]);
@@ -172,7 +172,7 @@ describe('Trax Core', () => {
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
                     '0:3 !PCE - 0:1',
-                    '0:4 !ERR - [trax] (MyStore) Store.initRoot can only be called during the store init phase',
+                    '0:4 !ERR - [TRAX] (MyStore) Store.initRoot can only be called during the store init phase',
                 ]);
             });
 
@@ -184,7 +184,7 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !ERR - [trax] createStore init function must return a valid object (MyStore)',
+                    '0:3 !ERR - [TRAX] createStore init function must return a valid object (MyStore)',
                     '0:4 !PCE - 0:1',
                 ]);
             });
@@ -197,7 +197,7 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !ERR - [trax] createStore init error (MyStore): Error: Unexpected error',
+                    '0:3 !ERR - [TRAX] createStore init error (MyStore): Error: Unexpected error',
                     '0:4 !PCE - 0:1',
                 ]);
             });
@@ -216,7 +216,7 @@ describe('Trax Core', () => {
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
                     '0:3 !PCE - 0:1',
-                    '0:4 !ERR - [trax] Store.dispose error (MyStore): Error: Unexpected dispose error',
+                    '0:4 !ERR - [TRAX] Store.dispose error (MyStore): Error: Unexpected dispose error',
                 ]);
             });
 
@@ -230,7 +230,7 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !ERR - [trax] Store id will be overridden and must not be provided by init function (MyStore)',
+                    '0:3 !ERR - [TRAX] Store id will be overridden and must not be provided by init function (MyStore)',
                     '0:4 !PCE - 0:1'
                 ]);
             });
@@ -241,7 +241,7 @@ describe('Trax Core', () => {
                 });
                 expect(st.id).toBe("MyStoreABC");
                 expect(printLogs()).toMatchObject([
-                    '0:1 !ERR - [trax] Invalid trax id: My/Store/ABC (changed into MyStoreABC)',
+                    '0:1 !ERR - [TRAX] Invalid trax id: My/Store/ABC (changed into MyStoreABC)',
                     '0:2 !PCS - StoreInit (MyStoreABC)',
                     '0:3 !NEW - O: MyStoreABC/root',
                     '0:4 !PCE - 0:2'
@@ -256,7 +256,7 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !ERR - [trax] (MyStore) Store.add(abc): Invalid init object parameter: [number]',
+                    '0:3 !ERR - [TRAX] (MyStore) Store.add(abc): Invalid init object parameter: [number]',
                     '0:4 !NEW - O: MyStore/abc',
                     '0:5 !PCE - 0:1'
                 ]);
@@ -272,7 +272,7 @@ describe('Trax Core', () => {
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
                     '0:3 !PCE - 0:1',
-                    '0:4 !ERR - [trax] Store.add: Invalid id \'root\' (reserved)'
+                    '0:4 !ERR - [TRAX] Store.add: Invalid id \'root\' (reserved)'
                 ]);
 
             });

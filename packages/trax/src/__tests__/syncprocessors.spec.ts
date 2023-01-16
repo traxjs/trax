@@ -744,7 +744,7 @@ describe('Sync Processors', () => {
                 "1:1 !NEW - P: PStore/%Render",
                 "1:2 !PCS - Compute #1 (PStore/%Render) P1 Init",
                 "1:3 !GET - PStore/root.firstName -> 'Homer'",
-                "1:4 !ERR - [trax] (PStore/%Render) Compute error: Error: Unexpected error",
+                "1:4 !ERR - [TRAX] (PStore/%Render) Compute error: Error: Unexpected error",
                 "1:5 !PCE - 1:2",
             ]);
         });
@@ -779,7 +779,7 @@ describe('Sync Processors', () => {
                 "1:5 !LOG - A",
                 "1:6 !SET - PStore/root.firstName = 'Lisa' (prev: 'Homer')",
                 "1:7 !DRT - PStore/%Render <- PStore/root.firstName",
-                "1:8 !ERR - [trax] (PStore/%Render) onDirty callback execution error: Error: [onDirty] Unexpected error",
+                "1:8 !ERR - [TRAX] (PStore/%Render) onDirty callback execution error: Error: [onDirty] Unexpected error",
                 "1:9 !LOG - B",
             ]);
         });
@@ -809,7 +809,7 @@ describe('Sync Processors', () => {
                 "1:1 !NEW - P: PStore/%PrettyName2",
                 "1:2 !PCS - Compute #1 (PStore/%PrettyName2) P2 Init",
                 "1:3 !GET - PStore/root.firstName -> 'Homer'",
-                "1:4 !ERR - [trax] Computed property conflict: PStore/root.prettyName can only be set by PStore/%PrettyName",
+                "1:4 !ERR - [TRAX] Computed property conflict: PStore/root.prettyName can only be set by PStore/%PrettyName",
                 "1:5 !PCE - 1:2",
                 "1:6 !LOG - DONE",
 
@@ -874,7 +874,7 @@ describe('Sync Processors', () => {
                 "0:33 !SET - PStore/root.v1 = 'P3(P2(P1(P3(P2(P1(A))))))' (prev: 'P3(P2(P1(A)))')",
                 "0:34 !DRT - PStore/%P1 <- PStore/root.v1",
                 "0:35 !PCE - 0:31",
-                "0:36 !ERR - [trax] (PStore/%P1) Circular reference: Processors cannot run twice during reconciliation",
+                "0:36 !ERR - [TRAX] (PStore/%P1) Circular reference: Processors cannot run twice during reconciliation",
                 "0:37 !PCE - 0:20",
             ]);
         });
@@ -906,7 +906,7 @@ describe('Sync Processors', () => {
                 "0:8 !NEW - P: PStore/%P2",
                 "0:9 !PCS - Compute #1 (PStore/%P2) P2 Init - parentId=0:1",
                 "0:10 !PCE - 0:9",
-                "0:11 !ERR - [trax] (PStore/%P2) No dependencies found: processor will never be re-executed",
+                "0:11 !ERR - [TRAX] (PStore/%P2) No dependencies found: processor will never be re-executed",
                 "0:12 !PCE - 0:1",
             ]);
         });

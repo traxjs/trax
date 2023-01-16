@@ -11,6 +11,10 @@ const ROOT = "root";
 const ID_SEPARATOR1 = ":";
 /** Separator used to create automatic ids while navigating JSON objects */
 const ID_SEPARATOR2 = "*";
+/** Separator used to replace "/" when creating ids from other ids */
+const ID_SEPARATOR3 = "-";
+/** Separator used to append a unique counter to dedupe a generated id that already exists */
+const ID_SEPARATOR4 = "$";
 
 /**
  * Meta-data object attached to each trax object (object, array, dictionary, processor, store)
@@ -28,7 +32,13 @@ interface $TraxMd {
      * Map of computed properties and their associated processor
      * Allows to detect if a computed property is illegaly changed
      */
-    computedProps?: { [propName: string]: $TraxProcessorId };
+    computedProps?: { [propName: string]: $TraxProcessorId | undefined };
+    /**
+     * Property used when the trax object is a collection and its content is set by a processor
+     * through updateArray or updateDictionary
+     * In this case computedProps should be undefined
+     */
+    computedContent?: $TraxProcessorId;
 }
 
 /**
@@ -61,6 +71,8 @@ export function createTraxEnv(): $Trax {
     const storeMap = new Map<string, $Store<any>>();
     /** Global map containing weakrefs to all data */
     const dataRefs = new Map<string, WeakRef<any>>();
+    /** Global processor map */
+    const processors = new Map<string, $TraxInternalProcessor>();
     const isArray = Array.isArray;
     /** Count of processors that have been created - used to set processor priorities */
     let processorPriorityCounter = 0;
@@ -137,7 +149,42 @@ export function createTraxEnv(): $Trax {
         },
         getTraxObjectType(obj: any): $TrxObjectType {
             return tmd(obj)?.type || $TrxObjectType.NotATraxObject;
-        }
+        },
+        updateArray(array: any[], newContent: any[]) {
+            if (!isArray(array) || !isArray(newContent)) {
+                error(`updateAray: Invalid argument (array expected)`);
+                return;
+            }
+            const md = tmd(array);
+            if (md) {
+                sanitizeComputedMd(md);
+                const pr = processorStack.peek()
+                if (pr) {
+                    if (!md.computedContent) {
+                        md.computedContent = pr.id;
+                    } else {
+                        // illegal change unless the previous processor has been disposed
+                        if (pr.id !== md.computedContent) {
+                            error(`Computed content conflict: ${md.id} can only be changed by ${md.computedContent}`);
+                        }
+                    }
+                }
+            }
+            const ctxt = startProcessingContext({ type: traxEvents.ProcessingStart, name: "ArrayUpdate", objectId: md?.id || "" });
+            const len1 = array.length;
+            const len2 = newContent.length;
+            for (let i = 0; len2 > i; i++) {
+                array[i] = newContent[i];
+            }
+            if (len2 < len1) {
+                for (let i = len2; len1 > i; i++) {
+                    // explicitely set items to undefined to notify potential listeners
+                    array[i] = undefined;
+                }
+                array.splice(len2, len1 - len2);
+            }
+            ctxt.end();
+        },
     }
 
     const proxyHandler = {
@@ -191,21 +238,34 @@ export function createTraxEnv(): $Trax {
                     // Register computed props
                     const pr = processorStack.peek();
                     if (pr) {
-                        // this is a computed property
-                        let computedProps = md.computedProps;
-                        if (!computedProps) {
-                            computedProps = md.computedProps = {};
+                        sanitizeComputedMd(md);
+                        let prId = md.computedContent || undefined;
+                        // the current prop is computed:
+                        // - either it is an independent prop
+                        // - or it is part of a computed collection
+                        if (!md.computedContent) {
+                            // this is a computed property
+                            let computedProps = md.computedProps;
+                            if (!computedProps) {
+                                computedProps = md.computedProps = {};
+                            }
+                            prId = computedProps[prop];
+                            if (!prId) {
+                                computedProps[prop] = pr.id;
+                            }
                         }
-                        const cpId = computedProps[prop];
-                        if (cpId) {
+
+                        if (prId) {
                             // a processor is already defined for the current property
-                            if (cpId !== pr.id) {
+                            if (prId !== pr.id) {
                                 // illegal change unless the previous processor has been disposed
-                                error(`Computed property conflict: ${md.id}.${prop} can only be set by ${cpId}`);
+                                if (md.computedContent) {
+                                    error(`Computed content conflict: ${md.id}.${prop} can only be set by ${prId}`);
+                                } else {
+                                    error(`Computed property conflict: ${md.id}.${prop} can only be set by ${prId}`);
+                                }
                                 value = v;
                             }
-                        } else {
-                            computedProps[prop] = pr.id;
                         }
                     }
 
@@ -273,7 +333,7 @@ export function createTraxEnv(): $Trax {
                 const initId = id;
                 while (true) {
                     dupeCount++;
-                    id = initId + "#" + dupeCount;
+                    id = initId + ID_SEPARATOR4 + dupeCount;
                     if (!dataRefs.get(id)) {
                         break;
                     }
@@ -312,8 +372,34 @@ export function createTraxEnv(): $Trax {
         });
     }
 
-    function buildIdSuffix(id: $TraxIdDef) {
-        let suffix = isArray(id) ? id.join(ID_SEPARATOR1) : id;
+    function buildIdSuffix(id: $TraxIdDef, storeId?: string) {
+        let suffix = "";
+        if (isArray(id)) {
+            suffix = id.map(item => {
+                if (typeof item === "object") {
+
+                    const md = tmd(item);
+                    if (!md) {
+                        error(`Invalid id param: not a trax object`);
+                        return "" + Math.floor(Math.random() * 100000);
+                    } else {
+                        const tid = md.id;
+                        if (storeId) {
+                            const slen = storeId.length + 1;
+                            if (tid.length > slen && tid.slice(0, slen) === storeId + "/") {
+                                // same store: return suffix
+                                return tid.slice(slen);
+                            }
+                        }
+                        // different store: replace "/"
+                        return tid.replace(/\//g, ID_SEPARATOR3);
+                    }
+                }
+                return "" + item;
+            }).join(ID_SEPARATOR1);
+        } else {
+            suffix = id;
+        }
         if (suffix.match(RX_INVALID_ID)) {
             const newSuffix = suffix.replace(RX_INVALID_ID, "");
             error(`Invalid trax id: ${suffix} (changed into ${newSuffix})`);
@@ -323,13 +409,39 @@ export function createTraxEnv(): $Trax {
     }
 
     function buildId(id: $TraxIdDef, storeId: string, isProcessor: boolean) {
-        let suffix = buildIdSuffix(id);
+        let suffix = buildIdSuffix(id, storeId);
         if (isProcessor) return storeId + "/%" + suffix;
         return storeId + "/" + suffix;;
     }
 
+    /**
+     * Check that processor meta data are still valid
+     * (processor may have been disposed and ids still references in md)
+     * @param md 
+     * @param propName 
+     */
+    function sanitizeComputedMd(md?: $TraxMd, propName?: string) {
+        if (md) {
+            if (needReset(md.computedContent)) {
+                md.computedContent = undefined;
+            }
+            const cps = md.computedProps;
+            if (cps && propName && needReset(cps[propName])) {
+                cps[propName] = undefined;
+            }
+        }
+
+        function needReset(id?: string) {
+            // return true if change required
+            if (id && !processors.has(id)) {
+                return true;
+            }
+            return false;
+        }
+    }
+
     function error(msg: string) {
-        log.error('[trax] ' + msg);
+        log.error('[TRAX] ' + msg);
     }
 
     function logTraxEvent(e: $TraxEvent) {
@@ -401,7 +513,7 @@ export function createTraxEnv(): $Trax {
         let initPhase = true;
         let disposed = false;
         const storeInit = startProcessingContext({ type: "!PCS", name: "StoreInit", storeId: storeId });
-        const processors = new Map<string, $TraxInternalProcessor>();
+
 
         const store: $Store<T> = {
             get id() {

@@ -3,8 +3,11 @@
  * Object Id - can be either a string or an array that will be joined to produce a unique id
  * e.g. ["foo",42] -> will generate id "foo:42" if used on the root store or "contextid/foo:42"
  * if used on a sub-store
+ * Note: the array can also contain another trax object in the first position - in this case the object id will be used as prefix
  */
-export type $TraxIdDef = string | (string | number | boolean)[];
+export type $TraxIdDef = string | (string | number | boolean | $TraxObject)[];
+
+export type $TraxObject = Object;
 
 export type $StoreWrapper = {
     readonly id: string;
@@ -72,12 +75,14 @@ export interface $Trax {
      */
     reconciliation(): Promise<void>;
     /**
-     * Helper function to pdate the content of an array without changing its reference
+     * Helper function to update the content of an array without changing its reference
      * Must be used in processors generating computed array collections
+     * Note: this method will also flag the array as computed and will ensure errors are raised
+     * if changes are made outside this processor
      * @param array 
      * @param newContent 
      */
-    // updateArray(array: any[], newContent: any[]): void;
+    updateArray(array: any[], newContent: any[]): void;
 }
 
 
@@ -287,7 +292,7 @@ export interface $TraxLogError {
     data: $JSONValue
 }
 
-export type $TraxLogProcessStart = $TraxLogProcessStoreInit | $TraxLogProcessCompute | $TraxLogReconciliation;
+export type $TraxLogProcessStart = $TraxLogProcessStoreInit | $TraxLogProcessCompute | $TraxLogReconciliation | $TraxLogCollectionUpdate;
 
 export interface $TraxLogProcessStoreInit {
     type: "!PCS";
@@ -303,6 +308,12 @@ export interface $TraxLogProcessCompute {
     trigger: $TraxComputeTrigger;
     isRenderer: boolean;
     computeCount: number;
+}
+
+export interface $TraxLogCollectionUpdate {
+    type: "!PCS";
+    name: "ArrayUpdate";
+    objectId: string;
 }
 
 export interface $TraxLogReconciliation {

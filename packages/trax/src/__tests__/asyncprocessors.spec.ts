@@ -340,9 +340,9 @@ describe('Async processors', () => {
                 "0:2 !NEW - O: PStore/root",
                 "0:3 !NEW - P: PStore/%PrettyName",
                 "0:4 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
-                "0:5 !ERR - [trax] (PStore/%PrettyName) Compute error: Error: Error 1",
+                "0:5 !ERR - [TRAX] (PStore/%PrettyName) Compute error: Error: Error 1",
                 "0:6 !PCE - 0:4",
-                "0:7 !ERR - [trax] (PStore/%PrettyName) No dependencies found: processor will never be re-executed",
+                "0:7 !ERR - [TRAX] (PStore/%PrettyName) No dependencies found: processor will never be re-executed",
                 "0:8 !PCE - 0:1",
                 "0:9 !GET - PStore/root.prettyName -> undefined",
             ]);
@@ -374,7 +374,7 @@ describe('Async processors', () => {
                 "0:7 !PCE - 0:1",
                 "0:8 !GET - PStore/root.prettyName -> undefined",
                 "1:1 GetFriendlyName - NO-DATA",
-                "2:1 !ERR - [trax] (PStore/%PrettyName) Compute error: Error: Friendly Name Error",
+                "2:1 !ERR - [TRAX] (PStore/%PrettyName) Compute error: Error: Friendly Name Error",
             ]);
 
             expect(pr.dependencies).toMatchObject([
@@ -408,7 +408,7 @@ describe('Async processors', () => {
                 "1:1 GetFriendlyName - NO-DATA",
                 "2:1 !PCR - 0:4",
                 "2:2 !SET - PStore/root.prettyName = 'Friendly(Bart)' (prev: undefined)",
-                "2:3 !ERR - [trax] (PStore/%PrettyName) Compute error: Error: Error 2",
+                "2:3 !ERR - [TRAX] (PStore/%PrettyName) Compute error: Error: Error 2",
                 "2:4 !PCE - 0:4",
             ]);
 

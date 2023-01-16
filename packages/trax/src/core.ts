@@ -77,7 +77,9 @@ export function createTraxEnv(): $Trax {
         return JSON.stringify(d, (key: string, value: any) => {
             if (typeof value === "object") {
                 const md = tmd(value);
-                return md ? `TRAX[${md.id}]` : value;
+                return md ? `[TRAX ${md.id}]` : value;
+            } else if (typeof value === "function") {
+                return "[Function]";
             }
             return value;
         });
@@ -158,8 +160,8 @@ export function createTraxEnv(): $Trax {
                     if (pr) {
                         pr.registerDependency(target, md.id, prop);
                     }
-                    // don't add log if prop is then or toJSON and value undefined
-                    addLog = ((prop !== "then" && prop !== "toJSON") || v !== undefined);
+                    // don't add log for common internal built-in props
+                    addLog = ((prop !== "then" && prop !== "toJSON" && prop !== "constructor") || v !== undefined);
                     v = target[prop] = wrapPropObject(target[prop], target, prop, md);
 
                     addLog && logTraxEvent({ type: "!GET", objectId: md.id, propName: prop as string, propValue: v });
@@ -208,11 +210,22 @@ export function createTraxEnv(): $Trax {
                     }
 
                     if (v !== value) {
-                        value = target[prop] = wrapPropObject(value, target, "" + prop, md);
+                        let lengthChange = false;
+                        if (isArray(target)) {
+                            // we ned to notify length change as functions like Array.push won't explicitely do it
+                            const len = target.length;
+                            value = target[prop as any] = wrapPropObject(value, target, "" + prop, md);
+                            lengthChange = target.length !== len;
+                        } else {
+                            value = target[prop] = wrapPropObject(value, target, "" + prop, md);
+                        }
 
                         logTraxEvent({ type: "!SET", objectId: md.id, propName: prop as string, fromValue: v, toValue: value });
                         if (typeof prop === "string") {
                             notifyPropChange(md, prop);
+                        }
+                        if (lengthChange) {
+                            notifyPropChange(md, "length");
                         }
                     }
                 } else {
@@ -413,7 +426,7 @@ export function createTraxEnv(): $Trax {
                 }
                 return getDataObject(sid) || undefined;
             },
-            add<T extends Object>(id: $TraxIdDef, o: T): T {
+            add<T extends Object | Array<any>>(id: $TraxIdDef, o: T): T {
                 return getOrAdd(id, o, false);
             },
             delete<T extends Object>(o: T): boolean {
@@ -550,11 +563,9 @@ export function createTraxEnv(): $Trax {
                 }
             }
             if (checkNotDisposed()) {
-                if (o === undefined || o === null || typeof (o) !== "object") {
-                    error(`(${storeId}) Store.get: Invalid init object parameter: ${o}`);
+                if (o === undefined || o === null || typeof o !== "object") {
+                    error(`(${storeId}) Store.add(${id}): Invalid init object parameter: [${typeof o}]`);
                     o = {} as T;
-                } else if (isArray(o)) {
-                    console.log("TODO : call addArray() + warning")
                 }
                 return getProxy(buildId(id, storeId, false), o);
             } else {

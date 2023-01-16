@@ -248,7 +248,7 @@ describe('Trax Core', () => {
                 ]);
             });
 
-            it('must be raised in case of invalid get parameter', async () => {
+            it('must be raised in case of invalid add parameter', async () => {
                 const st = trax.createStore("MyStore", (store: $Store<any>) => {
                     store.initRoot({ msg: "Hello" });
                     store.add("abc", 42);
@@ -256,7 +256,7 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - StoreInit (MyStore)',
                     '0:2 !NEW - O: MyStore/root',
-                    '0:3 !ERR - [trax] (MyStore) Store.get: Invalid init object parameter: 42',
+                    '0:3 !ERR - [trax] (MyStore) Store.add(abc): Invalid init object parameter: [number]',
                     '0:4 !NEW - O: MyStore/abc',
                     '0:5 !PCE - 0:1'
                 ]);

@@ -129,7 +129,7 @@ export interface $Store<T> {
      * @param id the object id - must be unique with the store scope
      * @param initValue the object init value (empty object if nothing is provided)
      */
-    add<T extends Object>(id: $TraxIdDef, initValue: T): T;
+    add<T extends Object | Object[]>(id: $TraxIdDef, initValue: T): T;
     /**
      * Delete a data object from the store
      * @param idOrObject 
@@ -137,19 +137,6 @@ export interface $Store<T> {
      */
     delete(p: $TraxProcessor): boolean;
     delete<T extends Object>(dataObject: T): boolean;
-    /**
-     * Get or create a data array associated to the given id
-     * @param id the array id - must be unique with the store scope
-     * @param initValue the array init value (empty array if nothing is provided)
-     */
-    // addArray<T extends Array<any>>(id: $TraxIdDef, initValue?: T): T;
-    /**
-     * Get or create a data dictionary associated to the given id
-     * (Dictionaries are JS objects used as Map<string,any>)
-     * @param id the dictionary id - must be unique with the store scope
-     * @param initValue the dictionary init value (empty object if nothing is provided)
-     */
-    // addDictionary<T extends Record<string, any>>(id: $TraxIdDef, initValue?: T): T;
     /**
      * Create a compute processor
      * Processor may be synchronous or asynchronous (cf. $TraxComputeFn)

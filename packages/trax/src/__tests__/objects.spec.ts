@@ -41,7 +41,7 @@ describe('Trax Objects', () => {
                 '0:3 !PCE - 0:1',
                 // Note: the following logs are on cycle 1 because the store was initialised in beforeEach
                 "1:1 !NEW - O: SimpleFamilyStore/root*father",
-                "1:2 !GET - SimpleFamilyStore/root.father -> 'TRAX[SimpleFamilyStore/root*father]'",
+                "1:2 !GET - SimpleFamilyStore/root.father -> '[TRAX SimpleFamilyStore/root*father]'",
                 "1:3 !GET - SimpleFamilyStore/root*father.firstName -> 'Homer'",
                 "1:4 !GET - SimpleFamilyStore/root.childNames -> ''",
             ]);

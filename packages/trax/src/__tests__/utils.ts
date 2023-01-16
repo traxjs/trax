@@ -19,6 +19,15 @@ export interface $SimpleFamilyStore {
     child3?: $Person;
 }
 
+export interface $ArrayFamilyStore {
+    familyName: string;
+    members: $Person[];
+    size?: number;
+    names?: string;
+    infos?: { desc: string }[];
+    misc?: { desc: string }[][];
+}
+
 export async function pause(timeMs = 10) {
     return new Promise((resolve) => {
         setTimeout(resolve, timeMs);

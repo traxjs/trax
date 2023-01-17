@@ -154,7 +154,7 @@ describe('Trax Core', () => {
                     '0:2 !NEW - O: MyStore/foo',
                     '0:3 !ERR - [TRAX] (MyStore) createStore init must define a root object - see also: initRoot()',
                     '0:4 !NEW - O: MyStore/root',
-                    '0:5 !PCE - 0:1', 
+                    '0:5 !PCE - 0:1',
                 ]);
             });
 
@@ -266,15 +266,17 @@ describe('Trax Core', () => {
                 const st = trax.createStore("MyStore", (store: $Store<any>) => {
                     store.initRoot({ msg: "Hello" });
                 });
-                st.add("root", { msg: "abc" });
+                const o = st.add("root", { msg: "abc" });
+                const id = trax.getTraxId(o); // e.g. MyStore/87524
+                expect(id.match(/^MyStore\/\d+$/)).not.toBe(null);
 
                 expect(printLogs()).toMatchObject([
-                    '0:1 !PCS - StoreInit (MyStore)',
-                    '0:2 !NEW - O: MyStore/root',
-                    '0:3 !PCE - 0:1',
-                    '0:4 !ERR - [TRAX] Store.add: Invalid id \'root\' (reserved)'
+                    "0:1 !PCS - StoreInit (MyStore)",
+                    "0:2 !NEW - O: MyStore/root",
+                    "0:3 !PCE - 0:1",
+                    "0:4 !ERR - [TRAX] Store.add: Invalid id 'root' (reserved)",
+                    "0:5 !NEW - O: " + id,
                 ]);
-
             });
         });
     });

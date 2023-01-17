@@ -64,6 +64,39 @@ describe('Trax Objects', () => {
             ]);
         });
 
+        it('must support using other trax objects to build advance ids (same store)', async () => {
+            let o1 = fst.add([fst.root, "foo"], { foo: "bar" });
+            expect(trax.getTraxId(o1)).toBe("SimpleFamilyStore/root:foo");
+
+            // this will generate an error
+            let o2 = fst.add([{ blah: "blah" }, "foo"], { foo: "bar" });
+            const id = trax.getTraxId(o2); // e.g. SimpleFamilyStore/17686:foo
+            const m = id.match(/^SimpleFamilyStore\/\d+\:foo$/);
+            expect(m).not.toBe(null);
+
+            expect(printLogs()).toMatchObject([
+                "1:1 !NEW - O: SimpleFamilyStore/root:foo",
+                "1:2 !ERR - [TRAX] Invalid id param: not a trax object",
+                "1:3 !NEW - O: " + id
+            ]);
+        });
+
+        it('must support using other trax objects to build advance ids (diffet store)', async () => {
+            const st = trax.createStore("AnotherStore", (store: $Store<{ msg: string }>) => {
+                store.initRoot({ msg: "Hello World" })
+            })
+
+            let o = fst.add([st.root, "foo"], { foo: "bar" });
+            expect(trax.getTraxId(o)).toBe("SimpleFamilyStore/AnotherStore-root:foo");
+
+            expect(printLogs()).toMatchObject([
+                "1:1 !PCS - StoreInit (AnotherStore)",
+                "1:2 !NEW - O: AnotherStore/root",
+                "1:3 !PCE - 1:1",
+                "1:4 !NEW - O: SimpleFamilyStore/AnotherStore-root:foo",
+            ]);
+        });
+
         it('must return the same object and ignore new default values', async () => {
             let o1 = fst.add("foo", { foo: "bar" });
             let o2 = fst.add("foo", { blah: "baz" });
@@ -97,6 +130,8 @@ describe('Trax Objects', () => {
             dr = fst.delete(o3);
             expect(dr).toBe(true);
             fst.add("x", { foo: 123 });
+            dr = fst.delete(o3);
+            expect(dr).toBe(false);
 
             expect(printLogs()).toMatchObject([
                 "1:1 !NEW - O: SimpleFamilyStore/foo",

@@ -202,7 +202,7 @@ export function createTraxEnv(): $Trax {
                 let addLog = false;
 
                 if (md) {
-                    // registerDependency
+                    // register dependency
                     const pr = processorStack.peek();
                     if (pr) {
                         pr.registerDependency(target, md.id, prop);
@@ -310,7 +310,7 @@ export function createTraxEnv(): $Trax {
     };
 
     function wrapPropObject(v: any, target: any, propName: string, targetMd: $TraxMd) {
-        if (v !== null && typeof v === "object") {
+        if (v !== null && v !== undefined && typeof v === "object") {
             // automatically wrap sub-objects
             let vmd = tmd(v); // value md
             if (!vmd) {
@@ -381,7 +381,7 @@ export function createTraxEnv(): $Trax {
                     const md = tmd(item);
                     if (!md) {
                         error(`Invalid id param: not a trax object`);
-                        return "" + Math.floor(Math.random() * 100000);
+                        return getRandomId();
                     } else {
                         const tid = md.id;
                         if (storeId) {
@@ -406,6 +406,10 @@ export function createTraxEnv(): $Trax {
             suffix = newSuffix;
         }
         return suffix;
+    }
+
+    function getRandomId(): string {
+        return "" + Math.floor(Math.random() * 100000);
     }
 
     function buildId(id: $TraxIdDef, storeId: string, isProcessor: boolean) {
@@ -554,20 +558,15 @@ export function createTraxEnv(): $Trax {
                 }
                 return false;
             },
-            compute(id: $TraxIdDef, compute: $TraxComputeFn, autoCompute?: boolean): $TraxProcessor {
-                const pid = buildId(id, storeId, true);
-                // check if id is already used by an object
-                if (getDataObject(pid)) {
-                    error(`Invalid compute call: id already in use: ${pid}`);
-                    return null as any;
-                }
+            compute(id: $TraxIdDef, compute: $TraxComputeFn, autoCompute?: boolean, isRenderer?: boolean): $TraxProcessor {
+                let pid = buildId(id, storeId, true);
                 let pr = processors.get(pid);
                 if (pr) {
                     return pr;
                 }
                 processorPriorityCounter++; // used for priorities
                 processorCount++; // used to track potential memory leaks
-                pr = createTraxProcessor(pid, processorPriorityCounter, compute, processorStack, getDataObject, logTraxEvent, startProcessingContext, autoCompute);
+                pr = createTraxProcessor(pid, processorPriorityCounter, compute, processorStack, getDataObject, logTraxEvent, startProcessingContext, autoCompute, isRenderer);
                 attachMetaData(pr, pid, $TrxObjectType.Processor);
                 processors.set(pid, pr);
                 return pr;
@@ -668,10 +667,11 @@ export function createTraxEnv(): $Trax {
          * @reeturns 
          */
         function getOrAdd<T extends Object>(id: $TraxIdDef, o: T, acceptRootId: boolean): T {
+            let idSuffix = buildIdSuffix(id, storeId);
             if (!acceptRootId) {
-                const idSuffix = buildIdSuffix(id);
                 if (idSuffix === ROOT) {
                     error("Store.add: Invalid id 'root' (reserved)");
+                    idSuffix = getRandomId();
                 }
             }
             if (checkNotDisposed()) {
@@ -679,7 +679,7 @@ export function createTraxEnv(): $Trax {
                     error(`(${storeId}) Store.add(${id}): Invalid init object parameter: [${typeof o}]`);
                     o = {} as T;
                 }
-                return getProxy(buildId(id, storeId, false), o);
+                return getProxy(buildId(idSuffix, storeId, false), o);
             } else {
                 return o as any;
             }

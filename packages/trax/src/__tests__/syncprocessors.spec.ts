@@ -652,6 +652,43 @@ describe('Sync Processors', () => {
             expect(v.v2).toBe("P1(X)");
             expect(v.v3).toBe("P2(Y)");
         });
+
+        it('should allow to create renderer processors', async () => {
+            const ps = createPStore();
+            const p = ps.root;
+
+            let output = "";
+            const r = ps.compute("Render", () => {
+                if ((p as any).then === undefined) {
+                    // this test is to ensure dependencies on then are not logged
+                    output = p.firstName + " " + p.lastName;
+                }
+            }, false, true);
+
+            expect(ps.get("PrettyName", true).isRenderer).toBe(false);
+            expect(r.isRenderer).toBe(true);
+            r.compute();
+
+            expect(printLogs(0)).toMatchObject([
+                "0:1 !PCS - StoreInit (PStore)",
+                "0:2 !NEW - O: PStore/root",
+                "0:3 !NEW - P: PStore/%PrettyName",
+                "0:4 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                "0:5 !GET - PStore/root.firstName -> 'Homer'",
+                "0:6 !GET - PStore/root.firstName -> 'Homer'",
+                "0:7 !GET - PStore/root.lastName -> 'Simpson'",
+                "0:8 !SET - PStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
+                "0:9 !SET - PStore/root.prettyNameLength = 13 (prev: undefined)",
+                "0:10 !PCE - 0:4",
+                "0:11 !PCE - 0:1",
+                "0:12 !NEW - P: PStore/%Render",
+                "0:13 !PCS - Compute #1 (PStore/%Render) P2 DirectCall R",
+                "0:14 !GET - PStore/root.firstName -> 'Homer'",
+                "0:15 !GET - PStore/root.lastName -> 'Simpson'",
+                "0:16 !PCE - 0:13",
+            ]);
+            expect(output).toBe("Homer Simpson");
+        });
     });
 
     describe('Delete', () => {
@@ -671,8 +708,11 @@ describe('Sync Processors', () => {
             expect(output).toBe("Bart Simpson");
             p.firstName = "Maggie"; // dirty
 
+            expect(pr.isDisposed).toBe(false);
             let r = ps.delete(pr); // deleted while dirty
             expect(r).toBe(true);
+            expect(pr.isDisposed).toBe(true);
+
             r = ps.delete(pr);
             expect(r).toBe(false);
             trax.log.info("Delete complete");

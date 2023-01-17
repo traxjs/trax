@@ -151,7 +151,7 @@ export interface $Store<T> {
      *                   (i.e. at the end of a cycle when trax.processChanges() is called)
      *                   If false, the process function will need to be explicitely called (useful for React renderers for instance)
      */
-    compute(id: $TraxIdDef, compute: $TraxComputeFn, autoCompute?: boolean): $TraxProcessor;
+    compute(id: $TraxIdDef, compute: $TraxComputeFn, autoCompute?: boolean, isRenderer?: boolean): $TraxProcessor;
 }
 
 /**

@@ -33,10 +33,11 @@ export interface $Trax {
      * @param initFunction the function that will be called to initialize the store. This function must 
      * define the store "root" object otherwise an error will be generated
      */
-    createStore<R, T extends Object>(
+    createStore<T extends Object, R>(
         idPrefix: $TraxIdDef,
         initFunction: (store: $Store<T>) => R
     ): R extends void ? $Store<T> : R & $StoreWrapper;
+    createStore<T extends Object>(idPrefix: $TraxIdDef, root: T): $Store<T>;
     /**
      * The trax event logs
      */

@@ -102,6 +102,14 @@ describe('Trax Core', () => {
             expect(s7.id).toBe("MyStore:A:42"); // id from array
         });
 
+        it('should support creation with no init function', async () => {
+            const ps = trax.createStore("PStore", {
+                firstName: "Homer",
+                lastName: "Simpson"
+            });
+            expect(ps.root.firstName).toBe("Homer");
+        });
+
         it('should be able to define a custom dispose behaviour', async () => {
             let traces = "";
             const initFn = (store: $Store<any>) => {

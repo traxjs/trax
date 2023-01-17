@@ -15,6 +15,8 @@ const ID_SEPARATOR2 = "*";
 const ID_SEPARATOR3 = "-";
 /** Separator used to append a unique counter to dedupe a generated id that already exists */
 const ID_SEPARATOR4 = "$";
+/** Property prefix for reference properties */
+const REF_PROP_PREFIX = "$";
 
 /**
  * Meta-data object attached to each trax object (object, array, dictionary, processor, store)
@@ -39,6 +41,15 @@ interface $TraxMd {
      * In this case computedProps should be undefined
      */
     computedContent?: $TraxProcessorId;
+    /**
+    * Auto-wrap level / Ref props computation
+    * Tell how sub-objects properties should be handled and if sub-objects should be automatcially wrapped or if
+    * they should be considered as references
+    * If level is 1, properties will be considered as references and won't be wrapped
+    * If level is >1, wrapped properties will be passed a decremented level (e.g. x-1 if x is the current level)
+    * Default = 0 (sub-object will be wrapped)
+    */
+    awLevel?: number;
 }
 
 /**
@@ -104,9 +115,9 @@ export function createTraxEnv(): $Trax {
         log,
         createStore<R, T extends Object>(
             idPrefix: $TraxIdDef,
-            initFunction: (store: $Store<T>) => R
+            initFunctionOrRoot: Object | ((store: $Store<T>) => R)
         ): R extends void ? $Store<T> : R & $StoreWrapper {
-            return createStore(idPrefix, initFunction, storeMap);
+            return createStore(idPrefix, initFunctionOrRoot, storeMap);
         },
         get pendingChanges() {
             return reconciliationList.size > 0;
@@ -309,13 +320,44 @@ export function createTraxEnv(): $Trax {
         }
     };
 
+    /**
+     * Auto-wrap a trax object property into a sub trax object
+     */
     function wrapPropObject(v: any, target: any, propName: string, targetMd: $TraxMd) {
         if (v !== null && v !== undefined && typeof v === "object") {
             // automatically wrap sub-objects
-            let vmd = tmd(v); // value md
-            if (!vmd) {
-                // this value object is not wrapped yet
-                v = getProxy(targetMd.id + ID_SEPARATOR2 + propName, v, true);
+            let vmd = tmd(v);
+            if (vmd) return v; // already wrapped
+
+            // determine auto-wrap-level - if 1, direct properties must not be wrapped
+            let awLevel = 0; // default = wrap
+            if (propName[0] === REF_PROP_PREFIX) {
+                // e.g. $myProp -> awLevel=1 / $$$myArray -> awLevel=3
+                let idx = 0, plen = propName.length;
+                while (idx < plen) {
+                    if (propName[idx] === REF_PROP_PREFIX) {
+                        awLevel++;
+                    } else {
+                        break;
+                    }
+                    idx++;
+                }
+            } else if (targetMd.awLevel) {
+                awLevel = targetMd.awLevel;
+            }
+            if (awLevel !== 1) {
+                // let's autowrap
+                if (!vmd) {
+                    // this value object is not wrapped yet
+                    v = getProxy(targetMd.id + ID_SEPARATOR2 + propName, v, true);
+                    if (awLevel && awLevel > 1) {
+                        // propagate awLevel to child md
+                        let vmd = tmd(v);
+                        if (vmd && !vmd.awLevel) {
+                            vmd.awLevel = awLevel - 1;
+                        }
+                    }
+                }
             }
         }
         return v;
@@ -509,7 +551,7 @@ export function createTraxEnv(): $Trax {
 
     function createStore<R, T extends Object>(
         idPrefix: $TraxIdDef,
-        initFunction: (store: $Store<T>) => R,
+        initFunctionOrRoot: Object | ((store: $Store<T>) => R),
         storeMap: Map<string, $Store<any>>
     ): R extends void ? $Store<T> : R & $StoreWrapper {
         const storeId = buildStoreId();
@@ -517,7 +559,9 @@ export function createTraxEnv(): $Trax {
         let initPhase = true;
         let disposed = false;
         const storeInit = startProcessingContext({ type: "!PCS", name: "StoreInit", storeId: storeId });
-
+        const initFunction = typeof initFunctionOrRoot === "function" ? initFunctionOrRoot : (store: $Store<T>) => {
+            store.initRoot(initFunctionOrRoot as any);
+        }
 
         const store: $Store<T> = {
             get id() {

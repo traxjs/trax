@@ -10,7 +10,7 @@ describe('Trax Objects', () => {
     beforeEach(() => {
         trax = createTraxEnv();
         fst = trax.createStore("SimpleFamilyStore", (store: Store<SimpleFamilyStore>) => {
-            store.initRoot({
+            store.init({
                 childNames: "",
                 father: {
                     firstName: "Homer",
@@ -37,8 +37,9 @@ describe('Trax Objects', () => {
 
             expect(printLogs(true, 0)).toMatchObject([
                 '0:1 !PCS - StoreInit (SimpleFamilyStore)',
-                '0:2 !NEW - O: SimpleFamilyStore/root',
-                '0:3 !PCE - 0:1',
+                '0:2 !NEW - S: SimpleFamilyStore',
+                '0:3 !NEW - O: SimpleFamilyStore/root',
+                '0:4 !PCE - 0:1',
                 // Note: the following logs are on cycle 1 because the store was initialised in beforeEach
                 "1:1 !NEW - O: SimpleFamilyStore/root*father",
                 "1:2 !GET - SimpleFamilyStore/root.father -> '[TRAX SimpleFamilyStore/root*father]'",
@@ -83,7 +84,7 @@ describe('Trax Objects', () => {
 
         it('must support using other trax objects to build advance ids (diffet store)', async () => {
             const st = trax.createStore("AnotherStore", (store: Store<{ msg: string }>) => {
-                store.initRoot({ msg: "Hello World" })
+                store.init({ msg: "Hello World" })
             })
 
             let o = fst.add([st.root, "foo"], { foo: "bar" });
@@ -91,9 +92,10 @@ describe('Trax Objects', () => {
 
             expect(printLogs()).toMatchObject([
                 "1:1 !PCS - StoreInit (AnotherStore)",
-                "1:2 !NEW - O: AnotherStore/root",
-                "1:3 !PCE - 1:1",
-                "1:4 !NEW - O: SimpleFamilyStore/AnotherStore-root:foo",
+                "1:2 !NEW - S: AnotherStore",
+                "1:3 !NEW - O: AnotherStore/root",
+                "1:4 !PCE - 1:1",
+                "1:5 !NEW - O: SimpleFamilyStore/AnotherStore-root:foo",
             ]);
         });
 

@@ -653,7 +653,7 @@ export function createTraxEnv(): Trax {
         let disposed = false;
         const storeInit = startProcessingContext({ type: "!PCS", name: "StoreInit", storeId: storeId });
         const initFunction = typeof initFunctionOrRoot === "function" ? initFunctionOrRoot : (store: Store<T>) => {
-            store.initRoot(initFunctionOrRoot as any);
+            store.init(initFunctionOrRoot as any);
         }
 
         const store: Store<T> = {
@@ -664,11 +664,11 @@ export function createTraxEnv(): Trax {
                 // root should always be defined if initFunction is correctly implemented
                 return root;
             },
-            initRoot(r: T) {
+            init(r: T) {
                 if (initPhase) {
                     root = getOrAdd(ROOT, r, true);
                 } else {
-                    error(`(${storeId}) Store.initRoot can only be called during the store init phase`);
+                    error(`(${storeId}) Store.init can only be called during the store init phase`);
                 }
                 return root;
             },
@@ -711,6 +711,7 @@ export function createTraxEnv(): Trax {
         };
         // attach meta data
         attachMetaData(store, storeId, TrxObjectType.Store);
+        logTraxEvent({ type: "!NEW", objectId: storeId, objectType: TrxObjectType.Store });
 
         // register store in parent
         storeMap.set(storeId, store);
@@ -773,7 +774,7 @@ export function createTraxEnv(): Trax {
 
         function checkRoot() {
             if (root == undefined) {
-                error(`(${storeId}) createStore init must define a root object - see also: initRoot()`);
+                error(`(${storeId}) createStore init must define a root object - see also: init()`);
                 root = getOrAdd(ROOT, {}, true);
             }
         }

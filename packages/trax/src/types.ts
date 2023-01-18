@@ -21,7 +21,6 @@ export enum TrxObjectType {
     NotATraxObject = "",
     Object = "O",
     Array = "A",
-    Dictionary = "D",
     Store = "S",
     Processor = "P"
 }
@@ -127,7 +126,7 @@ export interface Store<T> {
      * Initialize the root object - must be only called in the store init function
      * @param root 
      */
-    initRoot(root: T): T;
+    init(root: T): T;
     /**
      * Create a sub-store
      * @param id the store id - must be unique with the parent store scope
@@ -139,26 +138,11 @@ export interface Store<T> {
     //     initFunction: (store: $Store<any>) => R
     // ): R & { dispose: () => void };
     /**
-     * Retrieve a data object/array/dictionary that has been previously created
-     * (Doesn't work for processors or stores)
-     * Note: if this object is not indirectly referenced by the root object, it may habe been garbage collected
-     * @returns the tracked object or undefined if not found
-     */
-    get(id: TraxIdDef, isProcessor: true): TraxProcessor;
-    get<T extends Object>(id: TraxIdDef, isProcessor?: boolean): T | void;
-    /**
      * Get or create a data object associated to the given id
      * @param id the object id - must be unique with the store scope
      * @param initValue the object init value (empty object if nothing is provided)
      */
     add<T extends Object | Object[]>(id: TraxIdDef, initValue: T): T;
-    /**
-     * Delete a data object from the store
-     * @param idOrObject 
-     * @returns true if an object was successfully deleted
-     */
-    delete(p: TraxProcessor): boolean;
-    delete<T extends Object>(dataObject: T): boolean;
     /**
      * Create a compute processor
      * Processor may be synchronous or asynchronous (cf. $TraxComputeFn)
@@ -169,6 +153,21 @@ export interface Store<T> {
      *                   If false, the process function will need to be explicitely called (useful for React renderers for instance)
      */
     compute(id: TraxIdDef, compute: TraxComputeFn, autoCompute?: boolean, isRenderer?: boolean): TraxProcessor;
+    /**
+     * Delete a data object from the store
+     * @param idOrObject 
+     * @returns true if an object was successfully deleted
+     */
+    delete(p: TraxProcessor): boolean;
+    delete<T extends Object>(dataObject: T): boolean;
+    /**
+     * Retrieve a data object/array/dictionary that has been previously created
+     * (Doesn't work for processors or stores)
+     * Note: if this object is not indirectly referenced by the root object, it may habe been garbage collected
+     * @returns the tracked object or undefined if not found
+     */
+    get(id: TraxIdDef, isProcessor: true): TraxProcessor;
+    get<T extends Object>(id: TraxIdDef, isProcessor?: boolean): T | void;
 }
 
 /**

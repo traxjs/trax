@@ -19,12 +19,12 @@ describe('Dictionaries', () => {
         function createFamilyStore(empty: boolean) {
             return trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
                 if (empty) {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: {}
                     });
                 } else {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: {
                             m1: { firstName: "Homer", lastName: "Simpson" },
@@ -55,24 +55,25 @@ describe('Dictionaries', () => {
 
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - StoreInit (FStore)",
-                "0:2 !NEW - O: FStore/root",
-                "0:3 !NEW - P: FStore/%Size",
-                "0:4 !PCS - Compute #1 (FStore/%Size) P1 Init - parentId=0:1",
-                "0:5 !NEW - O: FStore/root*members",
-                "0:6 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:7 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 0",
-                "0:8 !SET - FStore/root.size = 0 (prev: undefined)",
-                "0:9 !PCE - 0:4",
-                "0:10 !NEW - P: FStore/%Names",
-                "0:11 !PCS - Compute #1 (FStore/%Names) P2 Init - parentId=0:1",
-                "0:12 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:13 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 0",
-                "0:14 !SET - FStore/root.names = '' (prev: undefined)",
-                "0:15 !PCE - 0:11",
-                "0:16 !PCE - 0:1",
-                "0:17 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:18 !GET - FStore/root.size -> 0",
-                "0:19 !GET - FStore/root.names -> ''",
+                "0:2 !NEW - S: FStore",
+                "0:3 !NEW - O: FStore/root",
+                "0:4 !NEW - P: FStore/%Size",
+                "0:5 !PCS - Compute #1 (FStore/%Size) P1 Init - parentId=0:1",
+                "0:6 !NEW - O: FStore/root*members",
+                "0:7 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:8 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 0",
+                "0:9 !SET - FStore/root.size = 0 (prev: undefined)",
+                "0:10 !PCE - 0:5",
+                "0:11 !NEW - P: FStore/%Names",
+                "0:12 !PCS - Compute #1 (FStore/%Names) P2 Init - parentId=0:1",
+                "0:13 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:14 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 0",
+                "0:15 !SET - FStore/root.names = '' (prev: undefined)",
+                "0:16 !PCE - 0:12",
+                "0:17 !PCE - 0:1",
+                "0:18 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:19 !GET - FStore/root.size -> 0",
+                "0:20 !GET - FStore/root.names -> ''",
             ]);
 
             trax.log.info("Add item");
@@ -156,30 +157,31 @@ describe('Dictionaries', () => {
 
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - StoreInit (FStore)",
-                "0:2 !NEW - O: FStore/root",
-                "0:3 !NEW - P: FStore/%Size",
-                "0:4 !PCS - Compute #1 (FStore/%Size) P1 Init - parentId=0:1",
-                "0:5 !NEW - O: FStore/root*members",
-                "0:6 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:7 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 2",
-                "0:8 !SET - FStore/root.size = 2 (prev: undefined)",
-                "0:9 !PCE - 0:4",
-                "0:10 !NEW - P: FStore/%Names",
-                "0:11 !PCS - Compute #1 (FStore/%Names) P2 Init - parentId=0:1",
-                "0:12 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:13 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 2",
-                "0:14 !NEW - O: FStore/root*members*m1",
-                "0:15 !GET - FStore/root*members.m1 -> '[TRAX FStore/root*members*m1]'",
-                "0:16 !GET - FStore/root*members*m1.firstName -> 'Homer'",
-                "0:17 !NEW - O: FStore/root*members*m2",
-                "0:18 !GET - FStore/root*members.m2 -> '[TRAX FStore/root*members*m2]'",
-                "0:19 !GET - FStore/root*members*m2.firstName -> 'Marge'",
-                "0:20 !SET - FStore/root.names = 'Homer, Marge' (prev: undefined)",
-                "0:21 !PCE - 0:11",
-                "0:22 !PCE - 0:1",
-                "0:23 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:24 !GET - FStore/root.size -> 2",
-                "0:25 !GET - FStore/root.names -> 'Homer, Marge'",
+                "0:2 !NEW - S: FStore",
+                "0:3 !NEW - O: FStore/root",
+                "0:4 !NEW - P: FStore/%Size",
+                "0:5 !PCS - Compute #1 (FStore/%Size) P1 Init - parentId=0:1",
+                "0:6 !NEW - O: FStore/root*members",
+                "0:7 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:8 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 2",
+                "0:9 !SET - FStore/root.size = 2 (prev: undefined)",
+                "0:10 !PCE - 0:5",
+                "0:11 !NEW - P: FStore/%Names",
+                "0:12 !PCS - Compute #1 (FStore/%Names) P2 Init - parentId=0:1",
+                "0:13 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:14 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 2",
+                "0:15 !NEW - O: FStore/root*members*m1",
+                "0:16 !GET - FStore/root*members.m1 -> '[TRAX FStore/root*members*m1]'",
+                "0:17 !GET - FStore/root*members*m1.firstName -> 'Homer'",
+                "0:18 !NEW - O: FStore/root*members*m2",
+                "0:19 !GET - FStore/root*members.m2 -> '[TRAX FStore/root*members*m2]'",
+                "0:20 !GET - FStore/root*members*m2.firstName -> 'Marge'",
+                "0:21 !SET - FStore/root.names = 'Homer, Marge' (prev: undefined)",
+                "0:22 !PCE - 0:12",
+                "0:23 !PCE - 0:1",
+                "0:24 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:25 !GET - FStore/root.size -> 2",
+                "0:26 !GET - FStore/root.names -> 'Homer, Marge'",
             ]);
 
             trax.log.info("Add item");
@@ -228,12 +230,12 @@ describe('Dictionaries', () => {
         function createFamilyStore(empty: boolean) {
             return trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
                 if (empty) {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: {}
                     });
                 } else {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: {
                             m1: { firstName: "Homer", lastName: "Simpson" },
@@ -285,20 +287,21 @@ describe('Dictionaries', () => {
 
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - StoreInit (FStore)",
-                "0:2 !NEW - O: FStore/root",
-                "0:3 !NEW - P: FStore/%Infos",
-                "0:4 !PCS - Compute #1 (FStore/%Infos) P1 Init - parentId=0:1",
-                "0:5 !GET - FStore/root.infos -> undefined",
-                "0:6 !NEW - O: FStore/root*infos",
-                "0:7 !SET - FStore/root.infos = '[TRAX FStore/root*infos]' (prev: undefined)",
-                "0:8 !NEW - O: FStore/root*members",
-                "0:9 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:10 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 0",
-                "0:11 !PCS - DictionaryUpdate - parentId=0:4",
-                "0:12 !PCE - 0:11",
-                "0:13 !PCE - 0:4",
-                "0:14 !PCE - 0:1",
-                "0:15 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:2 !NEW - S: FStore",
+                "0:3 !NEW - O: FStore/root",
+                "0:4 !NEW - P: FStore/%Infos",
+                "0:5 !PCS - Compute #1 (FStore/%Infos) P1 Init - parentId=0:1",
+                "0:6 !GET - FStore/root.infos -> undefined",
+                "0:7 !NEW - O: FStore/root*infos",
+                "0:8 !SET - FStore/root.infos = '[TRAX FStore/root*infos]' (prev: undefined)",
+                "0:9 !NEW - O: FStore/root*members",
+                "0:10 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:11 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 0",
+                "0:12 !PCS - DictionaryUpdate - parentId=0:5",
+                "0:13 !PCE - 0:12",
+                "0:14 !PCE - 0:5",
+                "0:15 !PCE - 0:1",
+                "0:16 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
             ]);
 
             expect(printInfos(family.infos)).toBe("");
@@ -396,32 +399,33 @@ describe('Dictionaries', () => {
 
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - StoreInit (FStore)",
-                "0:2 !NEW - O: FStore/root",
-                "0:3 !NEW - P: FStore/%Infos",
-                "0:4 !PCS - Compute #1 (FStore/%Infos) P1 Init - parentId=0:1",
-                "0:5 !GET - FStore/root.infos -> undefined",
-                "0:6 !NEW - O: FStore/root*infos",
-                "0:7 !SET - FStore/root.infos = '[TRAX FStore/root*infos]' (prev: undefined)",
-                "0:8 !NEW - O: FStore/root*members",
-                "0:9 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:10 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 2",
-                "0:11 !NEW - O: FStore/root*members*m1",
-                "0:12 !GET - FStore/root*members.m1 -> '[TRAX FStore/root*members*m1]'",
-                "0:13 !NEW - O: FStore/Info:root*members*m1",
-                "0:14 !GET - FStore/root*members*m1.firstName -> 'Homer'",
-                "0:15 !GET - FStore/root*members*m1.lastName -> 'Simpson'",
-                "0:16 !SET - FStore/Info:root*members*m1.desc = 'Homer Simpson' (prev: '')",
-                "0:17 !NEW - O: FStore/root*members*m2",
-                "0:18 !GET - FStore/root*members.m2 -> '[TRAX FStore/root*members*m2]'",
-                "0:19 !NEW - O: FStore/Info:root*members*m2",
-                "0:20 !GET - FStore/root*members*m2.firstName -> 'Marge'",
-                "0:21 !GET - FStore/root*members*m2.lastName -> 'Simpson'",
-                "0:22 !SET - FStore/Info:root*members*m2.desc = 'Marge Simpson' (prev: '')",
-                "0:23 !PCS - DictionaryUpdate - parentId=0:4",
-                "0:24 !PCE - 0:23",
-                "0:25 !PCE - 0:4",
-                "0:26 !PCE - 0:1",
-                "0:27 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:2 !NEW - S: FStore",
+                "0:3 !NEW - O: FStore/root",
+                "0:4 !NEW - P: FStore/%Infos",
+                "0:5 !PCS - Compute #1 (FStore/%Infos) P1 Init - parentId=0:1",
+                "0:6 !GET - FStore/root.infos -> undefined",
+                "0:7 !NEW - O: FStore/root*infos",
+                "0:8 !SET - FStore/root.infos = '[TRAX FStore/root*infos]' (prev: undefined)",
+                "0:9 !NEW - O: FStore/root*members",
+                "0:10 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:11 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 2",
+                "0:12 !NEW - O: FStore/root*members*m1",
+                "0:13 !GET - FStore/root*members.m1 -> '[TRAX FStore/root*members*m1]'",
+                "0:14 !NEW - O: FStore/Info:root*members*m1",
+                "0:15 !GET - FStore/root*members*m1.firstName -> 'Homer'",
+                "0:16 !GET - FStore/root*members*m1.lastName -> 'Simpson'",
+                "0:17 !SET - FStore/Info:root*members*m1.desc = 'Homer Simpson' (prev: '')",
+                "0:18 !NEW - O: FStore/root*members*m2",
+                "0:19 !GET - FStore/root*members.m2 -> '[TRAX FStore/root*members*m2]'",
+                "0:20 !NEW - O: FStore/Info:root*members*m2",
+                "0:21 !GET - FStore/root*members*m2.firstName -> 'Marge'",
+                "0:22 !GET - FStore/root*members*m2.lastName -> 'Simpson'",
+                "0:23 !SET - FStore/Info:root*members*m2.desc = 'Marge Simpson' (prev: '')",
+                "0:24 !PCS - DictionaryUpdate - parentId=0:5",
+                "0:25 !PCE - 0:24",
+                "0:26 !PCE - 0:5",
+                "0:27 !PCE - 0:1",
+                "0:28 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
 
             ]);
 
@@ -465,7 +469,7 @@ describe('Dictionaries', () => {
 
             it('should be raised in case of invalid updateDictionary arguments', async () => {
                 trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: {}
                     });
@@ -492,24 +496,25 @@ describe('Dictionaries', () => {
 
                 expect(printLogs(0)).toMatchObject([
                     "0:1 !PCS - StoreInit (FStore)",
-                    "0:2 !NEW - O: FStore/root",
-                    "0:3 !NEW - P: FStore/%Infos",
-                    "0:4 !PCS - Compute #1 (FStore/%Infos) P1 Init - parentId=0:1",
-                    "0:5 !GET - FStore/root.infos -> undefined",
-                    "0:6 !NEW - O: FStore/root*infos",
-                    "0:7 !SET - FStore/root.infos = '[TRAX FStore/root*infos]' (prev: undefined)",
-                    "0:8 !NEW - O: FStore/root*members",
-                    "0:9 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                    "0:10 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 0",
-                    "0:11 !ERR - [TRAX] updateDictionary: Invalid argument (object expected)",
-                    "0:12 !PCE - 0:4",
-                    "0:13 !PCE - 0:1",
+                    "0:2 !NEW - S: FStore",
+                    "0:3 !NEW - O: FStore/root",
+                    "0:4 !NEW - P: FStore/%Infos",
+                    "0:5 !PCS - Compute #1 (FStore/%Infos) P1 Init - parentId=0:1",
+                    "0:6 !GET - FStore/root.infos -> undefined",
+                    "0:7 !NEW - O: FStore/root*infos",
+                    "0:8 !SET - FStore/root.infos = '[TRAX FStore/root*infos]' (prev: undefined)",
+                    "0:9 !NEW - O: FStore/root*members",
+                    "0:10 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                    "0:11 !GET - FStore/root*members.☆trax.dictionary.size☆ -> 0",
+                    "0:12 !ERR - [TRAX] updateDictionary: Invalid argument (object expected)",
+                    "0:13 !PCE - 0:5",
+                    "0:14 !PCE - 0:1",
                 ]);
             });
 
             it('should be raised when a computed dict is updated by multiple processors (manual change)', async () => {
                 const fs = trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: {
                             m1: { firstName: "Homer", lastName: "Simpson" }
@@ -551,7 +556,7 @@ describe('Dictionaries', () => {
 
             it('should be raised when a computed dict is updated by multiple processors (direct change)', async () => {
                 const fs = trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: {
                             m1: { firstName: "Homer", lastName: "Simpson" }
@@ -599,7 +604,7 @@ describe('Dictionaries', () => {
 
             it('should be raised when a computed dict is updated by multiple processors (updateDictionary change)', async () => {
                 const fs = trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: {
                             m1: { firstName: "Homer", lastName: "Simpson" }

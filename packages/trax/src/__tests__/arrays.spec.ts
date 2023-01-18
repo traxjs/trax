@@ -26,12 +26,12 @@ describe('Arrays', () => {
         function createFamilyStore(empty: boolean) {
             return trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
                 if (empty) {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: []
                     });
                 } else {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: [{
                             firstName: "Homer",
@@ -64,26 +64,27 @@ describe('Arrays', () => {
 
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - StoreInit (FStore)",
-                "0:2 !NEW - O: FStore/root",
-                "0:3 !NEW - P: FStore/%Size",
-                "0:4 !PCS - Compute #1 (FStore/%Size) P1 Init - parentId=0:1",
-                "0:5 !NEW - A: FStore/root*members",
-                "0:6 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:7 !GET - FStore/root*members.length -> 0",
-                "0:8 !SET - FStore/root.size = 0 (prev: undefined)",
-                "0:9 !PCE - 0:4",
-                "0:10 !NEW - P: FStore/%Names",
-                "0:11 !PCS - Compute #1 (FStore/%Names) P2 Init - parentId=0:1",
-                "0:12 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:13 !GET - FStore/root*members.map -> '[Function]'",
-                "0:14 !GET - FStore/root*members.length -> 0",
-                "0:15 !SET - FStore/root.names = '' (prev: undefined)",
-                "0:16 !PCE - 0:11",
-                "0:17 !PCE - 0:1",
-                "0:18 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:19 !GET - FStore/root*members.length -> 0",
-                "0:20 !GET - FStore/root.size -> 0",
-                "0:21 !GET - FStore/root.names -> ''",
+                "0:2 !NEW - S: FStore",
+                "0:3 !NEW - O: FStore/root",
+                "0:4 !NEW - P: FStore/%Size",
+                "0:5 !PCS - Compute #1 (FStore/%Size) P1 Init - parentId=0:1",
+                "0:6 !NEW - A: FStore/root*members",
+                "0:7 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:8 !GET - FStore/root*members.length -> 0",
+                "0:9 !SET - FStore/root.size = 0 (prev: undefined)",
+                "0:10 !PCE - 0:5",
+                "0:11 !NEW - P: FStore/%Names",
+                "0:12 !PCS - Compute #1 (FStore/%Names) P2 Init - parentId=0:1",
+                "0:13 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:14 !GET - FStore/root*members.map -> '[Function]'",
+                "0:15 !GET - FStore/root*members.length -> 0",
+                "0:16 !SET - FStore/root.names = '' (prev: undefined)",
+                "0:17 !PCE - 0:12",
+                "0:18 !PCE - 0:1",
+                "0:19 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:20 !GET - FStore/root*members.length -> 0",
+                "0:21 !GET - FStore/root.size -> 0",
+                "0:22 !GET - FStore/root.names -> ''",
             ]);
 
             // add item
@@ -150,30 +151,31 @@ describe('Arrays', () => {
 
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - StoreInit (FStore)",
-                "0:2 !NEW - O: FStore/root",
-                "0:3 !NEW - P: FStore/%Size",
-                "0:4 !PCS - Compute #1 (FStore/%Size) P1 Init - parentId=0:1",
-                "0:5 !NEW - A: FStore/root*members",
-                "0:6 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:7 !GET - FStore/root*members.length -> 2",
-                "0:8 !SET - FStore/root.size = 2 (prev: undefined)",
-                "0:9 !PCE - 0:4",
-                "0:10 !NEW - P: FStore/%Names",
-                "0:11 !PCS - Compute #1 (FStore/%Names) P2 Init - parentId=0:1",
-                "0:12 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                "0:13 !GET - FStore/root*members.map -> '[Function]'",
-                "0:14 !GET - FStore/root*members.length -> 2",
-                "0:15 !NEW - O: FStore/root*members*0",
-                "0:16 !GET - FStore/root*members.0 -> '[TRAX FStore/root*members*0]'",
-                "0:17 !GET - FStore/root*members*0.firstName -> 'Homer'",
-                "0:18 !NEW - O: FStore/root*members*1",
-                "0:19 !GET - FStore/root*members.1 -> '[TRAX FStore/root*members*1]'",
-                "0:20 !GET - FStore/root*members*1.firstName -> 'Marge'",
-                "0:21 !SET - FStore/root.names = 'Homer, Marge' (prev: undefined)",
-                "0:22 !PCE - 0:11",
-                "0:23 !PCE - 0:1",
-                "0:24 !GET - FStore/root.size -> 2",
-                "0:25 !GET - FStore/root.names -> 'Homer, Marge'",
+                "0:2 !NEW - S: FStore",
+                "0:3 !NEW - O: FStore/root",
+                "0:4 !NEW - P: FStore/%Size",
+                "0:5 !PCS - Compute #1 (FStore/%Size) P1 Init - parentId=0:1",
+                "0:6 !NEW - A: FStore/root*members",
+                "0:7 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:8 !GET - FStore/root*members.length -> 2",
+                "0:9 !SET - FStore/root.size = 2 (prev: undefined)",
+                "0:10 !PCE - 0:5",
+                "0:11 !NEW - P: FStore/%Names",
+                "0:12 !PCS - Compute #1 (FStore/%Names) P2 Init - parentId=0:1",
+                "0:13 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                "0:14 !GET - FStore/root*members.map -> '[Function]'",
+                "0:15 !GET - FStore/root*members.length -> 2",
+                "0:16 !NEW - O: FStore/root*members*0",
+                "0:17 !GET - FStore/root*members.0 -> '[TRAX FStore/root*members*0]'",
+                "0:18 !GET - FStore/root*members*0.firstName -> 'Homer'",
+                "0:19 !NEW - O: FStore/root*members*1",
+                "0:20 !GET - FStore/root*members.1 -> '[TRAX FStore/root*members*1]'",
+                "0:21 !GET - FStore/root*members*1.firstName -> 'Marge'",
+                "0:22 !SET - FStore/root.names = 'Homer, Marge' (prev: undefined)",
+                "0:23 !PCE - 0:12",
+                "0:24 !PCE - 0:1",
+                "0:25 !GET - FStore/root.size -> 2",
+                "0:26 !GET - FStore/root.names -> 'Homer, Marge'",
             ]);
 
             // add item
@@ -422,7 +424,7 @@ describe('Arrays', () => {
             it('should support creation as JSON (empty)', async () => {
                 let output = "";
                 const fs = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
-                    const f = store.initRoot({
+                    const f = store.init({
                         familyName: "Simpson",
                         members: [],
                         misc: []
@@ -450,16 +452,17 @@ describe('Arrays', () => {
 
                 expect(printLogs(0)).toMatchObject([
                     "0:1 !PCS - StoreInit (FStore)",
-                    "0:2 !NEW - O: FStore/root",
-                    "0:3 !NEW - P: FStore/%MiscRender",
-                    "0:4 !PCS - Compute #1 (FStore/%MiscRender) P1 Init - parentId=0:1",
-                    "0:5 !NEW - A: FStore/root*misc",
-                    "0:6 !GET - FStore/root.misc -> '[TRAX FStore/root*misc]'",
+                    "0:2 !NEW - S: FStore",
+                    "0:3 !NEW - O: FStore/root",
+                    "0:4 !NEW - P: FStore/%MiscRender",
+                    "0:5 !PCS - Compute #1 (FStore/%MiscRender) P1 Init - parentId=0:1",
+                    "0:6 !NEW - A: FStore/root*misc",
                     "0:7 !GET - FStore/root.misc -> '[TRAX FStore/root*misc]'",
-                    "0:8 !GET - FStore/root*misc.map -> '[Function]'",
-                    "0:9 !GET - FStore/root*misc.length -> 0",
-                    "0:10 !PCE - 0:4",
-                    "0:11 !PCE - 0:1",
+                    "0:8 !GET - FStore/root.misc -> '[TRAX FStore/root*misc]'",
+                    "0:9 !GET - FStore/root*misc.map -> '[Function]'",
+                    "0:10 !GET - FStore/root*misc.length -> 0",
+                    "0:11 !PCE - 0:5",
+                    "0:12 !PCE - 0:1",
                     "1:1 !LOG - A",
                     "1:2 !GET - FStore/root.misc -> '[TRAX FStore/root*misc]'",
                     "1:3 !GET - FStore/root*misc.push -> '[Function]'",
@@ -509,7 +512,7 @@ describe('Arrays', () => {
             it('should support creation as JSON (non empty)', async () => {
                 let output = "";
                 const fs = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
-                    const f = store.initRoot({
+                    const f = store.init({
                         familyName: "Simpson",
                         members: [],
                         misc: [
@@ -540,7 +543,7 @@ describe('Arrays', () => {
             it('should support creation through add()', async () => {
                 let output = "";
                 const fs = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
-                    const f = store.initRoot({
+                    const f = store.init({
                         familyName: "Simpson",
                         members: [],
                         misc: []
@@ -577,12 +580,12 @@ describe('Arrays', () => {
         function createFamilyStore(empty: boolean) {
             return trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
                 if (empty) {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: []
                     });
                 } else {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: [{
                             firstName: "Homer",
@@ -946,7 +949,7 @@ describe('Arrays', () => {
         describe('Errors', () => {
             it('should be raised in case of invalid updateArray arguments', async () => {
                 trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: []
                     });
@@ -969,25 +972,26 @@ describe('Arrays', () => {
 
                 expect(printLogs(0)).toMatchObject([
                     "0:1 !PCS - StoreInit (FStore)",
-                    "0:2 !NEW - O: FStore/root",
-                    "0:3 !NEW - P: FStore/%Desc",
-                    "0:4 !PCS - Compute #1 (FStore/%Desc) P1 Init - parentId=0:1",
-                    "0:5 !GET - FStore/root.infos -> undefined",
-                    "0:6 !NEW - A: FStore/root*infos",
-                    "0:7 !SET - FStore/root.infos = '[TRAX FStore/root*infos]' (prev: undefined)",
-                    "0:8 !NEW - A: FStore/root*members",
-                    "0:9 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
-                    "0:10 !GET - FStore/root*members.map -> '[Function]'",
-                    "0:11 !GET - FStore/root*members.length -> 0",
-                    "0:12 !ERR - [TRAX] updateArray: Invalid argument (array expected)",
-                    "0:13 !PCE - 0:4",
-                    "0:14 !PCE - 0:1",
+                    "0:2 !NEW - S: FStore",
+                    "0:3 !NEW - O: FStore/root",
+                    "0:4 !NEW - P: FStore/%Desc",
+                    "0:5 !PCS - Compute #1 (FStore/%Desc) P1 Init - parentId=0:1",
+                    "0:6 !GET - FStore/root.infos -> undefined",
+                    "0:7 !NEW - A: FStore/root*infos",
+                    "0:8 !SET - FStore/root.infos = '[TRAX FStore/root*infos]' (prev: undefined)",
+                    "0:9 !NEW - A: FStore/root*members",
+                    "0:10 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
+                    "0:11 !GET - FStore/root*members.map -> '[Function]'",
+                    "0:12 !GET - FStore/root*members.length -> 0",
+                    "0:13 !ERR - [TRAX] updateArray: Invalid argument (array expected)",
+                    "0:14 !PCE - 0:5",
+                    "0:15 !PCE - 0:1",
                 ]);
             });
 
             it('should be raised when a computed array is updated by multiple processors (direct change)', async () => {
                 const fs = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: [{
                             firstName: "Bart", lastName: "Simpson"
@@ -1039,7 +1043,7 @@ describe('Arrays', () => {
 
             it('should be raised when a computed array is updated by multiple processors (updateArray change)', async () => {
                 const fs = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
-                    store.initRoot({
+                    store.init({
                         familyName: "Simpson",
                         members: [{
                             firstName: "Bart", lastName: "Simpson"

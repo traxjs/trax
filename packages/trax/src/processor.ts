@@ -1,11 +1,11 @@
 import { tmd } from "./core";
 import { LinkedList } from "./linkedlist";
-import { $ProcessingContext, $TraxComputeFn, $TraxEvent, $TraxLogProcessStart, $TraxProcessor, $TrxObjectType } from "./types";
+import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogProcessStart, TraxProcessor, TrxObjectType } from "./types";
 
 /**
  * Extend the public API with internal APIs
  */
-export interface $TraxInternalProcessor extends $TraxProcessor {
+export interface TraxInternalProcessor extends TraxProcessor {
     /**
      * Tell when the processor was last called for reconciliation
      * Negative if never reconciled
@@ -45,14 +45,14 @@ export interface $TraxInternalProcessor extends $TraxProcessor {
 export function createTraxProcessor(
     processorId: string,
     priority: number,
-    compute: $TraxComputeFn,
-    processorStack: LinkedList<$TraxInternalProcessor>,
+    compute: TraxComputeFn,
+    processorStack: LinkedList<TraxInternalProcessor>,
     getDataObject: (id: string) => any,
-    logTraxEvent: (e: $TraxEvent) => void,
-    startProcessingContext: (event: $TraxLogProcessStart) => $ProcessingContext,
+    logTraxEvent: (e: TraxEvent) => void,
+    startProcessingContext: (event: TraxLogProcessStart) => ProcessingContext,
     autoCompute = true,
     isRenderer = false
-): $TraxInternalProcessor {
+): TraxInternalProcessor {
     /** Number of time compute was called */
     let computeCount = 0;
     /** Tell if the processor need to re-compute its output */
@@ -69,7 +69,7 @@ export function createTraxProcessor(
      */
     let objectDependencies = new Set<string>();
     /** Log processing context */
-    let processingContext: $ProcessingContext | null = null;
+    let processingContext: ProcessingContext | null = null;
     /** Reconciliation id used during the last compute() call - used to track invalid cycles */
     let reconciliationId = -1;
     /** Generator returned by the compute function in case of async processors */
@@ -79,7 +79,7 @@ export function createTraxProcessor(
         logTraxEvent({ type: "!ERR", data: msg });
     }
 
-    const pr: $TraxInternalProcessor = {
+    const pr: TraxInternalProcessor = {
         get id() {
             return processorId;
         },
@@ -202,12 +202,12 @@ export function createTraxProcessor(
                     md.propListeners.delete(pr);
                 }
             }
-            logTraxEvent({ type: "!DEL", objectId: processorId, objectType: $TrxObjectType.Processor });
+            logTraxEvent({ type: "!DEL", objectId: processorId, objectType: TrxObjectType.Processor });
         }
     }
 
     // initialization
-    logTraxEvent({ type: "!NEW", objectId: processorId, objectType: $TrxObjectType.Processor });
+    logTraxEvent({ type: "!NEW", objectId: processorId, objectType: TrxObjectType.Processor });
     pr.compute("Init");
 
     return pr;

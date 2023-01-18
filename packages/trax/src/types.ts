@@ -5,11 +5,11 @@
  * if used on a sub-store
  * Note: the array can also contain another trax object in the first position - in this case the object id will be used as prefix
  */
-export type $TraxIdDef = string | (string | number | boolean | $TraxObject)[];
+export type TraxIdDef = string | (string | number | boolean | TraxObject)[];
 
-export type $TraxObject = Object;
+export type TraxObject = Object;
 
-export type $StoreWrapper = {
+export type StoreWrapper = {
     readonly id: string;
     dispose: () => void;
 }
@@ -17,7 +17,7 @@ export type $StoreWrapper = {
 /**
  * Trax object types
  */
-export enum $TrxObjectType {
+export enum TrxObjectType {
     NotATraxObject = "",
     Object = "O",
     Array = "A",
@@ -26,7 +26,7 @@ export enum $TrxObjectType {
     Processor = "P"
 }
 
-export interface $Trax {
+export interface Trax {
     /**
      * Create a root store
      * @param idPrefix the store id - if this id is already in use, a suffix will be automatically added
@@ -34,14 +34,14 @@ export interface $Trax {
      * define the store "root" object otherwise an error will be generated
      */
     createStore<T extends Object, R>(
-        idPrefix: $TraxIdDef,
-        initFunction: (store: $Store<T>) => R
-    ): R extends void ? $Store<T> : R & $StoreWrapper;
-    createStore<T extends Object>(idPrefix: $TraxIdDef, root: T): $Store<T>;
+        idPrefix: TraxIdDef,
+        initFunction: (store: Store<T>) => R
+    ): R extends void ? Store<T> : R & StoreWrapper;
+    createStore<T extends Object>(idPrefix: TraxIdDef, root: T): Store<T>;
     /**
      * The trax event logs
      */
-    log: $EventStream;
+    log: EventStream;
     /**
      * Tell if an object is a trax object
      */
@@ -56,7 +56,7 @@ export interface $Trax {
      * Get the trax type associated to an object
      * @param obj 
      */
-    getTraxObjectType(obj: any): $TrxObjectType;
+    getTraxObjectType(obj: any): TrxObjectType;
     /**
      * Tell if some changes are pending (i.e. dirty processors)
      * Return true if there are some dirty processors - which means that all computed values
@@ -99,7 +99,7 @@ export interface $Trax {
      * properties are added or removed
      * @param o 
      */
-    getObjectKeys(o: $TraxObject): string[];
+    getObjectKeys(o: TraxObject): string[];
 }
 
 
@@ -112,7 +112,7 @@ export interface $Trax {
  * - simplify troubleshooting
  * - easily dispose group of objects to make them ready for garbage collection
  */
-export interface $Store<T> {
+export interface Store<T> {
     /**
      * The store id
      */
@@ -144,20 +144,20 @@ export interface $Store<T> {
      * Note: if this object is not indirectly referenced by the root object, it may habe been garbage collected
      * @returns the tracked object or undefined if not found
      */
-    get(id: $TraxIdDef, isProcessor: true): $TraxProcessor;
-    get<T extends Object>(id: $TraxIdDef, isProcessor?: boolean): T | void;
+    get(id: TraxIdDef, isProcessor: true): TraxProcessor;
+    get<T extends Object>(id: TraxIdDef, isProcessor?: boolean): T | void;
     /**
      * Get or create a data object associated to the given id
      * @param id the object id - must be unique with the store scope
      * @param initValue the object init value (empty object if nothing is provided)
      */
-    add<T extends Object | Object[]>(id: $TraxIdDef, initValue: T): T;
+    add<T extends Object | Object[]>(id: TraxIdDef, initValue: T): T;
     /**
      * Delete a data object from the store
      * @param idOrObject 
      * @returns true if an object was successfully deleted
      */
-    delete(p: $TraxProcessor): boolean;
+    delete(p: TraxProcessor): boolean;
     delete<T extends Object>(dataObject: T): boolean;
     /**
      * Create a compute processor
@@ -168,7 +168,7 @@ export interface $Store<T> {
      *                   (i.e. at the end of a cycle when trax.processChanges() is called)
      *                   If false, the process function will need to be explicitely called (useful for React renderers for instance)
      */
-    compute(id: $TraxIdDef, compute: $TraxComputeFn, autoCompute?: boolean, isRenderer?: boolean): $TraxProcessor;
+    compute(id: TraxIdDef, compute: TraxComputeFn, autoCompute?: boolean, isRenderer?: boolean): TraxProcessor;
 }
 
 /**
@@ -177,20 +177,20 @@ export interface $Store<T> {
  * Asynchronous compute functions must return a Generator, whereas synchronous
  * compute functions shall not return anything
  */
-export type $TraxComputeFn = () => (void | Generator<Promise<any>, void, any>);
+export type TraxComputeFn = () => (void | Generator<Promise<any>, void, any>);
 
 /**
  * Processor id
  */
-export type $TraxProcessorId = string;
+export type TraxProcessorId = string;
 
 /**
  * Trax processor
  * This object track the dependencies of its compute function and will automatically
  * re-call the compute function in case of dependency changes
  */
-export interface $TraxProcessor {
-    readonly id: $TraxProcessorId;
+export interface TraxProcessor {
+    readonly id: TraxProcessorId;
     /**
      * Tell if the processor should automatically re-run the compute function
      * when it gets dirty or not (in which case the processor creator should use
@@ -270,25 +270,25 @@ export const traxEvents = Object.freeze({
     "ProcessingeEnd": "!PCE"
 });
 
-export type $TraxEvent = $TraxLogError | $TraxLogObjectLifeCycle | $TraxLogPropGet | $TraxLogPropSet | $TraxLogProcDirty;
+export type TraxEvent = TraxLogError | TraxLogObjectLifeCycle | TraxLogPropGet | TraxLogPropSet | TraxLogProcDirty;
 
 /** Reason that triggered a call to a processor's compute function */
-export type $TraxComputeTrigger = "Init" | "Reconciliation" | "DirectCall";
+export type TraxComputeTrigger = "Init" | "Reconciliation" | "DirectCall";
 
-export interface $TraxLogObjectLifeCycle {
+export interface TraxLogObjectLifeCycle {
     type: "!NEW" | "!DEL";
     objectId: string;
-    objectType: $TrxObjectType
+    objectType: TrxObjectType
 }
 
-export interface $TraxLogPropGet {
+export interface TraxLogPropGet {
     type: "!GET";
     objectId: string;
     propName: string;
     propValue: any;
 }
 
-export interface $TraxLogPropSet {
+export interface TraxLogPropSet {
     type: "!SET";
     objectId: string;
     propName: string;
@@ -296,7 +296,7 @@ export interface $TraxLogPropSet {
     toValue: any;
 }
 
-export interface $TraxLogProcDirty {
+export interface TraxLogProcDirty {
     type: "!DRT";
     processorId: string;
     /** Object holding the value that triggered the dirty event */
@@ -304,36 +304,36 @@ export interface $TraxLogProcDirty {
     propName: string;
 }
 
-export interface $TraxLogError {
+export interface TraxLogError {
     type: "!ERR";
-    data: $JSONValue
+    data: JSONValue
 }
 
-export type $TraxLogProcessStart = $TraxLogProcessStoreInit | $TraxLogProcessCompute | $TraxLogReconciliation | $TraxLogCollectionUpdate;
+export type TraxLogProcessStart = TraxLogProcessStoreInit | TraxLogProcessCompute | TraxLogReconciliation | TraxLogCollectionUpdate;
 
-export interface $TraxLogProcessStoreInit {
+export interface TraxLogProcessStoreInit {
     type: "!PCS";
     name: "StoreInit";
     storeId: string;
 }
 
-export interface $TraxLogProcessCompute {
+export interface TraxLogProcessCompute {
     type: "!PCS";
     name: "Compute";
     processorId: string;
     processorPriority: number;
-    trigger: $TraxComputeTrigger;
+    trigger: TraxComputeTrigger;
     isRenderer: boolean;
     computeCount: number;
 }
 
-export interface $TraxLogCollectionUpdate {
+export interface TraxLogCollectionUpdate {
     type: "!PCS";
     name: "ArrayUpdate" | "DictionaryUpdate";
     objectId: string;
 }
 
-export interface $TraxLogReconciliation {
+export interface TraxLogReconciliation {
     type: "!PCS";
     name: "Reconciliation";
     /** Counter incremeneted everytime a reconciliation runs */
@@ -343,18 +343,18 @@ export interface $TraxLogReconciliation {
 }
 
 /** JSON type */
-type $JSONValue = string | number | boolean | null | { [key: string]: $JSONValue } | Array<$JSONValue>;
+type JSONValue = string | number | boolean | null | { [key: string]: JSONValue } | Array<JSONValue>;
 
 /**
  * Data type that can be used in logs
  * Must be a valid parameter for JSON.stringify()
  */
-export type $LogData = $JSONValue;
+export type LogData = JSONValue;
 
 /**
  * Log Event
  */
-export interface $Event {
+export interface StreamEvent {
     /** 
      * Unique id composed of 2 numbers: cycle id and event count
      * e.g. 42:12 where 42 is the cycle index and 12 the event count within cycle #42
@@ -363,7 +363,7 @@ export interface $Event {
     /** Event type - allows to determine how to interprete data */
     type: string;
     /** Event data */
-    data?: $LogData;
+    data?: LogData;
     /** Id of another event that the current event relates to */
     parentId?: string;
 }
@@ -371,8 +371,8 @@ export interface $Event {
 /**
  * Log entry in the log stream
  */
-export interface $StreamEvent extends $Event {
-    next?: $StreamEvent;
+export interface StreamListEvent extends StreamEvent {
+    next?: StreamListEvent;
 };
 
 /**
@@ -383,7 +383,7 @@ export interface $StreamEvent extends $Event {
  * If pause() is called, resume() may be called into another cycle (until end() is eventually called - but this
  * is not mandatory as the async processing could be stopped)
  */
-export interface $ProcessingContext {
+export interface ProcessingContext {
     id: string;
     /** Raise a pause event in the event stream */
     pause(): void;
@@ -393,37 +393,37 @@ export interface $ProcessingContext {
     end(): void;
 }
 
-export type $SubscriptionId = Object;
+export type SubscriptionId = Object;
 
-export interface $EventStream {
+export interface EventStream {
     /**
      * Log an event
      * @param type unique event type - e.g. "namespace.name", cannot start with "!" (reserved for trax events)
      * @param data event data - must support JSON.stringify
      * @param src optional event source - used for internal events only
      */
-    event(type: string, data?: $LogData, src?: any): void;
+    event(type: string, data?: LogData, src?: any): void;
     /**
      * Log info data in the trax logs
      * @param data 
      */
-    info(...data: $LogData[]): void;
+    info(...data: LogData[]): void;
     /**
      * Log warning data in the trax logs
      * @param data 
      */
-    warn(...data: $LogData[]): void;
+    warn(...data: LogData[]): void;
     /**
      * Log error data in the trax logs
      * @param data 
      */
-    error(...data: $LogData[]): void;
+    error(...data: LogData[]): void;
     /**
      * Create a processing context and raise a start event in the event stream
      * Processing contexts are used to virtually regroup events that occur in a given context
      * Processing contexts can be stacked
      */
-    startProcessingContext(data?: $LogData): $ProcessingContext;
+    startProcessingContext(data?: LogData): ProcessingContext;
     /**
      * Number of items in the stream
      */
@@ -440,28 +440,28 @@ export interface $EventStream {
      * (oldest to newest)
      * @param eventProcessor the function called for each event - can return false to stop the scan
      */
-    scan(eventProcessor: (itm: $Event) => void | boolean): void;
+    scan(eventProcessor: (itm: StreamEvent) => void | boolean): void;
     /**
      * Return the last event added to the stream
      */
-    lastEvent(): $Event | undefined;
+    lastEvent(): StreamEvent | undefined;
     /**
      * Await a certain event. Typical usage:
      * await log.await(trxEvents.CycleComplete);
      * @param evenType 
      */
-    await(evenType: string | "*"): Promise<$Event>;
+    await(evenType: string | "*"): Promise<StreamEvent>;
     /**
      * Register an event consumer that will be synchronously called when a given event occurs
      * @param eventType an event type or "*" to listen to all events
      * @param callback 
      * @returns a subcribtion id that will be used to unsubscribe
      */
-    subscribe(eventType: string | "*", callback: (e: $Event) => void): $SubscriptionId;
+    subscribe(eventType: string | "*", callback: (e: StreamEvent) => void): SubscriptionId;
     /**
      * Unregister an event consumer
      * @param subscriptionId 
      * @returns true if the consumer was found and succesfully unregistered
      */
-    unsubscribe(subscriptionId: $SubscriptionId): boolean;
+    unsubscribe(subscriptionId: SubscriptionId): boolean;
 }

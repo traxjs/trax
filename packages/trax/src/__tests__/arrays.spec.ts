@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createTraxEnv } from '../core';
-import { $Store, $Trax } from '../types';
-import { $ArrayFamilyStore, printEvents } from './utils';
+import { Store, Trax } from '../types';
+import { ArrayFamilyStore, printEvents } from './utils';
 
 
 describe('Arrays', () => {
-    let trax: $Trax;
+    let trax: Trax;
 
     beforeEach(() => {
         trax = createTraxEnv();
@@ -24,7 +24,7 @@ describe('Arrays', () => {
     describe('Primary', () => {
 
         function createFamilyStore(empty: boolean) {
-            return trax.createStore("FStore", (store: $Store<$ArrayFamilyStore>) => {
+            return trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
                 if (empty) {
                     store.initRoot({
                         familyName: "Simpson",
@@ -421,7 +421,7 @@ describe('Arrays', () => {
         describe('Arrays of Arrays', () => {
             it('should support creation as JSON (empty)', async () => {
                 let output = "";
-                const fs = trax.createStore("FStore", (store: $Store<$ArrayFamilyStore>) => {
+                const fs = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
                     const f = store.initRoot({
                         familyName: "Simpson",
                         members: [],
@@ -508,7 +508,7 @@ describe('Arrays', () => {
 
             it('should support creation as JSON (non empty)', async () => {
                 let output = "";
-                const fs = trax.createStore("FStore", (store: $Store<$ArrayFamilyStore>) => {
+                const fs = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
                     const f = store.initRoot({
                         familyName: "Simpson",
                         members: [],
@@ -539,7 +539,7 @@ describe('Arrays', () => {
 
             it('should support creation through add()', async () => {
                 let output = "";
-                const fs = trax.createStore("FStore", (store: $Store<$ArrayFamilyStore>) => {
+                const fs = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
                     const f = store.initRoot({
                         familyName: "Simpson",
                         members: [],
@@ -575,7 +575,7 @@ describe('Arrays', () => {
 
     describe('Computed', () => {
         function createFamilyStore(empty: boolean) {
-            return trax.createStore("FStore", (store: $Store<$ArrayFamilyStore>) => {
+            return trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
                 if (empty) {
                     store.initRoot({
                         familyName: "Simpson",
@@ -613,7 +613,7 @@ describe('Arrays', () => {
             });
         }
 
-        function printInfos(infos: $ArrayFamilyStore["infos"]) {
+        function printInfos(infos: ArrayFamilyStore["infos"]) {
             return infos?.map(info => info.desc).join(";");
         }
 
@@ -945,7 +945,7 @@ describe('Arrays', () => {
 
         describe('Errors', () => {
             it('should be raised in case of invalid updateArray arguments', async () => {
-                trax.createStore("FStore", (store: $Store<$ArrayFamilyStore>) => {
+                trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
                     store.initRoot({
                         familyName: "Simpson",
                         members: []
@@ -986,7 +986,7 @@ describe('Arrays', () => {
             });
 
             it('should be raised when a computed array is updated by multiple processors (direct change)', async () => {
-                const fs = trax.createStore("FStore", (store: $Store<$ArrayFamilyStore>) => {
+                const fs = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
                     store.initRoot({
                         familyName: "Simpson",
                         members: [{
@@ -1038,7 +1038,7 @@ describe('Arrays', () => {
             });
 
             it('should be raised when a computed array is updated by multiple processors (updateArray change)', async () => {
-                const fs = trax.createStore("FStore", (store: $Store<$ArrayFamilyStore>) => {
+                const fs = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
                     store.initRoot({
                         familyName: "Simpson",
                         members: [{

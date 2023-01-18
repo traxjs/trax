@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createEventStream } from '../eventstream';
-import { $StreamEvent, $Event, $EventStream, traxEvents } from '../types';
+import { EventStream, StreamEvent,  traxEvents } from '../types';
 import { pause, printEvents } from './utils';
 
 describe('Event Stream', () => {
-    let log: $EventStream;
+    let log: EventStream;
     let count = 0;
     const internalSrcKey = {};
 
@@ -13,7 +13,7 @@ describe('Event Stream', () => {
     }
 
     function getLogArray() {
-        const arr: $StreamEvent[] = [];
+        const arr: StreamEvent[] = [];
         log.scan((itm) => {
             arr.push(itm);
         });
@@ -388,7 +388,7 @@ describe('Event Stream', () => {
 
     describe('Subscription', () => {
         it('should allow to await a specific event', async () => {
-            let count = 0, lastEvent: $Event | null = null;
+            let count = 0, lastEvent: StreamEvent | null = null;
 
             log.await(traxEvents.Warning).then((e) => {
                 count++;
@@ -445,8 +445,8 @@ describe('Event Stream', () => {
         it('should allow 2 listeners to await the same event', async () => {
             let count1 = 0,
                 count2 = 0,
-                lastEvent1: $Event | null = null,
-                lastEvent2: $Event | null = null;
+                lastEvent1: StreamEvent | null = null,
+                lastEvent2: StreamEvent | null = null;
 
             log.await(traxEvents.Warning).then((e) => {
                 count1++;
@@ -476,7 +476,7 @@ describe('Event Stream', () => {
 
         it('should accept multiple subscriptions with the same callback', async () => {
             let traces = "";
-            function cb(e: $Event) {
+            function cb(e: StreamEvent) {
                 traces += e.id + "/" + e.type + ";"
             }
 
@@ -513,11 +513,11 @@ describe('Event Stream', () => {
         it('should accept mixing * and specific event subscriptions', async () => {
             let traces = "", warnings = "";
 
-            const s1 = log.subscribe("*", (e: $Event) => {
+            const s1 = log.subscribe("*", (e: StreamEvent) => {
                 traces += e.id + "/" + e.type + ";"
             });
 
-            const s2 = log.subscribe(traxEvents.Warning, (e: $Event) => {
+            const s2 = log.subscribe(traxEvents.Warning, (e: StreamEvent) => {
                 warnings += e.id + "/" + e.type + ";"
             });
 

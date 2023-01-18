@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createTraxEnv } from '../core';
-import { $Store, $Trax } from '../types';
-import { $Person, $SimpleFamilyStore, printEvents } from './utils';
+import { Store, Trax } from '../types';
+import { Person, SimpleFamilyStore, printEvents } from './utils';
 
 describe('Sync Processors', () => {
-    let trax: $Trax;
+    let trax: Trax;
 
     beforeEach(() => {
         trax = createTraxEnv();
     });
 
-    interface $Values {
+    interface Values {
         v1: string;
         v2: string;
         v3: string;
@@ -21,7 +21,7 @@ describe('Sync Processors', () => {
     }
 
     function createPStore(addPrettyNameProcessor = true) {
-        return trax.createStore("PStore", (store: $Store<$Person>) => {
+        return trax.createStore("PStore", (store: Store<Person>) => {
             const p = store.initRoot({ firstName: "Homer", lastName: "Simpson" });
 
             if (addPrettyNameProcessor) {
@@ -95,7 +95,7 @@ describe('Sync Processors', () => {
         });
 
         it('should support array ids', async () => {
-            const ps = trax.createStore(["Some", "Store", 42], (store: $Store<$Person>) => {
+            const ps = trax.createStore(["Some", "Store", 42], (store: Store<Person>) => {
                 store.initRoot({ firstName: "Homer", lastName: "Simpson" });
             });
 
@@ -358,7 +358,7 @@ describe('Sync Processors', () => {
         });
 
         it('should support dependencies from multiple objects and auto-wrap objects set as JSON', async () => {
-            const fst = trax.createStore("SimpleFamilyStore", (store: $Store<$SimpleFamilyStore>) => {
+            const fst = trax.createStore("SimpleFamilyStore", (store: Store<SimpleFamilyStore>) => {
                 store.initRoot({
                     father: {
                         firstName: "Homer",
@@ -370,12 +370,12 @@ describe('Sync Processors', () => {
 
             await trax.reconciliation(); // skip first cycle
 
-            fst.root.child1 = fst.add<$Person>("Bart", {
+            fst.root.child1 = fst.add<Person>("Bart", {
                 firstName: "Bart",
                 lastName: "Simpson"
             });
 
-            fst.root.child2 = fst.add<$Person>("Lisa", {
+            fst.root.child2 = fst.add<Person>("Lisa", {
                 firstName: "Lisa",
                 lastName: "Simpson"
             });
@@ -383,7 +383,7 @@ describe('Sync Processors', () => {
             fst.compute("ChildNames", () => {
                 const names: string[] = [];
                 for (const nm of ["child1", "child2", "child3"]) {
-                    const child = family[nm] as $Person;
+                    const child = family[nm] as Person;
                     if (child) {
                         names.push(child.firstName);
                     }
@@ -458,19 +458,19 @@ describe('Sync Processors', () => {
         });
 
         it('should support multiple parallel processors with imbalanded branches', async () => {
-            interface $ValueObject {
+            interface ValueObject {
                 value: string;
             }
-            interface $ValueSet {
-                v0: $ValueObject;
-                v1: $ValueObject;
-                v2: $ValueObject;
-                v3: $ValueObject;
-                v4: $ValueObject;
-                v5: $ValueObject;
+            interface ValueSet {
+                v0: ValueObject;
+                v1: ValueObject;
+                v2: ValueObject;
+                v3: ValueObject;
+                v4: ValueObject;
+                v5: ValueObject;
             }
 
-            const st = trax.createStore("PStore", (store: $Store<$ValueSet>) => {
+            const st = trax.createStore("PStore", (store: Store<ValueSet>) => {
                 const v = store.initRoot({
                     v0: { value: "v0initValue" },
                     v1: { value: "v1initValue" },
@@ -607,7 +607,7 @@ describe('Sync Processors', () => {
         });
 
         it('should support multiple parallel processors and dispose', async () => {
-            const st = trax.createStore("PStore", (store: $Store<$Values>) => {
+            const st = trax.createStore("PStore", (store: Store<Values>) => {
                 const v = store.initRoot({
                     v1: "A",
                     v2: "B",
@@ -858,7 +858,7 @@ describe('Sync Processors', () => {
 
         it('should detect circular dependencies', async () => {
 
-            const st = trax.createStore("PStore", (store: $Store<$Values>) => {
+            const st = trax.createStore("PStore", (store: Store<Values>) => {
                 const v = store.initRoot({
                     v1: "A",
                     v2: "B",
@@ -920,7 +920,7 @@ describe('Sync Processors', () => {
         });
 
         it('should be raised if autoCompute processor doesn\'t have any dependency at init', async () => {
-            const st = trax.createStore("PStore", (store: $Store<$Values>) => {
+            const st = trax.createStore("PStore", (store: Store<Values>) => {
                 const v = store.initRoot({
                     v1: "A",
                     v2: "B",

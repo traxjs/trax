@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { $Store, $Trax } from '../types';
+import { Store, Trax } from '../types';
 import { createTraxEnv } from '../core';
-import { $Person, $SimpleFamilyStore, printEvents } from './utils';
+import { SimpleFamilyStore, printEvents } from './utils';
 
 
 describe('Trax Objects', () => {
-    let trax: $Trax, fst: $Store<$SimpleFamilyStore>;
+    let trax: Trax, fst: Store<SimpleFamilyStore>;
 
     beforeEach(() => {
         trax = createTraxEnv();
-        fst = trax.createStore("SimpleFamilyStore", (store: $Store<$SimpleFamilyStore>) => {
+        fst = trax.createStore("SimpleFamilyStore", (store: Store<SimpleFamilyStore>) => {
             store.initRoot({
                 childNames: "",
                 father: {
@@ -26,10 +26,10 @@ describe('Trax Objects', () => {
 
     describe('Basics', () => {
         it('must get the root object and wrap sub-objects', async () => {
-            const r1 = fst.get<$SimpleFamilyStore>("root")!;
+            const r1 = fst.get<SimpleFamilyStore>("root")!;
             expect(r1.father!.firstName).toBe("Homer");
 
-            const r2 = fst.get<$SimpleFamilyStore>("root")!;
+            const r2 = fst.get<SimpleFamilyStore>("root")!;
             expect(r1).toBe(r2);
             expect(r2.childNames).toBe("");
 
@@ -82,7 +82,7 @@ describe('Trax Objects', () => {
         });
 
         it('must support using other trax objects to build advance ids (diffet store)', async () => {
-            const st = trax.createStore("AnotherStore", (store: $Store<{ msg: string }>) => {
+            const st = trax.createStore("AnotherStore", (store: Store<{ msg: string }>) => {
                 store.initRoot({ msg: "Hello World" })
             })
 

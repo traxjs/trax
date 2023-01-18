@@ -1,19 +1,19 @@
 
-interface $ListItem<T> {
+interface ListItem<T> {
     value: T;
-    next?: $ListItem<T>;
+    next?: ListItem<T>;
 }
 
 /**
  * Pool of disposed items that can be reused
  */
-let itemPool: $ListItem<any> | undefined;
+let itemPool: ListItem<any> | undefined;
 
 /**
  * Add a list item to the item pool
  * @param itm 
  */
-function addToPool(itm: $ListItem<any>) {
+function addToPool(itm: ListItem<any>) {
     itm.value = null as any;
     itm.next = itemPool;
     itemPool = itm;
@@ -23,7 +23,7 @@ function addToPool(itm: $ListItem<any>) {
  * Get an item from the pool
  * @returns
  */
-function getItemFromPool<T>(value: T, next?: $ListItem<T>) {
+function getItemFromPool<T>(value: T, next?: ListItem<T>) {
     if (itemPool) {
         const itm = itemPool;
         itemPool = itm.next;
@@ -39,10 +39,10 @@ function getItemFromPool<T>(value: T, next?: $ListItem<T>) {
  * Object properties are voluntarily kept minimal to minimize memory footprint
  */
 export class LinkedList<T> {
-    private _head?: $ListItem<T>;
+    private _head?: ListItem<T>;
     private _size: number = 0;
 
-    get head(): $ListItem<T> | undefined {
+    get head(): ListItem<T> | undefined {
         return this._head;
     }
 
@@ -55,9 +55,9 @@ export class LinkedList<T> {
      * @param value 
      * @returns the list item
      */
-    add(value: T): $ListItem<T> {
+    add(value: T): ListItem<T> {
         const h = this._head;
-        let itm: $ListItem<T> = getItemFromPool(value, h) || { value, next: h };
+        let itm: ListItem<T> = getItemFromPool(value, h) || { value, next: h };
         this._head = itm;
         this._size++;
         return itm;
@@ -77,12 +77,12 @@ export class LinkedList<T> {
                 this.add(v);
             }
         } else {
-            let prev: $ListItem<T> | undefined;
+            let prev: ListItem<T> | undefined;
             while (prev || nd) {
                 v = fn(prev?.value, nd?.value) || undefined;
                 if (v !== undefined) {
                     // insert the item
-                    let itm: $ListItem<T> = getItemFromPool(v, nd) || { value: v, next: nd };
+                    let itm: ListItem<T> = getItemFromPool(v, nd) || { value: v, next: nd };
                     if (prev) {
                         prev.next = itm;
                     } else {
@@ -129,7 +129,7 @@ export class LinkedList<T> {
      * @returns true if an item was found and removed
      */
     remove(value: T): boolean {
-        let item = this._head, last: $ListItem<T> | null = null;
+        let item = this._head, last: ListItem<T> | null = null;
         while (item) {
             if (item.value === value) {
                 if (last) {

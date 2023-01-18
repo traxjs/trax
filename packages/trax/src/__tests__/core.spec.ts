@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { $Store, $Trax, $TrxObjectType } from '../types';
+import { Store, Trax, TrxObjectType } from '../types';
 import { createTraxEnv } from '../core';
-import { $Person, printEvents } from './utils';
+import { Person, printEvents } from './utils';
 
 describe('Trax Core', () => {
-    let trax: $Trax;
+    let trax: Trax;
 
     beforeEach(() => {
         trax = createTraxEnv();
@@ -62,16 +62,16 @@ describe('Trax Core', () => {
             expect(trax.getTraxId({})).toBe("");
             expect(trax.getTraxId(true)).toBe("");
 
-            expect(trax.getTraxObjectType(undefined)).toBe($TrxObjectType.NotATraxObject);
-            expect(trax.getTraxObjectType(42)).toBe($TrxObjectType.NotATraxObject);
-            expect(trax.getTraxObjectType({})).toBe($TrxObjectType.NotATraxObject);
-            expect(trax.getTraxObjectType(true)).toBe($TrxObjectType.NotATraxObject);
+            expect(trax.getTraxObjectType(undefined)).toBe(TrxObjectType.NotATraxObject);
+            expect(trax.getTraxObjectType(42)).toBe(TrxObjectType.NotATraxObject);
+            expect(trax.getTraxObjectType({})).toBe(TrxObjectType.NotATraxObject);
+            expect(trax.getTraxObjectType(true)).toBe(TrxObjectType.NotATraxObject);
         });
     });
 
     describe('Stores', () => {
         it('should be created wih a unique id', async () => {
-            const initFn = (store: $Store<any>) => {
+            const initFn = (store: Store<any>) => {
                 const root = store.initRoot({ msg: "Hello" });
                 return {
                     msg: root
@@ -112,7 +112,7 @@ describe('Trax Core', () => {
 
         it('should be able to define a custom dispose behaviour', async () => {
             let traces = "";
-            const initFn = (store: $Store<any>) => {
+            const initFn = (store: Store<any>) => {
                 const root = store.initRoot({ msg: "Hello" });
                 return {
                     msg: root,
@@ -136,14 +136,14 @@ describe('Trax Core', () => {
         });
 
         it('should be identified as trax objects', async () => {
-            const st = trax.createStore("MyStore", (store: $Store<any>) => {
+            const st = trax.createStore("MyStore", (store: Store<any>) => {
                 store.initRoot({ msg: "Hello" });
             });
             expect(trax.isTraxObject(st)).toBe(true);
         });
 
         it('should support init functions that don\'t return any object', async () => {
-            const st = trax.createStore("MyStore", (store: $Store<any>) => {
+            const st = trax.createStore("MyStore", (store: Store<any>) => {
                 store.initRoot({ msg: "Hello" });
             });
             expect(st.id).toBe("MyStore");
@@ -154,7 +154,7 @@ describe('Trax Core', () => {
 
         describe('Errors', () => {
             it('must be raised when initRoot is not called during the store initialization', async () => {
-                const st = trax.createStore("MyStore", (store: $Store<any>) => {
+                const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.add("foo", { msg: "Hello" });
                 });
                 expect(printLogs()).toMatchObject([
@@ -167,7 +167,7 @@ describe('Trax Core', () => {
             });
 
             it('must be raised when initRoot is called outside the init function', async () => {
-                const st = trax.createStore("MyStore", (store: $Store<any>) => {
+                const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.initRoot({ msg: "Hello" });
                 });
                 expect(printLogs()).toMatchObject([
@@ -185,7 +185,7 @@ describe('Trax Core', () => {
             });
 
             it('must be raised when init functions dont return an object', async () => {
-                const st = trax.createStore("MyStore", (store: $Store<any>) => {
+                const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.initRoot({ msg: "Hello" });
                     return 42;
                 });
@@ -198,7 +198,7 @@ describe('Trax Core', () => {
             });
 
             it('must be raised when init function throws an error', async () => {
-                const st = trax.createStore("MyStore", (store: $Store<any>) => {
+                const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.initRoot({ msg: "Hello" });
                     throw Error("Unexpected error");
                 });
@@ -211,7 +211,7 @@ describe('Trax Core', () => {
             });
 
             it('must be raised when the store dispose throws an error', async () => {
-                const st = trax.createStore("MyStore", (store: $Store<any>) => {
+                const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.initRoot({ msg: "Hello" });
                     return {
                         dispose() {
@@ -229,7 +229,7 @@ describe('Trax Core', () => {
             });
 
             it('must be raised if store id is provided by the init function', async () => {
-                const st = trax.createStore("MyStore", (store: $Store<any>) => {
+                const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.initRoot({ msg: "Hello" });
                     return {
                         id: "abcd"
@@ -244,7 +244,7 @@ describe('Trax Core', () => {
             });
 
             it('must be raised in case of invalid id', async () => {
-                const st = trax.createStore("My/Store/ABC", (store: $Store<any>) => {
+                const st = trax.createStore("My/Store/ABC", (store: Store<any>) => {
                     store.initRoot({ msg: "Hello" });
                 });
                 expect(st.id).toBe("MyStoreABC");
@@ -257,7 +257,7 @@ describe('Trax Core', () => {
             });
 
             it('must be raised in case of invalid add parameter', async () => {
-                const st = trax.createStore("MyStore", (store: $Store<any>) => {
+                const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.initRoot({ msg: "Hello" });
                     store.add("abc", 42);
                 });
@@ -271,7 +271,7 @@ describe('Trax Core', () => {
             });
 
             it('must be raised if "root" is used as an id for a new object', async () => {
-                const st = trax.createStore("MyStore", (store: $Store<any>) => {
+                const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.initRoot({ msg: "Hello" });
                 });
                 const o = st.add("root", { msg: "abc" });
@@ -291,7 +291,7 @@ describe('Trax Core', () => {
 
     describe('Reconciliation', () => {
         it('should support manual trigger (sync)', async () => {
-            const st = trax.createStore("MyStore", (store: $Store<$Person>) => {
+            const st = trax.createStore("MyStore", (store: Store<Person>) => {
                 const p = store.initRoot({ firstName: "Homer", lastName: "Simpson" });
                 store.compute("PrettyName", () => {
                     const nm = p.firstName + " " + p.lastName;
@@ -346,7 +346,7 @@ describe('Trax Core', () => {
         });
 
         it('should support automatic trigger (async)', async () => {
-            const st = trax.createStore("MyStore", (store: $Store<$Person>) => {
+            const st = trax.createStore("MyStore", (store: Store<Person>) => {
                 const p = store.initRoot({ firstName: "Homer", lastName: "Simpson" });
                 store.compute("PrettyName", () => {
                     const nm = p.firstName + " " + p.lastName;

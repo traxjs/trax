@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createTraxEnv } from '../core';
-import { $Store, $Trax } from '../types';
+import { Trax } from '../types';
 import { printEvents } from './utils';
 
 /**
@@ -10,7 +10,7 @@ import { printEvents } from './utils';
  * with 1 or more $ signs
  */
 describe('Ref Props', () => {
-    let trax: $Trax;
+    let trax: Trax;
 
     beforeEach(() => {
         trax = createTraxEnv();
@@ -20,7 +20,7 @@ describe('Ref Props', () => {
         return printEvents(trax.log, ignoreCycleEvents, minCycleId);
     }
 
-    interface $Person {
+    interface Person {
         name: string;
         $parents?: {
             father: string;
@@ -28,28 +28,28 @@ describe('Ref Props', () => {
         }
     }
 
-    interface $Person1 {
+    interface Person1 {
         name: string;
-        $family: $Person[];
+        $family: Person[];
     }
 
-    interface $Person21 {
+    interface Person21 {
         name: string;
-        $$family: $Person[];
+        $$family: Person[];
     }
 
-    interface $Person22 {
+    interface Person22 {
         name: string;
-        $$family: $Person[][];
+        $$family: Person[][];
     }
 
-    interface $Person3 {
+    interface Person3 {
         name: string;
-        $$$family: $Person[][];
+        $$$family: Person[][];
     }
 
     it('should be supported for sub-objects (level 1)', async () => {
-        const ps = trax.createStore<$Person>("PStore", {
+        const ps = trax.createStore<Person>("PStore", {
             name: "Bart",
             $parents: {
                 father: "Homer",
@@ -109,7 +109,7 @@ describe('Ref Props', () => {
     });
 
     it('should be supported for arrays (level 1)', async () => {
-        const ps = trax.createStore<$Person1>("PStore", {
+        const ps = trax.createStore<Person1>("PStore", {
             name: "Bart",
             $family: [
                 { name: "Homer" },
@@ -170,7 +170,7 @@ describe('Ref Props', () => {
     });
 
     it('should be supported for arrays (level 2 - array)', async () => {
-        const ps = trax.createStore<$Person21>("PStore", {
+        const ps = trax.createStore<Person21>("PStore", {
             name: "Bart",
             $$family: [
                 { name: "Homer" },
@@ -208,7 +208,7 @@ describe('Ref Props', () => {
     });
 
     it('should be supported for arrays (level 2 - array in array)', async () => {
-        const ps = trax.createStore<$Person22>("PStore", {
+        const ps = trax.createStore<Person22>("PStore", {
             name: "Bart",
             $$family: [
                 // first level is wrapped, but not the 2nd level
@@ -260,7 +260,7 @@ describe('Ref Props', () => {
     });
 
     it('should be supported for arrays (level 3  - array in array)', async () => {
-        const ps = trax.createStore<$Person3>("PStore", {
+        const ps = trax.createStore<Person3>("PStore", {
             name: "Bart",
             $$$family: [
                 // first level is wrapped, but not the 2nd level

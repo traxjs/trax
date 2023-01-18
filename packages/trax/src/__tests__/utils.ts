@@ -1,8 +1,7 @@
-import { e } from "vitest/dist/index-761e769b";
 import { traxMD } from "../core";
-import { $EventStream, $TraxLogObjectLifeCycle, $TraxLogProcDirty, $TraxLogProcessStart, $TraxLogPropGet, $TraxLogPropSet, traxEvents } from "../types";
+import { EventStream, TraxLogObjectLifeCycle, TraxLogProcDirty, TraxLogProcessStart, TraxLogPropGet, TraxLogPropSet, traxEvents } from "../types";
 
-export interface $Person {
+export interface Person {
     firstName: string;
     lastName: string;
     prettyName?: string;
@@ -10,27 +9,27 @@ export interface $Person {
     avatar?: string;
 }
 
-export interface $SimpleFamilyStore {
+export interface SimpleFamilyStore {
     childNames?: string; // computed
-    father?: $Person;
-    mother?: $Person;
-    child1?: $Person;
-    child2?: $Person;
-    child3?: $Person;
+    father?: Person;
+    mother?: Person;
+    child1?: Person;
+    child2?: Person;
+    child3?: Person;
 }
 
-export interface $ArrayFamilyStore {
+export interface ArrayFamilyStore {
     familyName: string;
-    members: $Person[];
+    members: Person[];
     size?: number;
     names?: string;
     infos?: { desc: string }[];
     misc?: { desc: string }[][];
 }
 
-export interface $DictFamilyStore {
+export interface DictFamilyStore {
     familyName: string;
-    members: { [id: string]: $Person }
+    members: { [id: string]: Person }
     size?: number;
     names?: string;
     infos?: { [key: string]: { desc: string } };
@@ -42,7 +41,7 @@ export async function pause(timeMs = 10) {
     });
 }
 
-export function printEvents(log: $EventStream, ignoreCycleEvents = true, minCycleId = 0): string[] {
+export function printEvents(log: EventStream, ignoreCycleEvents = true, minCycleId = 0): string[] {
     const arr: string[] = [];
     log.scan((evt) => {
         const m = evt.id.match(/^\d+/);
@@ -79,7 +78,7 @@ function formatData(eventType: string, data?: any) {
             || eventType === traxEvents.ProcessingeEnd) {
             return `${data.replace(/"/g, "")}`;
         } else if (eventType === traxEvents.ProcessingStart) {
-            const d = sd as $TraxLogProcessStart;
+            const d = sd as TraxLogProcessStart;
             if (d.name === "StoreInit") {
                 return `${d.name} (${d.storeId})`;
             } else if (d.name === "Compute") {
@@ -93,21 +92,21 @@ function formatData(eventType: string, data?: any) {
                 return `${(d as any).name}`;
             }
         } else if (eventType === traxEvents.New) {
-            const d = sd as $TraxLogObjectLifeCycle;
+            const d = sd as TraxLogObjectLifeCycle;
             if (d.objectId === undefined) return data;
             return `${d.objectType}: ${d.objectId}`;
         } else if (eventType === traxEvents.Dispose) {
-            const d = sd as $TraxLogObjectLifeCycle;
+            const d = sd as TraxLogObjectLifeCycle;
             if (d.objectId === undefined) return data;
             return `${d.objectType ? d.objectType + ": " : ""}${d.objectId}`;
         } else if (eventType === traxEvents.Get) {
-            const d = sd as $TraxLogPropGet;
+            const d = sd as TraxLogPropGet;
             return `${d.objectId}.${d.propName} -> ${stringify(d.propValue)}`;
         } else if (eventType === traxEvents.Set) {
-            const d = sd as $TraxLogPropSet;
+            const d = sd as TraxLogPropSet;
             return `${d.objectId}.${d.propName} = ${stringify(d.toValue)} (prev: ${stringify(d.fromValue)})`;
         } else if (eventType === traxEvents.ProcessorDirty) {
-            const d = sd as $TraxLogProcDirty;
+            const d = sd as TraxLogProcDirty;
             return `${d.processorId} <- ${d.objectId}.${d.propName}`;
         }
     } catch (ex) { }

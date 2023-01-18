@@ -1,5 +1,5 @@
 import { LinkedList } from "./linkedlist";
-import { $LogData, $StreamEvent, $Event, $EventStream, $SubscriptionId, $ProcessingContext, traxEvents } from "./types";
+import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents } from "./types";
 
 
 /**
@@ -8,13 +8,13 @@ import { $LogData, $StreamEvent, $Event, $EventStream, $SubscriptionId, $Process
  * @param internalSrcKey 
  * @returns 
  */
-export function createEventStream(internalSrcKey: any, dataStringifier?: (data: any) => string, onCycleComplete?: () => void): $EventStream {
+export function createEventStream(internalSrcKey: any, dataStringifier?: (data: any) => string, onCycleComplete?: () => void): EventStream {
     let size = 0;
     let maxSize = 500;
-    let head: $StreamEvent | undefined;
-    let tail: $StreamEvent | undefined;
-    const awaitMap = new Map<string, { p: Promise<$Event>, resolve: (e: $Event) => void }>();
-    const consumers: ((e: $Event) => void)[] = [];
+    let head: StreamListEvent | undefined;
+    let tail: StreamListEvent | undefined;
+    const awaitMap = new Map<string, { p: Promise<StreamEvent>, resolve: (e: StreamEvent) => void }>();
+    const consumers: ((e: StreamEvent) => void)[] = [];
 
     // ----------------------------------------------
     // cycle id managment
@@ -56,13 +56,13 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
 
     const START = 1, PAUSE = 2, END = 3;
     // Processing context stack
-    const pcStack = new LinkedList<$ProcessingContext>();
+    const pcStack = new LinkedList<ProcessingContext>();
 
-    function stackPc(pc: $ProcessingContext) {
+    function stackPc(pc: ProcessingContext) {
         pcStack.add(pc);
     }
 
-    function unstackPc(pc: $ProcessingContext) {
+    function unstackPc(pc: ProcessingContext) {
         let last = pcStack.shift();
         while (last && last !== pc) {
             error("[trax/processing context] Contexts must be ended or paused before parent:", last.id);
@@ -81,7 +81,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
         }
     }
 
-    function createProcessingContext(id: string): $ProcessingContext {
+    function createProcessingContext(id: string): ProcessingContext {
         let state = START;
         const pc = {
             get id() {
@@ -119,12 +119,12 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
         return pc;
     }
 
-    function error(...data: $LogData[]) {
+    function error(...data: LogData[]) {
         logEvent(traxEvents.Error, mergeMessageData(data));
     }
 
-    function logEvent(type: string, data?: $LogData, src?: any, parentId?: string) {
-        let evt: $StreamEvent;
+    function logEvent(type: string, data?: LogData, src?: any, parentId?: string) {
+        let evt: StreamListEvent;
         if (size >= maxSize && maxSize > 1) {
             evt = head!;
             head = head!.next;
@@ -163,7 +163,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
         return evt;
     }
 
-    function resolveAwaitPromises(eventType: string, e: $Event) {
+    function resolveAwaitPromises(eventType: string, e: StreamEvent) {
         const promiseData = awaitMap.get(eventType);
         if (promiseData) {
             awaitMap.delete(eventType);
@@ -172,13 +172,13 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
     }
 
     return {
-        event(type: string, data?: $LogData, src?: any) {
+        event(type: string, data?: LogData, src?: any) {
             logEvent(type, data, src);
         },
-        info(...data: $LogData[]) {
+        info(...data: LogData[]) {
             logEvent(traxEvents.Info, mergeMessageData(data));
         },
-        warn(...data: $LogData[]) {
+        warn(...data: LogData[]) {
             logEvent(traxEvents.Warning, mergeMessageData(data));
         },
         error,
@@ -201,7 +201,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
                 }
             }
         },
-        startProcessingContext(data?: $LogData): $ProcessingContext {
+        startProcessingContext(data?: LogData): ProcessingContext {
             const last = pcStack.peek();
             const parentId = last ? last.id : undefined;
             const evt = logEvent(traxEvents.ProcessingStart, data, internalSrcKey, parentId);
@@ -213,7 +213,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
         get size() {
             return size;
         },
-        scan(eventProcessor: (itm: $Event) => void | boolean) {
+        scan(eventProcessor: (itm: StreamEvent) => void | boolean) {
             let itm = head, process = true;
             while (process && itm) {
                 try {
@@ -224,10 +224,10 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
                 } catch (ex) { }
             }
         },
-        lastEvent(): $Event | undefined {
+        lastEvent(): StreamEvent | undefined {
             return tail;
         },
-        async await(eventType: string): Promise<$Event> {
+        async await(eventType: string): Promise<StreamEvent> {
             if (eventType === "" || eventType === "*") {
                 logEvent(traxEvents.Error, `[trax/eventStream.await] Invalid event type: '${eventType}'`);
                 return { id: tail!.id, type: tail!.type, data: tail!.data };
@@ -235,7 +235,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
             let promiseData = awaitMap.get(eventType);
             if (promiseData === undefined) {
                 let r: any, pd: any = {
-                    p: new Promise((resolve: (e: $Event) => void) => {
+                    p: new Promise((resolve: (e: StreamEvent) => void) => {
                         r = resolve;
                     })
                 }
@@ -245,12 +245,12 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
             }
             return promiseData!.p;
         },
-        subscribe(eventType: string | "*", callback: (e: $Event) => void): $SubscriptionId {
-            let fn: (e: $Event) => void;
+        subscribe(eventType: string | "*", callback: (e: StreamEvent) => void): SubscriptionId {
+            let fn: (e: StreamEvent) => void;
             if (eventType === "*") {
-                fn = (e: $Event) => callback(e);
+                fn = (e: StreamEvent) => callback(e);
             } else {
-                fn = (e: $Event) => {
+                fn = (e: StreamEvent) => {
                     if (e.type === eventType) {
                         callback(e);
                     }
@@ -259,7 +259,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
             consumers.push(fn);
             return fn;
         },
-        unsubscribe(subscriptionId: $SubscriptionId): boolean {
+        unsubscribe(subscriptionId: SubscriptionId): boolean {
             const idx = consumers.indexOf(subscriptionId as any);
             if (idx > -1) {
                 consumers.splice(idx, 1);
@@ -271,9 +271,9 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
 
 }
 
-function mergeMessageData(data: $LogData[]): $LogData | undefined {
+function mergeMessageData(data: LogData[]): LogData | undefined {
     let curMessage = "";
-    const output: $LogData[] = [];
+    const output: LogData[] = [];
     for (let d of data) {
         const tp = typeof d;
         if (tp === "string" || tp === "number" || tp === "boolean" || d === null) {
@@ -300,7 +300,7 @@ function mergeMessageData(data: $LogData[]): $LogData | undefined {
     return output;
 }
 
-function format(internalSrcKey: any, entry: $StreamEvent, type: string, dataStringifier?: (data: any) => string, data?: $LogData, src?: any) {
+function format(internalSrcKey: any, entry: StreamListEvent, type: string, dataStringifier?: (data: any) => string, data?: LogData, src?: any) {
     let hasError = false;
     let errMsg = "";
     if (type === "") {

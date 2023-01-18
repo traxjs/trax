@@ -1,7 +1,7 @@
 
 import { createStore } from "@traxjs/trax";
 
-interface $Counter {
+interface Counter {
     value: number;
     nbrOfOperations: number;
     maxValue: number;
@@ -9,7 +9,7 @@ interface $Counter {
 }
 
 export const counterStore = createStore("Counter", (store) => {
-    const counter: $Counter = store.object("root", {
+    const counter: Counter = store.object("root", {
         value: 0,
         nbrOfOperations: 0,
         maxValue: 0,

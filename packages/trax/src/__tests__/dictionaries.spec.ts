@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createTraxEnv } from '../core';
-import { $Store, $Trax } from '../types';
-import { $DictFamilyStore, printEvents } from './utils';
+import { Store, Trax } from '../types';
+import { DictFamilyStore, printEvents } from './utils';
 
 describe('Dictionaries', () => {
-    let trax: $Trax;
+    let trax: Trax;
 
     beforeEach(() => {
         trax = createTraxEnv();
@@ -17,7 +17,7 @@ describe('Dictionaries', () => {
     describe('Primary', () => {
 
         function createFamilyStore(empty: boolean) {
-            return trax.createStore("FStore", (store: $Store<$DictFamilyStore>) => {
+            return trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
                 if (empty) {
                     store.initRoot({
                         familyName: "Simpson",
@@ -226,7 +226,7 @@ describe('Dictionaries', () => {
     describe('Computed', () => {
 
         function createFamilyStore(empty: boolean) {
-            return trax.createStore("FStore", (store: $Store<$DictFamilyStore>) => {
+            return trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
                 if (empty) {
                     store.initRoot({
                         familyName: "Simpson",
@@ -250,7 +250,7 @@ describe('Dictionaries', () => {
                         infos = family.infos = {};
                     }
                     const members = family.members;
-                    const content: $DictFamilyStore["infos"] = {};
+                    const content: DictFamilyStore["infos"] = {};
 
                     for (let k of trax.getObjectKeys(members)) {
                         const m = members[k];
@@ -268,7 +268,7 @@ describe('Dictionaries', () => {
             });
         }
 
-        function printInfos(infos: $DictFamilyStore["infos"]) {
+        function printInfos(infos: DictFamilyStore["infos"]) {
             if (!infos) return "";
             const arr: string[] = [];
             return trax.getObjectKeys(infos).map(k => {
@@ -464,7 +464,7 @@ describe('Dictionaries', () => {
         describe('Errors', () => {
 
             it('should be raised in case of invalid updateDictionary arguments', async () => {
-                trax.createStore("FStore", (store: $Store<$DictFamilyStore>) => {
+                trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
                     store.initRoot({
                         familyName: "Simpson",
                         members: {}
@@ -478,7 +478,7 @@ describe('Dictionaries', () => {
                             infos = family.infos = {};
                         }
                         const members = family.members;
-                        const content: $DictFamilyStore["infos"] = {};
+                        const content: DictFamilyStore["infos"] = {};
 
                         for (let k of trax.getObjectKeys(members)) {
                             const m = members[k];
@@ -508,7 +508,7 @@ describe('Dictionaries', () => {
             });
 
             it('should be raised when a computed dict is updated by multiple processors (manual change)', async () => {
-                const fs = trax.createStore("FStore", (store: $Store<$DictFamilyStore>) => {
+                const fs = trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
                     store.initRoot({
                         familyName: "Simpson",
                         members: {
@@ -524,7 +524,7 @@ describe('Dictionaries', () => {
                             infos = family.infos = {};
                         }
                         const members = family.members;
-                        const content: $DictFamilyStore["infos"] = {};
+                        const content: DictFamilyStore["infos"] = {};
 
                         for (let k of trax.getObjectKeys(members)) {
                             const m = members[k];
@@ -550,7 +550,7 @@ describe('Dictionaries', () => {
             });
 
             it('should be raised when a computed dict is updated by multiple processors (direct change)', async () => {
-                const fs = trax.createStore("FStore", (store: $Store<$DictFamilyStore>) => {
+                const fs = trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
                     store.initRoot({
                         familyName: "Simpson",
                         members: {
@@ -566,7 +566,7 @@ describe('Dictionaries', () => {
                             infos = family.infos = {};
                         }
                         const members = family.members;
-                        const content: $DictFamilyStore["infos"] = {};
+                        const content: DictFamilyStore["infos"] = {};
 
                         for (let k of trax.getObjectKeys(members)) {
                             const m = members[k];
@@ -598,7 +598,7 @@ describe('Dictionaries', () => {
             });
 
             it('should be raised when a computed dict is updated by multiple processors (updateDictionary change)', async () => {
-                const fs = trax.createStore("FStore", (store: $Store<$DictFamilyStore>) => {
+                const fs = trax.createStore("FStore", (store: Store<DictFamilyStore>) => {
                     store.initRoot({
                         familyName: "Simpson",
                         members: {
@@ -614,7 +614,7 @@ describe('Dictionaries', () => {
                             infos = family.infos = {};
                         }
                         const members = family.members;
-                        const content: $DictFamilyStore["infos"] = {};
+                        const content: DictFamilyStore["infos"] = {};
 
                         for (let k of trax.getObjectKeys(members)) {
                             const m = members[k];

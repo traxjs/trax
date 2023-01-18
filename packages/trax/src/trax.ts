@@ -1,5 +1,5 @@
 
-export interface $Store<T> {
+export interface Store<T> {
     root: T;
     object<T extends Object>(id: string, defaultValue: T): T;
 } 
@@ -9,10 +9,10 @@ export interface $Store<T> {
 // Create store function
 export function createStore<R>(
     idPrefix: string,
-    initFunction: (store: $Store<any>) => R): R & { dispose: () => void } {
+    initFunction: (store: Store<any>) => R): R & { dispose: () => void } {
 
     try {
-        const store = new Store();
+        const store = new StoreImpl();
         const o = initFunction(store);
         (o as any).dispose = () => { };
         return o as any;
@@ -23,7 +23,7 @@ export function createStore<R>(
     return { dispose: () => { } } as any;
 };
 
-class Store<T> {
+class StoreImpl<T> {
     root: T = {} as any;
 
     object<T extends Object>(id: string, defaultValue: T): T {

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createTraxEnv } from '../core';
-import { $Store, $Trax } from '../types';
-import { $Person, pause, printEvents } from './utils';
+import { Store, Trax } from '../types';
+import { Person, pause, printEvents } from './utils';
 
 describe('Async processors', () => {
-    let trax: $Trax;
+    let trax: Trax;
 
     beforeEach(() => {
         trax = createTraxEnv();
@@ -32,7 +32,7 @@ describe('Async processors', () => {
     }
 
     function createPStore(firstName = "Homer", includeAvatar = false) {
-        return trax.createStore("PStore", (store: $Store<$Person>) => {
+        return trax.createStore("PStore", (store: Store<Person>) => {
             const p = store.initRoot({ firstName, lastName: "Simpson" });
 
             store.compute("PrettyName", function* () {
@@ -283,7 +283,7 @@ describe('Async processors', () => {
         });
 
         it('should support generator functions that dont return promises', async () => {
-            const ps = trax.createStore("PStore", (store: $Store<$Person>) => {
+            const ps = trax.createStore("PStore", (store: Store<Person>) => {
                 const p = store.initRoot({ firstName: "Bart", lastName: "Simpson" });
 
                 store.compute("PrettyName", function* () {
@@ -324,7 +324,7 @@ describe('Async processors', () => {
 
     describe('Errors', () => {
         it('should raise an error in case of compute error before yield', async () => {
-            const ps = trax.createStore("PStore", (store: $Store<$Person>) => {
+            const ps = trax.createStore("PStore", (store: Store<Person>) => {
                 const p = store.initRoot({ firstName: "Bart", lastName: "Simpson" });
 
                 store.compute("PrettyName", function* () {
@@ -351,7 +351,7 @@ describe('Async processors', () => {
         });
 
         it('should raise an error in case of compute error during yield', async () => {
-            const ps = trax.createStore("PStore", (store: $Store<$Person>) => {
+            const ps = trax.createStore("PStore", (store: Store<Person>) => {
                 const p = store.initRoot({ firstName: "Bart", lastName: "Simpson" });
 
                 store.compute("PrettyName", function* () {
@@ -383,7 +383,7 @@ describe('Async processors', () => {
         });
 
         it('should raise an error in case of compute error after yield', async () => {
-            const ps = trax.createStore("PStore", (store: $Store<$Person>) => {
+            const ps = trax.createStore("PStore", (store: Store<Person>) => {
                 const p = store.initRoot({ firstName: "Bart", lastName: "Simpson" });
 
                 store.compute("PrettyName", function* () {

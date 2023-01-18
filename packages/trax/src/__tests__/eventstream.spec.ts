@@ -20,7 +20,7 @@ describe('Event Stream', () => {
         return arr;
     }
 
-    
+
 
     beforeEach(() => {
         count = 0;
@@ -560,6 +560,23 @@ describe('Event Stream', () => {
             expect(traces).toBe("");
             expect(warnings).toBe("");
         });
+
+        it('should log an error in case of invalid subscription event', async () => {
+            log.info("A");
+            await log.await("*");
+            await log.await("");
+
+
+            expect(printLogs(false)).toMatchObject([
+                "0:0 !CS - 0",
+                "0:1 !LOG - A",
+                "0:2 !ERR - [trax/eventStream.await] Invalid event type: '*'",
+                "0:3 !CC - 0",
+                "1:0 !CS - 0",
+                "1:1 !ERR - [trax/eventStream.await] Invalid event type: ''",
+                "1:2 !CC - 0",
+            ]);
+        });
     });
 
     describe('Processing Context', () => {
@@ -626,6 +643,7 @@ describe('Event Stream', () => {
             sc.end()
             c.end();
             log.info("D");
+            expect(sc)
 
             expect(printLogs()).toMatchObject([
                 '0:1 !LOG - A',

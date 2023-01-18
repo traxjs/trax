@@ -1,10 +1,12 @@
 import { createEventStream } from "./eventstream";
 import { LinkedList } from "./linkedlist";
 import { $TraxInternalProcessor, createTraxProcessor } from "./processor";
-import { $Store, $StoreWrapper, $Trax, $TraxIdDef, $TraxProcessor, $TrxObjectType, $TraxLogProcessStart, traxEvents, $TraxComputeFn, $TraxEvent, $ProcessingContext, $TraxProcessorId } from "./types";
+import { $Store, $StoreWrapper, $Trax, $TraxIdDef, $TraxProcessor, $TrxObjectType, $TraxLogProcessStart, traxEvents, $TraxComputeFn, $TraxEvent, $ProcessingContext, $TraxProcessorId, $TraxObject } from "./types";
 
-
+/** Symbol used to attach meta data to trax objects */
 export const traxMD = Symbol("trax.md");
+/** Symbol used to attach the Object.keys() size to objects used as dictionaries - cf. getObjectKeys() */
+const dictSize = Symbol("trax.dict.size");
 const RX_INVALID_ID = /(\/|\>)/g;
 const ROOT = "root";
 /** Separator used to join array id definitions */
@@ -17,6 +19,8 @@ const ID_SEPARATOR3 = "-";
 const ID_SEPARATOR4 = "$";
 /** Property prefix for reference properties */
 const REF_PROP_PREFIX = "$";
+/** Pseudo property name to track dict size */
+const DICT_SIZE_PROP = '☆trax.dictionary.size☆';
 
 /**
  * Meta-data object attached to each trax object (object, array, dictionary, processor, store)
@@ -50,6 +54,10 @@ interface $TraxMd {
     * Default = 0 (sub-object will be wrapped)
     */
     awLevel?: number;
+    /**
+     * Number of propeties set on an object - only used for objects uses as dictionaries
+     */
+    dictSize?: number;
 }
 
 /**
@@ -163,25 +171,11 @@ export function createTraxEnv(): $Trax {
         },
         updateArray(array: any[], newContent: any[]) {
             if (!isArray(array) || !isArray(newContent)) {
-                error(`updateAray: Invalid argument (array expected)`);
+                error(`updateArray: Invalid argument (array expected)`);
                 return;
             }
-            const md = tmd(array);
-            if (md) {
-                sanitizeComputedMd(md);
-                const pr = processorStack.peek()
-                if (pr) {
-                    if (!md.computedContent) {
-                        md.computedContent = pr.id;
-                    } else {
-                        // illegal change unless the previous processor has been disposed
-                        if (pr.id !== md.computedContent) {
-                            error(`Computed content conflict: ${md.id} can only be changed by ${md.computedContent}`);
-                        }
-                    }
-                }
-            }
-            const ctxt = startProcessingContext({ type: traxEvents.ProcessingStart, name: "ArrayUpdate", objectId: md?.id || "" });
+            const id = checkComputedContent(array);
+            const ctxt = startProcessingContext({ type: traxEvents.ProcessingStart, name: "ArrayUpdate", objectId: id });
             const len1 = array.length;
             const len2 = newContent.length;
             for (let i = 0; len2 > i; i++) {
@@ -196,6 +190,61 @@ export function createTraxEnv(): $Trax {
             }
             ctxt.end();
         },
+        updateDictionary<T>(dict: { [k: string]: T }, newContent: { [k: string]: T }): void {
+            if (dict === null || typeof dict !== "object") {
+                error(`updateDictionary: Invalid argument (object expected)`);
+                return;
+            }
+            const id = checkComputedContent(dict);
+            const ctxt = startProcessingContext({ type: traxEvents.ProcessingStart, name: "DictionaryUpdate", objectId: id });
+
+            const oldContentKeys = trx.getObjectKeys(dict);
+            const newContentKeys = trx.getObjectKeys(newContent);
+
+            // delete values that are not in newContent
+            for (const k of oldContentKeys) {
+                if (!newContentKeys.includes(k)) {
+                    delete dict[k]
+                }
+            }
+
+            // create or update values in newContent
+            for (const k of newContentKeys) {
+                dict[k] = newContent[k];
+            }
+            ctxt.end();
+        },
+        getObjectKeys(o: $TraxObject): string[] {
+            const md = tmd(o);
+            if (!md) {
+                return Object.keys(o);
+            } else {
+                // force read of dictSize to create a dependency on this property
+                const sz: number = (o as any)[dictSize];
+                if (sz) return Object.keys(o);
+                return [];
+            }
+        }
+    }
+
+    function checkComputedContent(o: Object) {
+        const md = tmd(o);
+        if (md) {
+            sanitizeComputedMd(md);
+            const pr = processorStack.peek()
+            if (pr) {
+                if (!md.computedContent) {
+                    md.computedContent = pr.id;
+                } else {
+                    // illegal change unless the previous processor has been disposed
+                    if (pr.id !== md.computedContent) {
+                        error(`Computed content conflict: ${md.id} can only be changed by ${md.computedContent}`);
+                    }
+                }
+            }
+            return md.id;
+        }
+        return "";
     }
 
     const proxyHandler = {
@@ -208,6 +257,9 @@ export function createTraxEnv(): $Trax {
             const md = tmd(target);
             if (prop === traxMD) {
                 return md;
+            } else if (prop === "toJSON") {
+                // JSON.stringify call on a proxy will get here
+                return undefined;
             } else if (typeof prop === "string") {
                 let v: any;
                 let addLog = false;
@@ -219,7 +271,7 @@ export function createTraxEnv(): $Trax {
                         pr.registerDependency(target, md.id, prop);
                     }
                     // don't add log for common internal built-in props
-                    addLog = ((prop !== "then" && prop !== "toJSON" && prop !== "constructor") || v !== undefined);
+                    addLog = ((prop !== "then" && prop !== "constructor") || v !== undefined);
                     v = target[prop] = wrapPropObject(target[prop], target, prop, md);
 
                     addLog && logTraxEvent({ type: "!GET", objectId: md.id, propName: prop as string, propValue: v });
@@ -227,6 +279,20 @@ export function createTraxEnv(): $Trax {
                     v = target[prop];
                 }
                 return v;
+            } else if (prop === dictSize) {
+                if (md) {
+                    let v = md.dictSize;
+                    if (v === undefined) {
+                        // first time
+                        md.dictSize = v = Object.keys(target).length;
+                    }
+                    const pr = processorStack.peek();
+                    if (pr) {
+                        pr.registerDependency(target, md.id, DICT_SIZE_PROP);
+                    }
+                    logTraxEvent({ type: "!GET", objectId: md.id, propName: DICT_SIZE_PROP, propValue: v });
+                    return v;
+                }
             }
             return target[prop];
         },
@@ -248,8 +314,8 @@ export function createTraxEnv(): $Trax {
                 if (md) {
                     // Register computed props
                     const pr = processorStack.peek();
+                    sanitizeComputedMd(md);
                     if (pr) {
-                        sanitizeComputedMd(md);
                         let prId = md.computedContent || undefined;
                         // the current prop is computed:
                         // - either it is an independent prop
@@ -278,17 +344,33 @@ export function createTraxEnv(): $Trax {
                                 value = v;
                             }
                         }
+                    } else {
+                        // not in processor stack
+                        if (md.computedContent) {
+                            error(`Computed content conflict: ${md.id}.${prop} can only be set by ${md.computedContent}`);
+                            value = v;
+                        }
                     }
 
                     if (v !== value) {
-                        let lengthChange = false;
+                        let lengthChange = false, dictSizeChange = false;
                         if (isArray(target)) {
-                            // we ned to notify length change as functions like Array.push won't explicitely do it
+                            // we need to notify length change as functions like Array.push won't explicitely do it
                             const len = target.length;
                             value = target[prop as any] = wrapPropObject(value, target, "" + prop, md);
                             lengthChange = target.length !== len;
                         } else {
                             value = target[prop] = wrapPropObject(value, target, "" + prop, md);
+
+                            // Compute dictSize if object is used as a dictionary
+                            const dictSize1 = md.dictSize;
+                            if (v === undefined && dictSize1 !== undefined) {
+                                const dictSize2 = Object.keys(target).length;
+                                if (dictSize2 !== dictSize1) {
+                                    md.dictSize = dictSize2;
+                                    dictSizeChange = true;
+                                }
+                            }
                         }
 
                         logTraxEvent({ type: "!SET", objectId: md.id, propName: prop as string, fromValue: v, toValue: value });
@@ -297,6 +379,9 @@ export function createTraxEnv(): $Trax {
                         }
                         if (lengthChange) {
                             notifyPropChange(md, "length");
+                        }
+                        if (dictSizeChange) {
+                            notifyPropChange(md, DICT_SIZE_PROP);
                         }
                     }
                 } else {
@@ -314,6 +399,14 @@ export function createTraxEnv(): $Trax {
          */
         deleteProperty(target: any, prop: string | symbol): boolean {
             if (typeof prop === "string" && prop in target) {
+                const md = tmd(target);
+
+                if (md && md.dictSize) {
+                    // prop is in target so we can safely decrease dictSize
+                    md.dictSize--;
+                    notifyPropChange(md, DICT_SIZE_PROP);
+                }
+                delete target[prop];
                 return true;
             }
             return false;

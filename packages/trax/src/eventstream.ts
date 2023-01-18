@@ -81,14 +81,11 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
         }
     }
 
-    function createProcessingContext(id: string, parentId?: string): $ProcessingContext {
+    function createProcessingContext(id: string): $ProcessingContext {
         let state = START;
         const pc = {
             get id() {
                 return id;
-            },
-            get parentId() {
-                return parentId;
             },
             pause() {
                 if (state !== START) {
@@ -208,7 +205,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
             const last = pcStack.peek();
             const parentId = last ? last.id : undefined;
             const evt = logEvent(traxEvents.ProcessingStart, data, internalSrcKey, parentId);
-            return createProcessingContext(evt.id, parentId);
+            return createProcessingContext(evt.id);
         },
         get maxSize(): number {
             return maxSize;

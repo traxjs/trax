@@ -80,10 +80,26 @@ export interface $Trax {
      * Must be used in processors generating computed array collections
      * Note: this method will also flag the array as computed and will ensure errors are raised
      * if changes are made outside this processor
-     * @param array 
-     * @param newContent 
+     * @param array the array to update
+     * @param newContent the new array content
      */
     updateArray(array: any[], newContent: any[]): void;
+    /**
+     * Helper function to update the content of a dictionary without changing its reference
+     * Must be used in processors generating computed dictionary collections
+     * Note: this method will also flag the dictionary as computed and will ensure errors are raised
+     * if changes are made outside this processor
+     * @param dict the dictionary to update
+     * @param newContent the new dictionary content
+     */
+    updateDictionary<T>(dict: { [k: string]: T }, newContent: { [k: string]: T }): void;
+    /**
+     * Wrapper around Object.keys() that should be used in processors
+     * that read objects as dictionaries. This will allow processors to get dirty when
+     * properties are added or removed
+     * @param o 
+     */
+    getObjectKeys(o: $TraxObject): string[];
 }
 
 
@@ -313,7 +329,7 @@ export interface $TraxLogProcessCompute {
 
 export interface $TraxLogCollectionUpdate {
     type: "!PCS";
-    name: "ArrayUpdate";
+    name: "ArrayUpdate" | "DictionaryUpdate";
     objectId: string;
 }
 

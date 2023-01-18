@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { f } from 'vitest/dist/index-761e769b';
 import { createTraxEnv } from '../core';
 import { $Store, $Trax } from '../types';
 import { $ArrayFamilyStore, printEvents } from './utils';
@@ -980,13 +979,13 @@ describe('Arrays', () => {
                     "0:9 !GET - FStore/root.members -> '[TRAX FStore/root*members]'",
                     "0:10 !GET - FStore/root*members.map -> '[Function]'",
                     "0:11 !GET - FStore/root*members.length -> 0",
-                    "0:12 !ERR - [TRAX] updateAray: Invalid argument (array expected)",
+                    "0:12 !ERR - [TRAX] updateArray: Invalid argument (array expected)",
                     "0:13 !PCE - 0:4",
                     "0:14 !PCE - 0:1",
                 ]);
             });
 
-            it('should be raised when a computed array is updates by multiple processors (direct change)', async () => {
+            it('should be raised when a computed array is updated by multiple processors (direct change)', async () => {
                 const fs = trax.createStore("FStore", (store: $Store<$ArrayFamilyStore>) => {
                     store.initRoot({
                         familyName: "Simpson",
@@ -1038,7 +1037,7 @@ describe('Arrays', () => {
                 ]);
             });
 
-            it('should be raised when a computed array is updates by multiple processors (updateArray change)', async () => {
+            it('should be raised when a computed array is updated by multiple processors (updateArray change)', async () => {
                 const fs = trax.createStore("FStore", (store: $Store<$ArrayFamilyStore>) => {
                     store.initRoot({
                         familyName: "Simpson",

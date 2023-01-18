@@ -28,6 +28,14 @@ export interface $ArrayFamilyStore {
     misc?: { desc: string }[][];
 }
 
+export interface $DictFamilyStore {
+    familyName: string;
+    members: { [id: string]: $Person }
+    size?: number;
+    names?: string;
+    infos?: { [key: string]: { desc: string } };
+}
+
 export async function pause(timeMs = 10) {
     return new Promise((resolve) => {
         setTimeout(resolve, timeMs);

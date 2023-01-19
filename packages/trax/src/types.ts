@@ -211,7 +211,7 @@ export interface Store<T> {
      * Dispose the current store and all its sub-stores and processor 
      * so that they can be garbage collected
      */
-    dispose():void;
+    dispose(): boolean;
 }
 
 /**
@@ -273,6 +273,11 @@ export interface TraxProcessor {
      * Execute the compute function if the processor is dirty
      */
     compute(): void;
+    /** 
+     * Dispose the current processor to stop further compute and
+     * have it garbage collected
+     */
+    dispose(): boolean;
 }
 
 /**

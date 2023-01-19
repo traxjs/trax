@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Store, Trax } from '../types';
-import { createTraxEnv } from '../core';
+import { createTraxEnv, traxMD } from '../core';
 import { SimpleFamilyStore, printEvents } from './utils';
 
 
@@ -112,8 +112,13 @@ describe('Trax Objects', () => {
 
         it('must support delete and create new objects if previous id was deleted', async () => {
             let o1 = fst.add("foo", { foo: "bar" });
+
+            const md1a = o1[traxMD];
+            expect(md1a.id).toBe("SimpleFamilyStore/foo");
             let dr = fst.delete(o1);
             expect(dr).toBe(true);
+            const md1b = o1[traxMD];
+            expect(md1b).toBe(undefined);
             dr = fst.delete(o1);
             expect(dr).toBe(false);
 

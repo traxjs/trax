@@ -35,11 +35,6 @@ export interface TraxInternalProcessor extends TraxProcessor {
      * - DirectCall = explicit call (usually made by processors that are not auto-computed)
      */
     compute(trigger?: "Init" | "Reconciliation" | "DirectCall", reconciliationIdx?: number): void;
-    /**
-     * Dispose the processor so that it can't be executed anymore
-     * Called by the parent store when store.delete() is called
-     */
-    dispose(): void;
 }
 
 export function createTraxProcessor(
@@ -50,6 +45,7 @@ export function createTraxProcessor(
     getDataObject: (id: string) => any,
     logTraxEvent: (e: TraxEvent) => void,
     startProcessingContext: (event: TraxLogProcessStart) => ProcessingContext,
+    onDispose?: (id: string) => void,
     autoCompute = true,
     isRenderer = false
 ): TraxInternalProcessor {
@@ -189,11 +185,15 @@ export function createTraxProcessor(
                 }
             }
         },
-        dispose() {
-            if (disposed) return;
+        dispose(): boolean {
+            if (disposed) return false;
             disposed = true;
             computing = false;
             generator = undefined;
+            // detach from parent store
+            if (onDispose) {
+                onDispose(processorId);
+            }
 
             // unregister current dependencies
             for (const objectId of objectDependencies) {
@@ -203,6 +203,7 @@ export function createTraxProcessor(
                 }
             }
             logTraxEvent({ type: "!DEL", objectId: processorId, objectType: TrxObjectType.Processor });
+            return true;
         }
     }
 

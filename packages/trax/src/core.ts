@@ -709,19 +709,10 @@ export function createTraxEnv(): Trax {
                 let id = "";
                 if (md) {
                     id = md.id;
-                    // TODO rework
                     if (md.type === TrxObjectType.Processor) {
-                        if (md.storeId !== storeId) {
-                            error(`Processor ${id} cannot be deleted from ${storeId}`);
-                            return false;
-                        }
-                        return deleteProcessor(o as any as TraxInternalProcessor);
+                        error(`(${id}) Processors cannot be disposed through store.delete()`);
                     } else if (md.type === TrxObjectType.Store) {
-                        if (md.storeId !== storeId) {
-                            error(`Store ${id} cannot be deleted from ${storeId}`);
-                            return false;
-                        }
-                        return removeDataObject(id);
+                        error(`(${id}) Stores cannot be disposed through store.delete()`);
                     } else {
                         return removeDataObject(id);
                     }
@@ -736,7 +727,18 @@ export function createTraxEnv(): Trax {
                 }
                 processorPriorityCounter++; // used for priorities
                 processorCount++; // used to track potential memory leaks
-                pr = createTraxProcessor(pid, processorPriorityCounter, compute, processorStack, getDataObject, logTraxEvent, startProcessingContext, autoCompute, isRenderer);
+                pr = createTraxProcessor(
+                    pid,
+                    processorPriorityCounter,
+                    compute,
+                    processorStack,
+                    getDataObject,
+                    logTraxEvent,
+                    startProcessingContext,
+                    detachChildProcessor,
+                    autoCompute,
+                    isRenderer
+                );
                 attachMetaData(pr, pid, TrxObjectType.Processor, storeId);
                 processors.set(pid, pr);
                 storeProcessors.add(pid);
@@ -750,8 +752,8 @@ export function createTraxEnv(): Trax {
                 const subStoreId = buildStoreId(id, storeId, false);
                 return stores.get(subStoreId);
             },
-            dispose() {
-                dispose();
+            dispose(): boolean {
+                return dispose();
             }
         };
         // attach meta data
@@ -761,8 +763,8 @@ export function createTraxEnv(): Trax {
         // register store in parent
         stores.set(storeId, store);
 
-        function dispose() {
-            if (disposed) return;
+        function dispose(): boolean {
+            if (disposed) return false;
             stores.delete(storeId);
             disposed = true;
 
@@ -788,24 +790,23 @@ export function createTraxEnv(): Trax {
             storeProcessors.forEach((processorId) => {
                 const pr = processors.get(processorId);
                 if (pr && !pr.disposed) {
-                    deleteProcessor(pr);
+                    pr.dispose();
                 }
             });
             storeProcessors.clear();
+            return true;
         }
 
         function detachChildStore(id: string) {
             storeSubStores.delete(id);
         }
 
-        function deleteProcessor(pr: TraxInternalProcessor) {
-            const ok = processors.delete(pr.id);
+        function detachChildProcessor(id: string) {
+            const ok = processors.delete(id);
             if (ok) {
-                pr.dispose();
                 processorCount--;
-                storeProcessors.delete(pr.id);
+                storeProcessors.delete(id);
             }
-            return ok;
         }
 
         let r: R;

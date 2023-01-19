@@ -644,7 +644,7 @@ describe('Sync Processors', () => {
             expect(v.v2).toBe("P1(X)");
             expect(v.v3).toBe("P2(X)");
 
-            st.delete(p1);
+            p1.dispose();
             expect(p1.dependencies).toMatchObject([]);
 
             v.v1 = "Y";
@@ -652,7 +652,7 @@ describe('Sync Processors', () => {
             expect(v.v2).toBe("P1(X)");
             expect(v.v3).toBe("P2(Y)");
 
-            st.delete(p2);
+            p2.dispose();
 
             v.v1 = "Z";
             await trax.reconciliation();
@@ -699,8 +699,8 @@ describe('Sync Processors', () => {
         });
     });
 
-    describe('Delete', () => {
-        it('should support deletion through store.delete', async () => {
+    describe('Dispose', () => {
+        it('should support deletion through dispose()', async () => {
             const ps = createPStore(false);
             const p = ps.root;
 
@@ -719,13 +719,13 @@ describe('Sync Processors', () => {
             expect(ps.getProcessor("Render")).toBe(pr);
             expect(trax.getProcessor("PStore/%Render")).toBe(pr);
             expect(pr.disposed).toBe(false);
-            let r = ps.delete(pr); // deleted while dirty
+            let r = pr.dispose(); // deleted while dirty
             expect(r).toBe(true);
             expect(pr.disposed).toBe(true);
             expect(ps.getProcessor("Render")).toBe(undefined);
             expect(trax.getProcessor("PStore/%Render")).toBe(undefined);
 
-            r = ps.delete(pr);
+            r = pr.dispose();
             expect(r).toBe(false);
             trax.log.info("Delete complete");
 
@@ -965,26 +965,6 @@ describe('Sync Processors', () => {
                 "0:11 !PCE - 0:10",
                 "0:12 !ERR - [TRAX] (PStore/%P2) No dependencies found: processor will never be re-executed",
                 "0:13 !PCE - 0:1",
-            ]);
-        });
-
-        it('should not accept deletion if processor doesn\'t belong to store', async () => {
-            let output = "";
-            const st1 = trax.createStore("SA", { value: "A" });
-            const p1 = st1.compute("SAP", () => {
-                output = st1.root.value;
-            });
-            const st2 = trax.createStore("SB", { value: "B" });
-            const p2 = st2.compute("SBP", () => {
-                output = st2.root.value;
-            });
-
-            expect(output).toBe("B");
-            await trax.reconciliation();
-
-            st1.delete(p2);
-            expect(printLogs(1)).toMatchObject([
-                "1:1 !ERR - [TRAX] Processor SB/%SBP cannot be deleted from SA",
             ]);
         });
     });

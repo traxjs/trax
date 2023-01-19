@@ -10,8 +10,8 @@ describe('Trax Core', () => {
         trax = createTraxEnv();
     });
 
-    function printLogs(ignoreCycleEvents = true): string[] {
-        return printEvents(trax.log, ignoreCycleEvents);
+    function printLogs(ignoreCycleEvents = true, minCycleId = 0): string[] {
+        return printEvents(trax.log, ignoreCycleEvents, minCycleId);
     }
 
     describe('Basics', () => {
@@ -154,7 +154,7 @@ describe('Trax Core', () => {
 
         describe('Sub Stores', () => {
 
-            it('should support create / delete from their parent store', async () => {
+            it('should support create / dispose', async () => {
                 const ps = trax.createStore("PStore", {
                     firstName: "Homer",
                     lastName: "Simpson"
@@ -183,8 +183,9 @@ describe('Trax Core', () => {
                 expect(data.msg).toBe("Bart!");
 
                 expect(trax.getStore(pssId)).toBe(pss);
-                pss.dispose();
+                expect(pss.dispose()).toBe(true);
                 expect(trax.getStore(pssId)).toBe(undefined);
+                expect(pss.dispose()).toBe(false); // already disposed
 
                 await trax.reconciliation();
                 ps.root.firstName = "Lisa";
@@ -285,10 +286,10 @@ describe('Trax Core', () => {
                 expect(pss.root.msg).toBe("Lisa!"); // not disposed
             });
 
-
         });
 
         describe('Errors', () => {
+
             it('must be raised when init is not called during the store initialization', async () => {
                 const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.add("foo", { msg: "Hello" });
@@ -430,6 +431,63 @@ describe('Trax Core', () => {
                     "0:4 !PCE - 0:1",
                     "0:5 !ERR - [TRAX] Store.add: Invalid id 'root' (reserved)",
                     "0:6 !NEW - O: " + id,
+                ]);
+            });
+
+            it('must be raised if stores are used after being disposed', async () => {
+                const ps = trax.createStore("PStore", {
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                });
+
+                await trax.reconciliation();
+                ps.dispose();
+                const o = ps.add("Foo", { bar: 123 });
+
+                expect(printLogs(true, 1)).toMatchObject([
+                    "1:1 !ERR - [TRAX] (PStore) Stores cannot be used after being disposed",
+                ]);
+            });
+
+            it('must be raise if delete is called for SubStores', async () => {
+                const ps = trax.createStore("PStore", {
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                });
+
+                const pss = ps.createStore("SubStore", (store: Store<{ msg: string }>) => {
+                    const root = store.init({ msg: "" });
+
+                    store.compute("Msg", () => {
+                        root.msg = ps.root.firstName + "!";
+                    });
+                });
+
+                await trax.reconciliation();
+                ps.delete(pss);
+
+                expect(printLogs(true, 1)).toMatchObject([
+                    "1:1 !ERR - [TRAX] (PStore>SubStore) Stores cannot be disposed through store.delete()",
+                ]);
+            });
+
+            it('must be raise if delete is called for Processors', async () => {
+                const ps = trax.createStore("PStore", {
+                    firstName: "Homer",
+                    lastName: "Simpson",
+                    misc: ""
+                });
+
+                const pr = ps.compute("Misc", () => {
+                    const root = ps.root;
+                    root.misc = root.firstName + " " + root.lastName;
+                })
+
+                await trax.reconciliation();
+                ps.delete(pr);
+
+                expect(printLogs(true, 1)).toMatchObject([
+                    "1:1 !ERR - [TRAX] (PStore/%Misc) Processors cannot be disposed through store.delete()",
                 ]);
             });
         });

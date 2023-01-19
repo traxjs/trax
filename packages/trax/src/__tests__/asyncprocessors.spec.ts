@@ -157,7 +157,7 @@ describe('Async processors', () => {
                 "7:1 !GET - PStore/root.prettyName -> 'Friendly(Bart) Simpson'",
             ]);
 
-            ps.delete(pr);
+            pr.dispose();
             await trax.reconciliation(); // to move to next cycle
             expect(pr.dirty).toBe(false);
             p.firstName = "Lisa";

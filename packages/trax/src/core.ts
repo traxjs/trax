@@ -19,6 +19,8 @@ const ID_SEPARATOR3 = "-";
 const ID_SEPARATOR4 = "$";
 /** Property prefix for reference properties */
 const REF_PROP_PREFIX = "$";
+/** Separator for sub-store ids */
+const ID_SUB_STORE_SEPARATOR = ">";
 /** Pseudo property name to track dict size */
 const DICT_SIZE_PROP = '☆trax.dictionary.size☆';
 
@@ -30,6 +32,8 @@ interface TraxMd {
     id: string;
     /** The object type */
     type: TrxObjectType;
+    /** Store that the object belongs to. Empty string for root stores */
+    storeId: string;
     /**
      * Used by data objects (objects / array / dictionary) to track processors that have a dependency on their properties
      */
@@ -72,8 +76,8 @@ export function tmd(o: any): TraxMd | undefined {
 /**
  * Create and attach meta data to a given object
 */
-function attachMetaData(o: Object, id: string, type: TrxObjectType): TraxMd {
-    const md: TraxMd = { id, type };
+function attachMetaData(o: Object, id: string, type: TrxObjectType, storeId: string): TraxMd {
+    const md: TraxMd = { id, type, storeId };
     (o as any)[traxMD] = md;
     return md;
 }
@@ -87,7 +91,7 @@ export function createTraxEnv(): Trax {
     /** counter used to de-dupe auto-generated ids */
     let dupeCount = 0;
     /** Global map containing all stores */
-    const storeMap = new Map<string, Store<any>>();
+    const stores = new Map<string, Store<any>>();
     /** Global map containing weakrefs to all data */
     const dataRefs = new Map<string, WeakRef<any>>();
     /** Global processor map */
@@ -125,7 +129,7 @@ export function createTraxEnv(): Trax {
             idPrefix: TraxIdDef,
             initFunctionOrRoot: Object | ((store: Store<T>) => R)
         ): R extends void ? Store<T> : R & StoreWrapper {
-            return createStore(idPrefix, initFunctionOrRoot, storeMap);
+            return createStore(idPrefix, "", initFunctionOrRoot);
         },
         get pendingChanges() {
             return reconciliationList.size > 0;
@@ -168,6 +172,15 @@ export function createTraxEnv(): Trax {
         },
         getTraxObjectType(obj: any): TrxObjectType {
             return tmd(obj)?.type || TrxObjectType.NotATraxObject;
+        },
+        getProcessor(id: TraxProcessorId): TraxProcessor | void {
+            return processors.get(id);
+        },
+        getStore<T>(id: string): Store<T> | void {
+            return stores.get(id);
+        },
+        getData<T>(id: string): T | void {
+            return getDataObject(id) || undefined;
         },
         updateArray(array: any[], newContent: any[]) {
             if (!isArray(array) || !isArray(newContent)) {
@@ -442,7 +455,7 @@ export function createTraxEnv(): Trax {
                 // let's autowrap
                 if (!vmd) {
                     // this value object is not wrapped yet
-                    v = getProxy(targetMd.id + ID_SEPARATOR2 + propName, v, true);
+                    v = getProxy(targetMd.id + ID_SEPARATOR2 + propName, v, targetMd.storeId, true);
                     if (awLevel && awLevel > 1) {
                         // propagate awLevel to child md
                         let vmd = tmd(v);
@@ -456,7 +469,7 @@ export function createTraxEnv(): Trax {
         return v;
     }
 
-    function getProxy(id: string, obj?: any, generateNewId = false) {
+    function getProxy(id: string, obj: any, storeId: string, generateNewId = false) {
         const p = getDataObject(id);
         if (p) {
             // generateId is false when called from get() or getArray()
@@ -477,18 +490,14 @@ export function createTraxEnv(): Trax {
                 return p;
             }
         }
-        if (obj === undefined) {
-            // object not found, no default provided
-            return undefined;
-        }
 
         // create a new proxy
         let md: TraxMd;
         if (isArray(obj)) {
             // TODO
-            md = attachMetaData(obj, id, TrxObjectType.Array);
+            md = attachMetaData(obj, id, TrxObjectType.Array, storeId);
         } else {
-            md = attachMetaData(obj, id, TrxObjectType.Object);
+            md = attachMetaData(obj, id, TrxObjectType.Object, storeId);
         }
         logTraxEvent({ type: "!NEW", objectId: id, objectType: md.type });
         const prx = new Proxy(obj, proxyHandler);
@@ -644,10 +653,11 @@ export function createTraxEnv(): Trax {
 
     function createStore<R, T extends Object>(
         idPrefix: TraxIdDef,
+        parentStoreId: string,
         initFunctionOrRoot: Object | ((store: Store<T>) => R),
-        storeMap: Map<string, Store<any>>
+        onDispose?: (id: string) => void
     ): R extends void ? Store<T> : R & StoreWrapper {
-        const storeId = buildStoreId();
+        const storeId = buildStoreId(idPrefix, parentStoreId, true);
         let root: any;
         let initPhase = true;
         let disposed = false;
@@ -655,6 +665,10 @@ export function createTraxEnv(): Trax {
         const initFunction = typeof initFunctionOrRoot === "function" ? initFunctionOrRoot : (store: Store<T>) => {
             store.init(initFunctionOrRoot as any);
         }
+        /** Set of processor ids associated to this store */
+        const storeProcessors = new Set<string>();
+        /** Set of sub-store ids associated to this store */
+        const storeSubStores = new Set<string>();
 
         const store: Store<T> = {
             get id() {
@@ -664,6 +678,17 @@ export function createTraxEnv(): Trax {
                 // root should always be defined if initFunction is correctly implemented
                 return root;
             },
+            get disposed(): boolean {
+                return disposed;
+            },
+            createStore<R, T extends Object>(
+                id: TraxIdDef,
+                initFunctionOrRoot: Object | ((store: Store<T>) => R)
+            ): R extends void ? Store<T> : R & StoreWrapper {
+                const st = createStore(id, storeId, initFunctionOrRoot, detachChildStore);
+                storeSubStores.add(st.id);
+                return st;
+            },
             init(r: T) {
                 if (initPhase) {
                     root = getOrAdd(ROOT, r, true);
@@ -672,24 +697,32 @@ export function createTraxEnv(): Trax {
                 }
                 return root;
             },
-            get<T extends Object>(id: TraxIdDef, isProcessor = false): T | void {
-                const sid = buildId(id, storeId, isProcessor);
-                if (isProcessor) {
-                    return processors.get(sid) as any;
-                }
-                return getDataObject(sid) || undefined;
-            },
             add<T extends Object | Array<any>>(id: TraxIdDef, o: T): T {
                 return getOrAdd(id, o, false);
+            },
+            get<T extends Object>(id: TraxIdDef): T | void {
+                const sid = buildId(id, storeId, false);
+                return getDataObject(sid) || undefined;
             },
             delete<T extends Object>(o: T): boolean {
                 const md = tmd(o);
                 let id = "";
                 if (md) {
                     id = md.id;
+                    // TODO rework
                     if (md.type === TrxObjectType.Processor) {
+                        if (md.storeId !== storeId) {
+                            error(`Processor ${id} cannot be deleted from ${storeId}`);
+                            return false;
+                        }
                         return deleteProcessor(o as any as TraxInternalProcessor);
-                    } else if (md.type !== TrxObjectType.Store) {
+                    } else if (md.type === TrxObjectType.Store) {
+                        if (md.storeId !== storeId) {
+                            error(`Store ${id} cannot be deleted from ${storeId}`);
+                            return false;
+                        }
+                        return removeDataObject(id);
+                    } else {
                         return removeDataObject(id);
                     }
                 }
@@ -704,22 +737,65 @@ export function createTraxEnv(): Trax {
                 processorPriorityCounter++; // used for priorities
                 processorCount++; // used to track potential memory leaks
                 pr = createTraxProcessor(pid, processorPriorityCounter, compute, processorStack, getDataObject, logTraxEvent, startProcessingContext, autoCompute, isRenderer);
-                attachMetaData(pr, pid, TrxObjectType.Processor);
+                attachMetaData(pr, pid, TrxObjectType.Processor, storeId);
                 processors.set(pid, pr);
+                storeProcessors.add(pid);
                 return pr;
+            },
+            getProcessor(id: TraxIdDef): TraxProcessor | undefined {
+                const sid = buildId(id, storeId, true);
+                return processors.get(sid) as any;
+            },
+            getStore<T>(id: TraxIdDef): Store<T> | void {
+                const subStoreId = buildStoreId(id, storeId, false);
+                return stores.get(subStoreId);
+            },
+            dispose() {
+                dispose();
             }
         };
         // attach meta data
-        attachMetaData(store, storeId, TrxObjectType.Store);
+        attachMetaData(store, storeId, TrxObjectType.Store, "");
         logTraxEvent({ type: "!NEW", objectId: storeId, objectType: TrxObjectType.Store });
 
         // register store in parent
-        storeMap.set(storeId, store);
+        stores.set(storeId, store);
 
         function dispose() {
-            // unregiser store in parent
-            storeMap.delete(storeId);
+            if (disposed) return;
+            stores.delete(storeId);
             disposed = true;
+
+            // detach from parent store
+            if (onDispose) {
+                // onDispose is not provided for root stores
+                onDispose(storeId);
+            }
+
+            // dispose root
+            dataRefs.delete(trx.getTraxId(root));
+
+            // dispose all sub-stores
+            storeSubStores.forEach((stId) => {
+                const st = stores.get(stId);
+                if (st && !st.disposed) {
+                    st.dispose();
+                }
+            });
+            storeSubStores.clear();
+
+            // dispose all sub-processors
+            storeProcessors.forEach((processorId) => {
+                const pr = processors.get(processorId);
+                if (pr && !pr.disposed) {
+                    deleteProcessor(pr);
+                }
+            });
+            storeProcessors.clear();
+        }
+
+        function detachChildStore(id: string) {
+            storeSubStores.delete(id);
         }
 
         function deleteProcessor(pr: TraxInternalProcessor) {
@@ -727,6 +803,7 @@ export function createTraxEnv(): Trax {
             if (ok) {
                 pr.dispose();
                 processorCount--;
+                storeProcessors.delete(pr.id);
             }
             return ok;
         }
@@ -787,13 +864,19 @@ export function createTraxEnv(): Trax {
             return true;
         }
 
-        function buildStoreId() {
+        function buildStoreId(idPrefix: TraxIdDef, parentStoreId: string, makeUnique = true) {
             let storeId = buildIdSuffix(idPrefix);
-            let st = storeMap.get(storeId);
-            let count = 0, suffix = "";
-            while (st) {
-                suffix = "" + (++count);
-                st = st = storeMap.get(storeId + suffix);
+            if (parentStoreId !== "") {
+                storeId = parentStoreId + ID_SUB_STORE_SEPARATOR + storeId;
+            }
+            let suffix = "";
+            if (makeUnique) {
+                let st = stores.get(storeId);
+                let count = 0;
+                while (st) {
+                    suffix = "" + (++count);
+                    st = st = stores.get(storeId + suffix);
+                }
             }
             return storeId + suffix;
         }
@@ -817,7 +900,7 @@ export function createTraxEnv(): Trax {
                     error(`(${storeId}) Store.add(${id}): Invalid init object parameter: [${typeof o}]`);
                     o = {} as T;
                 }
-                return getProxy(buildId(idSuffix, storeId, false), o);
+                return getProxy(buildId(idSuffix, storeId, false), o, storeId);
             } else {
                 return o as any;
             }

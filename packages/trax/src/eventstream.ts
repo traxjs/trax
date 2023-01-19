@@ -139,11 +139,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
         format(internalSrcKey, evt, type, dataStringifier, data, src);
         evt.id = generateId();
         evt.parentId = parentId;
-        if (evt.type === "") {
-            // invalid formatter, there is nothing we can do here
-            // as the formatter will also be called for errors
-            console.error("[trax/createEventStream] Invalid Event Formatter");
-        } else {
+        if (evt.type !== "") {
             if (head === undefined) {
                 head = tail = evt;
                 size = 1;

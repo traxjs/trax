@@ -28,15 +28,20 @@ export enum TrxObjectType {
 export interface Trax {
     /**
      * Create a root store
-     * @param idPrefix the store id - if this id is already in use, a suffix will be automatically added
+     * @param id the store id
      * @param initFunction the function that will be called to initialize the store. This function must 
      * define the store "root" object otherwise an error will be generated
      */
     createStore<T extends Object, R>(
-        idPrefix: TraxIdDef,
+        id: TraxIdDef,
         initFunction: (store: Store<T>) => R
     ): R extends void ? Store<T> : R & StoreWrapper;
-    createStore<T extends Object>(idPrefix: TraxIdDef, root: T): Store<T>;
+    /**
+     * Create a root store
+     * @param id the store id
+     * @param root the root object to initialize the store
+     */
+    createStore<T extends Object>(id: TraxIdDef, root: T): Store<T>;
     /**
      * The trax event logs
      */
@@ -56,6 +61,21 @@ export interface Trax {
      * @param obj 
      */
     getTraxObjectType(obj: any): TrxObjectType;
+    /**
+     * Get a processor from its id
+     * @param id 
+     */
+    getProcessor(id: string): TraxProcessor | void;
+    /**
+     * Retrieve a store from its id
+     * @param id 
+     */
+    getStore<T>(id: string): Store<T> | void;
+    /**
+     * Get a trax data object (object / array or dictionary)
+     * @param id 
+     */
+    getData<T>(id: string): T | void;
     /**
      * Tell if some changes are pending (i.e. dirty processors)
      * Return true if there are some dirty processors - which means that all computed values
@@ -128,15 +148,25 @@ export interface Store<T> {
      */
     init(root: T): T;
     /**
+     * Tell if the store is disposed and should be ignored
+     */
+    readonly disposed: boolean;
+    /**
      * Create a sub-store
-     * @param id the store id - must be unique with the parent store scope
+     * @param id the store id
      * @param initFunction the function that will be called to initialize the store. This function must 
      * define the store "root" object otherwise an error will be generated
      */
-    // createStore<R extends Object>(
-    //     id: $TraxIdDef,
-    //     initFunction: (store: $Store<any>) => R
-    // ): R & { dispose: () => void };
+    createStore<T extends Object, R>(
+        id: TraxIdDef,
+        initFunction: (store: Store<T>) => R
+    ): R extends void ? Store<T> : R & StoreWrapper;
+    /**
+     * Create a sub-store
+     * @param id the store id
+     * @param root the root object to initialize the store
+     */
+    createStore<T extends Object>(id: TraxIdDef, root: T): Store<T>;
     /**
      * Get or create a data object associated to the given id
      * @param id the object id - must be unique with the store scope
@@ -166,8 +196,22 @@ export interface Store<T> {
      * Note: if this object is not indirectly referenced by the root object, it may habe been garbage collected
      * @returns the tracked object or undefined if not found
      */
-    get(id: TraxIdDef, isProcessor: true): TraxProcessor;
-    get<T extends Object>(id: TraxIdDef, isProcessor?: boolean): T | void;
+    get<T extends Object>(id: TraxIdDef): T | void;
+    /**
+     * Retrieve a processor created on this store
+     * @param id 
+     */
+    getProcessor(id: TraxIdDef): TraxProcessor | void;
+    /**
+     * Retrieve a sub-store
+     * @param id 
+     */
+    getStore<T>(id: TraxIdDef): Store<T> | void;
+    /** 
+     * Dispose the current store and all its sub-stores and processor 
+     * so that they can be garbage collected
+     */
+    dispose():void;
 }
 
 /**
@@ -208,7 +252,7 @@ export interface TraxProcessor {
     /**
      * Tell if the processor internal value is dirty and if it must be reprocessed
      */
-    readonly isDirty: boolean;
+    readonly dirty: boolean;
     /**
     * Tell if the processor was labeled as a renderer (debug info)
     */
@@ -216,7 +260,7 @@ export interface TraxProcessor {
     /**
      * Tell if the processor is disposed and should be ignored
      */
-    readonly isDisposed: boolean;
+    readonly disposed: boolean;
     /** Get the processor current dependencies */
     readonly dependencies: string[];
     /**

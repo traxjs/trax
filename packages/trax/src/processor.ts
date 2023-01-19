@@ -95,13 +95,13 @@ export function createTraxProcessor(
         get computeCount() {
             return computeCount;
         },
-        get isDirty() {
+        get dirty() {
             return dirty;
         },
         get isRenderer() {
             return isRenderer;
         },
-        get isDisposed() {
+        get disposed() {
             return disposed;
         },
         get dependencies() {

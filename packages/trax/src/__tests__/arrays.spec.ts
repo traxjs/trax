@@ -1098,7 +1098,7 @@ describe('Arrays', () => {
                     "1:12 !PCE - 1:3",
                 ]);
 
-                fs.delete(fs.get("Infos", true));
+                fs.delete(fs.getProcessor("Infos")!);
                 await trax.reconciliation();
 
                 trax.log.info("B");

@@ -53,16 +53,16 @@ describe('Sync Processors', () => {
             expect(output).toBe("Homer Simpson");
             expect(pr.autoCompute).toBe(true);
             expect(pr.computeCount).toBe(1);
-            expect(pr.isDirty).toBe(false);
+            expect(pr.dirty).toBe(false);
             expect(pr.priority).toBe(1);
 
             trax.log.info("-----------------------------");
             p.firstName = "Bart";
-            expect(pr.isDirty).toBe(true);
+            expect(pr.dirty).toBe(true);
             await trax.reconciliation();
             expect(output).toBe("Bart Simpson");
             expect(pr.computeCount).toBe(2);
-            expect(pr.isDirty).toBe(false);
+            expect(pr.dirty).toBe(false);
 
             trax.log.info("END");
 
@@ -163,7 +163,7 @@ describe('Sync Processors', () => {
                 onDirtyCount++;
             }
 
-            expect(pr.isDirty).toBe(true);
+            expect(pr.dirty).toBe(true);
             expect(onDirtyCount).toBe(0);
             expect(pr.autoCompute).toBe(false);
             expect(output).toBe(""); // not computed
@@ -172,11 +172,11 @@ describe('Sync Processors', () => {
             trax.log.info("A");
             await trax.reconciliation();
 
-            expect(pr.isDirty).toBe(true);
+            expect(pr.dirty).toBe(true);
             expect(output).toBe("");
             pr.compute();
             expect(output).toBe("Homer Simpson");
-            expect(pr.isDirty).toBe(false);
+            expect(pr.dirty).toBe(false);
             expect(pr.computeCount).toBe(1);
             expect(onDirtyCount).toBe(0);
 
@@ -186,17 +186,17 @@ describe('Sync Processors', () => {
             expect(onDirtyCount).toBe(1);
             p.lastName = "SIMPSON";
             expect(onDirtyCount).toBe(1);
-            expect(pr.isDirty).toBe(true);
+            expect(pr.dirty).toBe(true);
             expect(pr.computeCount).toBe(1);
 
             pr.compute();
             expect(output).toBe("Bart SIMPSON");
-            expect(pr.isDirty).toBe(false);
+            expect(pr.dirty).toBe(false);
             expect(pr.computeCount).toBe(2);
 
             p.firstName = "BART";
             expect(onDirtyCount).toBe(2);
-            expect(pr.isDirty).toBe(true);
+            expect(pr.dirty).toBe(true);
 
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - StoreInit (PStore)",
@@ -236,7 +236,7 @@ describe('Sync Processors', () => {
                 onDirtyCount++;
             }
 
-            expect(pr.isDirty).toBe(false);
+            expect(pr.dirty).toBe(false);
             expect(onDirtyCount).toBe(0);
             expect(pr.autoCompute).toBe(true);
             expect(output).toBe("Homer Simpson");
@@ -245,10 +245,10 @@ describe('Sync Processors', () => {
             trax.log.info("A");
             await trax.reconciliation();
 
-            expect(pr.isDirty).toBe(false);
+            expect(pr.dirty).toBe(false);
             pr.compute(); // no effect
             expect(output).toBe("Homer Simpson");
-            expect(pr.isDirty).toBe(false);
+            expect(pr.dirty).toBe(false);
             expect(pr.computeCount).toBe(1);
             expect(onDirtyCount).toBe(0);
 
@@ -258,20 +258,20 @@ describe('Sync Processors', () => {
             expect(onDirtyCount).toBe(1);
             p.lastName = "SIMPSON";
             expect(onDirtyCount).toBe(1);
-            expect(pr.isDirty).toBe(true);
+            expect(pr.dirty).toBe(true);
             expect(pr.computeCount).toBe(1);
 
             trax.log.info("C");
             await trax.reconciliation();
             expect(output).toBe("Bart SIMPSON");
-            expect(pr.isDirty).toBe(false);
+            expect(pr.dirty).toBe(false);
             expect(pr.computeCount).toBe(2);
             expect(onDirtyCount).toBe(1);
 
             trax.log.info("D");
             p.firstName = "BART";
             expect(onDirtyCount).toBe(2);
-            expect(pr.isDirty).toBe(true);
+            expect(pr.dirty).toBe(true);
 
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - StoreInit (PStore)",
@@ -456,10 +456,10 @@ describe('Sync Processors', () => {
 
             let prg = ps.get("Render");
             expect(prg).toBe(undefined);
-            prg = ps.get("Render", true);
+            prg = ps.getProcessor("Render")!;
             expect(prg).toBe(pr);
 
-            prg = ps.get("Render2", true);
+            prg = ps.getProcessor("Render2");
             expect(prg).toBe(undefined);
         });
 
@@ -629,8 +629,8 @@ describe('Sync Processors', () => {
                 });
             });
             const v = st.root;
-            const p1 = st.get("P1", true);
-            const p2 = st.get("P2", true);
+            const p1 = st.getProcessor("P1")!;
+            const p2 = st.getProcessor("P2")!;
 
             await trax.reconciliation();
             expect(v.v2).toBe("P1(A)");
@@ -672,7 +672,7 @@ describe('Sync Processors', () => {
                 }
             }, false, true);
 
-            expect(ps.get("PrettyName", true).isRenderer).toBe(false);
+            expect(ps.getProcessor("PrettyName")!.isRenderer).toBe(false);
             expect(r.isRenderer).toBe(true);
             r.compute();
 
@@ -716,10 +716,14 @@ describe('Sync Processors', () => {
             expect(output).toBe("Bart Simpson");
             p.firstName = "Maggie"; // dirty
 
-            expect(pr.isDisposed).toBe(false);
+            expect(ps.getProcessor("Render")).toBe(pr);
+            expect(trax.getProcessor("PStore/%Render")).toBe(pr);
+            expect(pr.disposed).toBe(false);
             let r = ps.delete(pr); // deleted while dirty
             expect(r).toBe(true);
-            expect(pr.isDisposed).toBe(true);
+            expect(pr.disposed).toBe(true);
+            expect(ps.getProcessor("Render")).toBe(undefined);
+            expect(trax.getProcessor("PStore/%Render")).toBe(undefined);
 
             r = ps.delete(pr);
             expect(r).toBe(false);
@@ -736,9 +740,10 @@ describe('Sync Processors', () => {
             pr = ps.compute("Render", () => {
                 output = p.firstName + " " + p.lastName;
             });
+            expect(ps.getProcessor("Render")).toBe(pr);
+            expect(trax.getProcessor("PStore/%Render")).toBe(pr);
             expect(output).toBe("Lisa Simpson");
             await trax.reconciliation();
-
 
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - StoreInit (PStore)",
@@ -812,7 +817,7 @@ describe('Sync Processors', () => {
             }
             await trax.reconciliation();
 
-            expect(pr.isDirty).toBe(true);
+            expect(pr.dirty).toBe(true);
             expect(pr.autoCompute).toBe(false);
             pr.compute();
 
@@ -960,6 +965,26 @@ describe('Sync Processors', () => {
                 "0:11 !PCE - 0:10",
                 "0:12 !ERR - [TRAX] (PStore/%P2) No dependencies found: processor will never be re-executed",
                 "0:13 !PCE - 0:1",
+            ]);
+        });
+
+        it('should not accept deletion if processor doesn\'t belong to store', async () => {
+            let output = "";
+            const st1 = trax.createStore("SA", { value: "A" });
+            const p1 = st1.compute("SAP", () => {
+                output = st1.root.value;
+            });
+            const st2 = trax.createStore("SB", { value: "B" });
+            const p2 = st2.compute("SBP", () => {
+                output = st2.root.value;
+            });
+
+            expect(output).toBe("B");
+            await trax.reconciliation();
+
+            st1.delete(p2);
+            expect(printLogs(1)).toMatchObject([
+                "1:1 !ERR - [TRAX] Processor SB/%SBP cannot be deleted from SA",
             ]);
         });
     });

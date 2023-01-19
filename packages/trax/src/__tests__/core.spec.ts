@@ -154,11 +154,137 @@ describe('Trax Core', () => {
 
         describe('Sub Stores', () => {
 
-            it('should be created from another store', async () => {
-                
+            it('should support create / delete from their parent store', async () => {
+                const ps = trax.createStore("PStore", {
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                });
+
+                const pss = ps.createStore("SubStore", (store: Store<{ msg: string }>) => {
+                    const root = store.init({ msg: "" });
+
+                    store.compute("Msg", () => {
+                        root.msg = ps.root.firstName + "!";
+                    });
+                });
+                const data = pss.root;
+
+                const pssId = pss.id;
+                expect(pssId).toBe("PStore>SubStore");
+                expect(trax.getTraxId(pss)).toBe("PStore>SubStore");
+
+                expect(pss.disposed).toBe(false);
+
+                expect(data.msg).toBe("Homer!");
+
+                await trax.reconciliation();
+                ps.root.firstName = "Bart";
+                await trax.reconciliation();
+                expect(data.msg).toBe("Bart!");
+
+                expect(trax.getStore(pssId)).toBe(pss);
+                pss.dispose();
+                expect(trax.getStore(pssId)).toBe(undefined);
+
+                await trax.reconciliation();
+                ps.root.firstName = "Lisa";
+                await trax.reconciliation();
+                expect(data.msg).toBe("Bart!"); // no changes
             });
 
-            // more than one level
+            it('should be disposed when parent is disposed', async () => {
+                const ps = trax.createStore("PStore", {
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                });
+
+                const pss = ps.createStore("SubStore", (store: Store<{ msg: string }>) => {
+                    const root = store.init({ msg: "" });
+
+                    store.compute("Msg", () => {
+                        root.msg = ps.root.firstName + "!";
+                    });
+                });
+                const data1 = ps.root;
+                const data1Id = trax.getTraxId(data1);
+                expect(data1Id).toBe("PStore/root");
+
+                const data2 = pss.root;
+                const data2Id = trax.getTraxId(data2);
+                expect(data1Id).toBe("PStore/root");
+                expect(data2Id).toBe("PStore>SubStore/root");
+                expect(trax.getData(data1Id)).toBe(data1);
+                expect(trax.getData(data2Id)).toBe(data2);
+
+                const psId = ps.id;
+                const pssId = pss.id;
+                const pr = pss.getProcessor("Msg")!;
+                expect(pr.id).toBe("PStore>SubStore/%Msg");
+                expect(pr.disposed).toBe(false);
+
+                expect(trax.getStore(psId)).toBe(ps);
+                expect(trax.getStore(pssId)).toBe(pss);
+
+                ps.dispose();
+                expect(trax.getStore(psId)).toBe(undefined);
+                expect(trax.getStore(pssId)).toBe(undefined);
+                expect(trax.getData(data1Id)).toBe(undefined);
+                expect(trax.getData(data2Id)).toBe(undefined);
+                expect(ps.disposed).toBe(true);
+                expect(pss.disposed).toBe(true);
+                expect(pr.disposed).toBe(true);
+            });
+
+            it('should support substores in substores', async () => {
+                let output = "";
+                const ps = trax.createStore("PStore", {
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                });
+
+                const pss = ps.createStore("SubStore", (store: Store<{ msg: string }>) => {
+                    const root = store.init({ msg: "" });
+
+                    store.compute("Msg", () => {
+                        root.msg = ps.root.firstName + "!";
+                    });
+
+                    store.createStore("SubSubStore", (sst: Store<{ info: string }>) => {
+                        const root2 = sst.init({ info: "" });
+
+                        sst.compute("Info", () => {
+                            output = root2.info = "<" + root.msg + ">";
+                        });
+                    })
+                });
+
+                expect(output).toBe("<Homer!>");
+
+                await trax.reconciliation();
+                ps.root.firstName = "Bart";
+
+                await trax.reconciliation();
+                expect(output).toBe("<Bart!>");
+
+                const sst = pss.getStore("SubSubStore")!;
+                expect(sst.id).toBe("PStore>SubStore>SubSubStore");
+                expect(sst.disposed).toBe(false);
+                expect(trax.getStore("PStore>SubStore>SubSubStore")).toBe(sst);
+
+                sst.dispose();
+                expect(sst.disposed).toBe(true);
+                expect(trax.getStore("PStore>SubStore>SubSubStore")).toBe(undefined);
+                expect(pss.getStore("SubSubStore")).toBe(undefined);
+
+                await trax.reconciliation();
+                ps.root.firstName = "Lisa";
+
+                await trax.reconciliation();
+                expect(output).toBe("<Bart!>"); // unchanged
+
+                expect(pss.root.msg).toBe("Lisa!"); // not disposed
+            });
+
 
         });
 

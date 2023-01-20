@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Store, Trax, TrxObjectType } from '../types';
 import { createTraxEnv } from '../core';
-import { Person, printEvents } from './utils';
+import { pause, Person, printEvents } from './utils';
 
 describe('Trax Core', () => {
     let trax: Trax;
@@ -10,7 +10,7 @@ describe('Trax Core', () => {
         trax = createTraxEnv();
     });
 
-    function printLogs(ignoreCycleEvents = true, minCycleId = 0): string[] {
+    function printLogs(minCycleId = 0, ignoreCycleEvents = true): string[] {
         return printEvents(trax.log, ignoreCycleEvents, minCycleId);
     }
 
@@ -22,7 +22,7 @@ describe('Trax Core', () => {
             await trax.reconciliation();
             expect(trax.pendingChanges).toBe(false);
 
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:0 !CS - 0',
                 '0:1 !LOG - A',
                 '0:2 !CC - 0',
@@ -31,7 +31,7 @@ describe('Trax Core', () => {
             // no changes
             await trax.reconciliation();
             expect(trax.pendingChanges).toBe(false);
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:0 !CS - 0',
                 '0:1 !LOG - A',
                 '0:2 !CC - 0',
@@ -40,7 +40,7 @@ describe('Trax Core', () => {
             trax.log.info("B");
             await trax.reconciliation();
             expect(trax.pendingChanges).toBe(false);
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:0 !CS - 0',
                 '0:1 !LOG - A',
                 '0:2 !CC - 0',
@@ -285,7 +285,180 @@ describe('Trax Core', () => {
 
                 expect(pss.root.msg).toBe("Lisa!"); // not disposed
             });
+        });
 
+        describe('Wrappers', () => {
+            function createPStore(throwError = false) {
+                return trax.createStore("PStore", (store: Store<Person>) => {
+                    const root = store.init({ firstName: "Homer", lastName: "Simpson" });
+
+                    store.compute("PrettyName", () => {
+                        root.prettyName = root.firstName + " " + root.lastName;
+                    });
+
+                    return {
+                        person: root,
+                        updateNameSync(value1: string, value2: string) {
+                            root.firstName += value1;
+                            if (throwError) {
+                                throw "Something bad happened";
+                            }
+                            root.lastName += value2 + value2;
+                        },
+                        async updateNameAsync(value1: string, value2: string) {
+                            root.firstName += value1;
+                            await pause(1);
+                            trax.log.event("@traxjs/trax/test/updateNameAsyncDone");
+                            if (throwError) {
+                                throw "Something bad happened";
+                            }
+                            root.lastName += value2 + value2;
+                        },
+                        // updateNameAsync2: store.action(function* (value1: string, value2: string) {
+                        //     root.firstName += value1;
+                        //     yield pause(1);
+                        //     trax.log.event("@traxjs/trax/test/updateNameAsync2Done");
+                        //     if (throwError) {
+                        //         throw "Something bad happened";
+                        //     }
+                        //     root.lastName += value2 + value2;
+                        // })
+                    }
+                })
+            }
+
+            it('should wrap sync functions and log calls', async () => {
+                const ps = createPStore();
+                expect(ps.person.firstName).toBe("Homer");
+
+                await trax.reconciliation();
+                trax.log.info("A")
+                ps.updateNameSync("A", "B");
+                trax.processChanges();
+                expect(ps.person.prettyName).toBe("HomerA SimpsonBB");
+
+                expect(printLogs(1)).toMatchObject([
+                    "1:1 !LOG - A",
+                    "1:2 !PCS - PStore.updateNameSync()",
+                    "1:3 !GET - PStore/root.firstName -> 'Homer'",
+                    "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
+                    "1:5 !DRT - PStore/%PrettyName <- PStore/root.firstName",
+                    "1:6 !GET - PStore/root.lastName -> 'Simpson'",
+                    "1:7 !SET - PStore/root.lastName = 'SimpsonBB' (prev: 'Simpson')",
+                    "1:8 !PCE - 1:2",
+                    "1:9 !PCS - Reconciliation #1 - 1 processor",
+                    "1:10 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=1:9",
+                    "1:11 !GET - PStore/root.firstName -> 'HomerA'",
+                    "1:12 !GET - PStore/root.lastName -> 'SimpsonBB'",
+                    "1:13 !SET - PStore/root.prettyName = 'HomerA SimpsonBB' (prev: 'Homer Simpson')",
+                    "1:14 !PCE - 1:10",
+                    "1:15 !PCE - 1:9",
+                    "1:16 !GET - PStore/root.prettyName -> 'HomerA SimpsonBB'",
+                ]);
+            });
+
+            it('should log errors on sync function calls', async () => {
+                const ps = createPStore(true);
+                expect(ps.person.firstName).toBe("Homer");
+
+                await trax.reconciliation();
+                trax.log.info("A")
+                ps.updateNameSync("A", "B");
+                trax.processChanges();
+                expect(ps.person.prettyName).toBe("HomerA Simpson"); // half processed
+
+                expect(printLogs(1)).toMatchObject([
+                    "1:1 !LOG - A",
+                    "1:2 !PCS - PStore.updateNameSync()",
+                    "1:3 !GET - PStore/root.firstName -> 'Homer'",
+                    "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
+                    "1:5 !DRT - PStore/%PrettyName <- PStore/root.firstName",
+                    "1:6 !ERR - [TRAX] (PStore.updateNameSync) error: Something bad happened",
+                    "1:7 !PCE - 1:2",
+                    "1:8 !PCS - Reconciliation #1 - 1 processor",
+                    "1:9 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=1:8",
+                    "1:10 !GET - PStore/root.firstName -> 'HomerA'",
+                    "1:11 !GET - PStore/root.lastName -> 'Simpson'",
+                    "1:12 !SET - PStore/root.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
+                    "1:13 !PCE - 1:9",
+                    "1:14 !PCE - 1:8",
+                    "1:15 !GET - PStore/root.prettyName -> 'HomerA Simpson'",
+                ]);
+
+
+            });
+
+            it('should wrap async functions and log calls', async () => {
+                const ps = createPStore();
+                expect(ps.person.firstName).toBe("Homer");
+
+                await trax.reconciliation();
+                trax.log.info("A")
+                ps.updateNameAsync("A", "B");
+                await trax.log.await("@traxjs/trax/test/updateNameAsyncDone");
+                await trax.reconciliation();
+                expect(ps.person.prettyName).toBe("HomerA SimpsonBB");
+
+                expect(printLogs(1)).toMatchObject([
+                    "1:1 !LOG - A",
+                    "1:2 !PCS - PStore.updateNameAsync()",
+                    "1:3 !GET - PStore/root.firstName -> 'Homer'",
+                    "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
+                    "1:5 !DRT - PStore/%PrettyName <- PStore/root.firstName",
+                    "1:6 !PCP - 1:2",
+                    "1:7 !PCS - Reconciliation #1 - 1 processor",
+                    "1:8 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=1:7",
+                    "1:9 !GET - PStore/root.firstName -> 'HomerA'",
+                    "1:10 !GET - PStore/root.lastName -> 'Simpson'",
+                    "1:11 !SET - PStore/root.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
+                    "1:12 !PCE - 1:8",
+                    "1:13 !PCE - 1:7",
+                    "2:1 @traxjs/trax/test/updateNameAsyncDone - NO-DATA",
+                    "2:2 !GET - PStore/root.lastName -> 'Simpson'",
+                    "2:3 !SET - PStore/root.lastName = 'SimpsonBB' (prev: 'Simpson')",
+                    "2:4 !DRT - PStore/%PrettyName <- PStore/root.lastName",
+                    "2:5 !PCS - Reconciliation #2 - 1 processor",
+                    "2:6 !PCS - Compute #3 (PStore/%PrettyName) P1 Reconciliation - parentId=2:5",
+                    "2:7 !GET - PStore/root.firstName -> 'HomerA'",
+                    "2:8 !GET - PStore/root.lastName -> 'SimpsonBB'",
+                    "2:9 !SET - PStore/root.prettyName = 'HomerA SimpsonBB' (prev: 'HomerA Simpson')",
+                    "2:10 !PCE - 2:6",
+                    "2:11 !PCE - 2:5",
+                    "3:1 !GET - PStore/root.prettyName -> 'HomerA SimpsonBB'",
+                ]);
+            });
+
+            it('should log errors on async function calls', async () => {
+                const ps = createPStore(true);
+                expect(ps.person.firstName).toBe("Homer");
+
+                await trax.reconciliation();
+                trax.log.info("A")
+                ps.updateNameAsync("A", "B");
+                await trax.log.await("@traxjs/trax/test/updateNameAsyncDone");
+                await trax.reconciliation();
+                expect(ps.person.prettyName).toBe("HomerA Simpson"); // half processed
+
+
+                expect(printLogs(1)).toMatchObject([
+                    "1:1 !LOG - A",
+                    "1:2 !PCS - PStore.updateNameAsync()",
+                    "1:3 !GET - PStore/root.firstName -> 'Homer'",
+                    "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
+                    "1:5 !DRT - PStore/%PrettyName <- PStore/root.firstName",
+                    "1:6 !PCP - 1:2",
+                    "1:7 !PCS - Reconciliation #1 - 1 processor",
+                    "1:8 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=1:7",
+                    "1:9 !GET - PStore/root.firstName -> 'HomerA'",
+                    "1:10 !GET - PStore/root.lastName -> 'Simpson'",
+                    "1:11 !SET - PStore/root.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
+                    "1:12 !PCE - 1:8",
+                    "1:13 !PCE - 1:7",
+                    "2:1 @traxjs/trax/test/updateNameAsyncDone - NO-DATA",
+                    "3:1 !ERR - [TRAX] (PStore.updateNameAsync) error: Something bad happened",
+                    "4:1 !GET - PStore/root.prettyName -> 'HomerA Simpson'",
+                ]);
+            });
         });
 
         describe('Errors', () => {
@@ -367,7 +540,9 @@ describe('Trax Core', () => {
                     "0:2 !NEW - S: MyStore",
                     '0:3 !NEW - O: MyStore/root',
                     '0:4 !PCE - 0:1',
-                    '0:5 !ERR - [TRAX] Store.dispose error (MyStore): Error: Unexpected dispose error',
+                    "0:5 !PCS - MyStore.dispose()",
+                    "0:6 !ERR - [TRAX] (MyStore.dispose) error: Error: Unexpected dispose error",
+                    "0:7 !PCE - 0:5",
                 ]);
             });
 
@@ -444,7 +619,7 @@ describe('Trax Core', () => {
                 ps.dispose();
                 const o = ps.add("Foo", { bar: 123 });
 
-                expect(printLogs(true, 1)).toMatchObject([
+                expect(printLogs(1)).toMatchObject([
                     "1:1 !ERR - [TRAX] (PStore) Stores cannot be used after being disposed",
                 ]);
             });
@@ -466,7 +641,7 @@ describe('Trax Core', () => {
                 await trax.reconciliation();
                 ps.delete(pss);
 
-                expect(printLogs(true, 1)).toMatchObject([
+                expect(printLogs(1)).toMatchObject([
                     "1:1 !ERR - [TRAX] (PStore>SubStore) Stores cannot be disposed through store.delete()",
                 ]);
             });
@@ -486,7 +661,7 @@ describe('Trax Core', () => {
                 await trax.reconciliation();
                 ps.delete(pr);
 
-                expect(printLogs(true, 1)).toMatchObject([
+                expect(printLogs(1)).toMatchObject([
                     "1:1 !ERR - [TRAX] (PStore/%Misc) Processors cannot be disposed through store.delete()",
                 ]);
             });
@@ -519,7 +694,7 @@ describe('Trax Core', () => {
 
             await trax.reconciliation();
 
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 "0:0 !CS - 0",
                 "0:1 !PCS - StoreInit (MyStore)",
                 "0:2 !NEW - S: MyStore",
@@ -580,7 +755,7 @@ describe('Trax Core', () => {
             expect(p.prettyName).toBe("Bart Simpson");
 
 
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 "0:0 !CS - 0",
                 "0:1 !PCS - StoreInit (MyStore)",
                 "0:2 !NEW - S: MyStore",

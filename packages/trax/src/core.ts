@@ -809,13 +809,49 @@ export function createTraxEnv(): Trax {
             }
         }
 
+        function wrapStoreAPIs(obj: Object) {
+            const o = obj as any;
+            for (const k of Object.keys(o)) {
+                if (typeof o[k] === "function") {
+                    o[k] = wrapAPIFunction(k, o[k]);
+                }
+            }
+        }
+
+        function wrapAPIFunction(name: string, fn: Function) {
+            return (...args: any[]) => {
+                const c = log.startProcessingContext({ name: storeId + "." + name + "()", storeId });
+                let r: any;
+                try {
+                    r = fn(...args);
+                } catch (ex) {
+                    error(`(${storeId}.${name}) error: ${ex}`);
+                }
+                // check if r is a Promise
+                if (typeof r === "object" && typeof r.then === "function" && typeof r.catch === "function") {
+                    c.pause();
+                    // TODO: raise warning
+                    r.catch((err: any) => {
+                        error(`(${storeId}.${name}) error: ${err}`);
+                    });
+                } else {
+                    c.end();
+                }
+                return r;
+            }
+        }
+
         let r: R;
         try {
             r = initFunction(store);
             initPhase = false;
-            if (r !== undefined && (r === null || typeof r !== "object")) {
-                error(`createStore init function must return a valid object (${storeId})`);
-                r = {} as R;
+            if (r !== undefined) {
+                if (r !== null && typeof r === "object") {
+                    wrapStoreAPIs(r);
+                } else {
+                    error(`createStore init function must return a valid object (${storeId})`);
+                    r = {} as R;
+                }
             }
         } catch (ex) {
             error(`createStore init error (${storeId}): ${ex}`);
@@ -834,11 +870,7 @@ export function createTraxEnv(): Trax {
         if (typeof res.dispose === 'function') {
             const originalDispose = res.dispose;
             res.dispose = () => {
-                try {
-                    originalDispose.call(r);
-                } catch (ex) {
-                    error(`Store.dispose error (${storeId}): ${ex}`);
-                }
+                originalDispose.call(r); // already wrapped
                 dispose();
             }
         } else res.dispose = dispose;

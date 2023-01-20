@@ -271,8 +271,9 @@ export interface TraxProcessor {
     onDirty: (() => void) | null;
     /**
      * Execute the compute function if the processor is dirty
+     * @param forceExecution if true compute will be exececuted event if processor is not dirty
      */
-    compute(): void;
+    compute(forceExecution?:boolean): void;
     /** 
      * Dispose the current processor to stop further compute and
      * have it garbage collected

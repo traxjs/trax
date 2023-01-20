@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createTraxEnv } from '../core';
-import { Store, Trax } from '../types';
-import { Person, SimpleFamilyStore, printEvents } from './utils';
+import { createTraxEnv, traxMD } from '../core';
+import { Store, Trax, TraxProcessor } from '../types';
+import { Person, SimpleFamilyStore, printEvents, ArrayFamilyStore } from './utils';
 
 describe('Sync Processors', () => {
     let trax: Trax;
@@ -93,6 +93,35 @@ describe('Sync Processors', () => {
                 "PStore/root.lastName"
             ]);
 
+        });
+
+        it('should support to be forced event if processor is not dirty', async () => {
+            const ps = createPStore(false);
+            const p = ps.root;
+
+            let output = "";
+            const pr = ps.compute("Render", () => {
+                output = p.firstName + " " + p.lastName;
+            });
+
+            expect(output).toBe("Homer Simpson");
+            await trax.reconciliation();
+            expect(pr.dirty).toBe(false);
+            trax.log.info("A");
+            pr.compute(); // not exected
+            trax.log.info("B");
+            pr.compute(true);
+            trax.log.info("C");
+
+            expect(printLogs(1)).toMatchObject([
+                "1:1 !LOG - A",
+                "1:2 !LOG - B",
+                "1:3 !PCS - Compute #2 (PStore/%Render) P1 DirectCall",
+                "1:4 !GET - PStore/root.firstName -> 'Homer'",
+                "1:5 !GET - PStore/root.lastName -> 'Simpson'",
+                "1:6 !PCE - 1:3",
+                "1:7 !LOG - C",
+            ]);
         });
 
         it('should support array ids', async () => {
@@ -361,6 +390,57 @@ describe('Sync Processors', () => {
                 "1:14 !PCE - 1:6",
                 "2:1 !GET - PStore/root.prettyName -> 'Bart S'",
             ]);
+        });
+
+        it('should support conditional processing and clean previous listeners (multiple objects)', async () => {
+            const fs = trax.createStore("FStore", (s: Store<ArrayFamilyStore>) => {
+                const data = s.init({
+                    familyName: "",
+                    members: [
+                        { firstName: "Homer", lastName: "Simpson" },
+                        { firstName: "Marge", lastName: "Simpson" }
+                    ]
+                });
+
+                s.compute("Names", () => {
+                    // display even or odd names depending on the members length
+                    const members = data.members;
+                    const len = members.length;
+                    const arr: string[] = [];
+                    for (let i = len % 2; i < len; i += 2) {
+                        arr.push(members[i].firstName);
+                    }
+                    data.names = arr.join(", ");
+                });
+            });
+
+            const data = fs.root;
+            const members = data.members;
+            const namesPr = fs.getProcessor("Names")!;
+            expect(data.names).toBe("Homer");
+            expect(hasListener(members[0], namesPr)).toBe(true);
+            expect(hasListener(members[1], namesPr)).toBe(false);
+
+            await trax.reconciliation();
+            trax.log.info("A");
+            members.push({ firstName: "Bart", lastName: "Simpson" });
+            trax.processChanges();
+            expect(data.names).toBe("Marge");
+            expect(hasListener(members[0], namesPr)).toBe(false);
+            expect(hasListener(members[1], namesPr)).toBe(true);
+            expect(hasListener(members[2], namesPr)).toBe(false);
+
+            members.push({ firstName: "Lisa", lastName: "Simpson" });
+            trax.processChanges();
+            expect(data.names).toBe("Homer, Bart");
+            expect(hasListener(members[0], namesPr)).toBe(true);
+            expect(hasListener(members[1], namesPr)).toBe(false);
+            expect(hasListener(members[2], namesPr)).toBe(true);
+            expect(hasListener(members[3], namesPr)).toBe(false);
+
+            function hasListener(o: any, pr: TraxProcessor) {
+                return (o[traxMD].propListeners as Set<TraxProcessor>)?.has(pr) || false;
+            }
         });
 
         it('should support dependencies from multiple objects and auto-wrap objects set as JSON', async () => {
@@ -696,6 +776,48 @@ describe('Sync Processors', () => {
                 "0:17 !PCE - 0:14",
             ]);
             expect(output).toBe("Homer Simpson");
+        });
+
+        it('should support processors with dependencies on different stores', async () => {
+            const ps = trax.createStore("PStore", (s: Store<Person>) => {
+                s.init({ firstName: "Homer", lastName: "Simpson" });
+            });
+            const main = ps.root;
+
+            const fs = trax.createStore("FStore", (s: Store<ArrayFamilyStore>) => {
+                const data = s.init({
+                    familyName: "",
+                    members: [
+                        { firstName: "Homer", lastName: "Simpson" },
+                        { firstName: "Marge", lastName: "Simpson" }
+                    ]
+                });
+
+                s.compute("Names", () => {
+                    // display even or odd names depending on the members length
+                    const members = data.members;
+                    data.names = members.map((m) => {
+                        return (m.firstName === main.firstName) ? "MAIN" : m.firstName;
+                    }).join(", ");
+                });
+            });
+
+            const data = fs.root;
+            const namesPr = fs.getProcessor("Names")!;
+
+            expect(data.names).toBe("MAIN, Marge");
+            main.firstName = "Marge";
+            trax.processChanges();
+            expect(data.names).toBe("Homer, MAIN");
+
+            await trax.reconciliation(); // move to next cycle
+            trax.log.info("A");
+
+            // disposing the main store will not trigger a change in namesPr
+            // this has to be managed manually
+            expect(namesPr.dirty).toBe(false);
+            ps.dispose();
+            expect(namesPr.dirty).toBe(false);
         });
     });
 

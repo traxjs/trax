@@ -34,7 +34,7 @@ export interface TraxInternalProcessor extends TraxProcessor {
      * - Reconcialiation = call made by trax at the end of each cycle (cf. processChanges)
      * - DirectCall = explicit call (usually made by processors that are not auto-computed)
      */
-    compute(trigger?: "Init" | "Reconciliation" | "DirectCall", reconciliationIdx?: number): void;
+    compute(forceExecution?:boolean, trigger?: "Init" | "Reconciliation" | "DirectCall", reconciliationIdx?: number): void;
 }
 
 export function createTraxProcessor(
@@ -129,11 +129,11 @@ export function createTraxProcessor(
             propDependencies.add(propKey(objectId, propName));
             objectDependencies.add(objectId);
         },
-        compute(trigger: "Init" | "Reconciliation" | "DirectCall" = "DirectCall", reconciliationIdx: number = -1) {
+        compute(forceExecution = false, trigger: "Init" | "Reconciliation" | "DirectCall" = "DirectCall", reconciliationIdx: number = -1) {
             if (disposed) return;
-            if (!autoCompute && (trigger === "Init" || trigger === "Reconciliation")) return;
+            if (!forceExecution && !autoCompute && (trigger === "Init" || trigger === "Reconciliation")) return;
 
-            if (dirty) {
+            if (dirty || forceExecution) {
                 dirty = false;
 
                 propDependencies.clear();
@@ -209,7 +209,7 @@ export function createTraxProcessor(
 
     // initialization
     logTraxEvent({ type: "!NEW", objectId: processorId, objectType: TrxObjectType.Processor });
-    pr.compute("Init");
+    pr.compute(false, "Init");
 
     return pr;
 

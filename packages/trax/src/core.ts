@@ -59,7 +59,7 @@ interface TraxMd {
     */
     awLevel?: number;
     /**
-     * Number of propeties set on an object - only used for objects uses as dictionaries
+     * Number of properties set on an object - only used for objects used as dictionaries
      */
     dictSize?: number;
 }
@@ -149,7 +149,7 @@ export function createTraxEnv(): Trax {
                     if (p.reconciliationId === reconciliationCount) {
                         error(`(${p.id}) Circular reference: Processors cannot run twice during reconciliation`);
                     } else {
-                        p.compute("Reconciliation", reconciliationCount);
+                        p.compute(false, "Reconciliation", reconciliationCount);
                     }
                     p = reconciliationList.shift();
                 }

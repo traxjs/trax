@@ -286,6 +286,37 @@ describe('Async processors', () => {
             ]);
         });
 
+        it('should cancel compute when processor gets disposed', async () => {
+            const ps = createPStore("Bart", true);
+            const p = ps.root;
+            const pr = ps.getProcessor("PrettyName")!;
+
+            expect(p.avatar).toBe(undefined);
+
+            expect(pr.dependencies).toMatchObject([
+                "PStore/root.firstName",
+            ]);
+            pr.dispose();
+
+            await trax.reconciliation();
+            await pause(20);
+
+            // GetAvatar will not be called
+            expect(printLogs(0)).toMatchObject([
+                "0:1 !PCS - StoreInit (PStore)",
+                "0:2 !NEW - S: PStore",
+                "0:3 !NEW - O: PStore/root",
+                "0:4 !NEW - P: PStore/%PrettyName",
+                "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                "0:6 !GET - PStore/root.firstName -> 'Bart'",
+                "0:7 !PCP - 0:5",
+                "0:8 !PCE - 0:1",
+                "0:9 !GET - PStore/root.avatar -> undefined",
+                "0:10 !DEL - P: PStore/%PrettyName",
+                "1:1 GetFriendlyName - NO-DATA",
+            ]);
+        });
+
         it('should support generator functions that dont return promises', async () => {
             const ps = trax.createStore("PStore", (store: Store<Person>) => {
                 const p = store.init({ firstName: "Bart", lastName: "Simpson" });

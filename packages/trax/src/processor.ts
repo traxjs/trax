@@ -1,4 +1,5 @@
 import { tmd } from "./core";
+import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
 import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogProcessStart, TraxProcessor, TrxObjectType } from "./types";
 
@@ -34,7 +35,7 @@ export interface TraxInternalProcessor extends TraxProcessor {
      * - Reconcialiation = call made by trax at the end of each cycle (cf. processChanges)
      * - DirectCall = explicit call (usually made by processors that are not auto-computed)
      */
-    compute(forceExecution?:boolean, trigger?: "Init" | "Reconciliation" | "DirectCall", reconciliationIdx?: number): void;
+    compute(forceExecution?: boolean, trigger?: "Init" | "Reconciliation" | "DirectCall", reconciliationIdx?: number): void;
 }
 
 export function createTraxProcessor(
@@ -70,10 +71,37 @@ export function createTraxProcessor(
     let reconciliationId = -1;
     /** Generator returned by the compute function in case of async processors */
     let generator: Generator<Promise<any>, void, any> | undefined;
+    /** Last reason that triggered a compute call */
+    let lastTrigger: "Init" | "Reconciliation" | "DirectCall" = "DirectCall";
 
     function error(msg: string) {
         logTraxEvent({ type: "!ERR", data: msg });
     }
+
+    const wrappedCompute = wrapFunction(
+        compute,
+        () => startProcessingContext({
+            type: "!PCS",
+            name: "Compute",
+            processorId,
+            processorPriority: priority,
+            trigger: lastTrigger,
+            isRenderer,
+            computeCount
+        }),
+        (ex) => { error(`(${processorId}) Compute error: ${ex}`); },
+        () => {
+            // onProcessStart
+            computing = true;
+            processorStack.add(pr);
+            return disposed ? false : undefined;
+        },
+        () => {
+            // onProcessEnd
+            computing = false;
+            processorStack.shift();
+        }
+    );
 
     const pr: TraxInternalProcessor = {
         get id() {
@@ -141,42 +169,15 @@ export function createTraxProcessor(
                 objectDependencies = new Set<string>();
 
                 // core compute
-                processorStack.add(pr);
-                computing = true;
                 computeCount++;
-                processingContext = startProcessingContext({
-                    type: "!PCS",
-                    name: "Compute",
-                    processorId,
-                    processorPriority: priority,
-                    trigger,
-                    isRenderer,
-                    computeCount
-                });
                 reconciliationId = reconciliationIdx;
+                lastTrigger = trigger;
 
-                let itr: IteratorResult<Promise<any>, void> | undefined;
-                let done = true;
-                try {
-                    // compute will indirectly call registerDependency() through proxy getters
-                    const v = compute();
-                    if (!!v && v.next && typeof v.next === "function") {
-                        generator = v;
-                        // get the first iterator value
-                        itr = v.next();
-                        done = !!itr.done;
-                    }
-                } catch (ex) {
-                    error(`(${processorId}) Compute error: ${ex}`);
-                }
-                processorStack.shift();
-                computing = false;
-                if (done) {
-                    processingContext.end();
-                    processingContext = null;
-                } else {
-                    processingContext.pause();
-                    processIteratorPromise(itr, generator!);
+                const r = wrappedCompute();
+                if (r && typeof r === "object" && typeof (r as any).catch === "function") {
+                    // r is a promise
+                    // no need to log the error as it was already caught up by the wrapped function
+                    (r as any as Promise<any>).catch(() => {});
                 }
 
                 updateDependencies(oldObjectDependencies);
@@ -236,57 +237,6 @@ export function createTraxProcessor(
                 }
                 md.propListeners.add(pr);
             }
-        }
-    }
-
-    function processIteratorPromise(itr: IteratorResult<Promise<any>, void> | undefined, g: Generator<Promise<any>>) {
-        if (itr && !itr.done) {
-            const yieldValue = itr.value;
-            const logError = (err: any) => {
-                error(`(${processorId}) Compute error: ${err}`);
-            }
-
-            if (!!yieldValue && (yieldValue as any).then) {
-                // yield returned a promise
-                yieldValue.then((v) => {
-                    computeNext(v, g);
-                }).catch(logError);
-            } else {
-                // yield did not return a promise - let's create one
-                Promise.resolve().then(() => {
-                    computeNext(yieldValue, g);
-                }).catch(logError);
-            }
-        }
-    }
-
-    function computeNext(nextValue: any, g: Generator<Promise<any>, void, any>) {
-        if (disposed || g !== generator || !processingContext) return;
-        // note: g !==generator when compute() was called before the previous generator processing ended
-
-        processorStack.add(pr);
-        computing = true;
-        processingContext.resume();
-
-        let itr: IteratorResult<Promise<any>, void> | undefined;
-        let done = true;
-
-        try {
-            // compute will indirectly call registerDependency() through proxy getters
-            itr = g.next(nextValue);
-            done = !!itr.done;
-        } catch (ex) {
-            error(`(${processorId}) Compute error: ${ex}`);
-            done = true;
-        }
-
-        processorStack.shift();
-        computing = false;
-        if (done) {
-            processingContext.end();
-        } else {
-            processingContext.pause();
-            processIteratorPromise(itr, g);
         }
     }
 }

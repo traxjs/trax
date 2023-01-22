@@ -303,7 +303,9 @@ describe('Trax Core', () => {
                             if (throwError) {
                                 throw "Something bad happened";
                             }
-                            root.lastName += value2 + value2;
+                            const r = root.lastName + value2 + value2;
+                            root.lastName = r;
+                            return r;
                         },
                         async updateNameAsync(value1: string, value2: string) {
                             root.firstName += value1;
@@ -314,15 +316,17 @@ describe('Trax Core', () => {
                             }
                             root.lastName += value2 + value2;
                         },
-                        // updateNameAsync2: store.action(function* (value1: string, value2: string) {
-                        //     root.firstName += value1;
-                        //     yield pause(1);
-                        //     trax.log.event("@traxjs/trax/test/updateNameAsync2Done");
-                        //     if (throwError) {
-                        //         throw "Something bad happened";
-                        //     }
-                        //     root.lastName += value2 + value2;
-                        // })
+                        updateNameAsync2: store.async(function* (value1: string, value2: string) {
+                            root.firstName += value1;
+                            yield pause(1);
+                            trax.log.event("@traxjs/trax/test/updateNameAsync2Done");
+                            if (throwError) {
+                                throw "Something bad happened";
+                            }
+                            const r = root.lastName + value2 + value2;
+                            root.lastName = r;
+                            return r;
+                        })
                     }
                 })
             }
@@ -333,7 +337,8 @@ describe('Trax Core', () => {
 
                 await trax.reconciliation();
                 trax.log.info("A")
-                ps.updateNameSync("A", "B");
+                const r = ps.updateNameSync("A", "B");
+                expect(r).toBe("SimpsonBB");
                 trax.processChanges();
                 expect(ps.person.prettyName).toBe("HomerA SimpsonBB");
 
@@ -405,7 +410,7 @@ describe('Trax Core', () => {
                     "1:3 !GET - PStore/root.firstName -> 'Homer'",
                     "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
                     "1:5 !DRT - PStore/%PrettyName <- PStore/root.firstName",
-                    "1:6 !PCP - 1:2",
+                    "1:6 !PCE - 1:2",
                     "1:7 !PCS - Reconciliation #1 - 1 processor",
                     "1:8 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=1:7",
                     "1:9 !GET - PStore/root.firstName -> 'HomerA'",
@@ -446,7 +451,7 @@ describe('Trax Core', () => {
                     "1:3 !GET - PStore/root.firstName -> 'Homer'",
                     "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
                     "1:5 !DRT - PStore/%PrettyName <- PStore/root.firstName",
-                    "1:6 !PCP - 1:2",
+                    "1:6 !PCE - 1:2",
                     "1:7 !PCS - Reconciliation #1 - 1 processor",
                     "1:8 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=1:7",
                     "1:9 !GET - PStore/root.firstName -> 'HomerA'",
@@ -457,6 +462,48 @@ describe('Trax Core', () => {
                     "2:1 @traxjs/trax/test/updateNameAsyncDone - NO-DATA",
                     "3:1 !ERR - [TRAX] (PStore.updateNameAsync) error: Something bad happened",
                     "4:1 !GET - PStore/root.prettyName -> 'HomerA Simpson'",
+                ]);
+            });
+
+            it('should wrap generator functions and return async functions', async () => {
+                const ps = createPStore();
+                expect(ps.person.firstName).toBe("Homer");
+
+                await trax.reconciliation();
+                trax.log.info("A")
+                const r = await ps.updateNameAsync2("A", "B");
+
+                expect(r).toBe("SimpsonBB");
+                expect(ps.person.prettyName).toBe("HomerA SimpsonBB");
+
+                expect(printLogs(1)).toMatchObject([
+                    "1:1 !LOG - A",
+                    "1:2 !PCS - PStore.updateNameAsync2()",
+                    "1:3 !GET - PStore/root.firstName -> 'Homer'",
+                    "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
+                    "1:5 !DRT - PStore/%PrettyName <- PStore/root.firstName",
+                    "1:6 !PCP - 1:2",
+                    "1:7 !PCS - Reconciliation #1 - 1 processor",
+                    "1:8 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=1:7",
+                    "1:9 !GET - PStore/root.firstName -> 'HomerA'",
+                    "1:10 !GET - PStore/root.lastName -> 'Simpson'",
+                    "1:11 !SET - PStore/root.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
+                    "1:12 !PCE - 1:8",
+                    "1:13 !PCE - 1:7",
+                    "2:1 !PCR - 1:2",
+                    "2:2 @traxjs/trax/test/updateNameAsync2Done - NO-DATA",
+                    "2:3 !GET - PStore/root.lastName -> 'Simpson'",
+                    "2:4 !SET - PStore/root.lastName = 'SimpsonBB' (prev: 'Simpson')",
+                    "2:5 !DRT - PStore/%PrettyName <- PStore/root.lastName",
+                    "2:6 !PCE - 1:2",
+                    "2:7 !PCS - Reconciliation #2 - 1 processor",
+                    "2:8 !PCS - Compute #3 (PStore/%PrettyName) P1 Reconciliation - parentId=2:7",
+                    "2:9 !GET - PStore/root.firstName -> 'HomerA'",
+                    "2:10 !GET - PStore/root.lastName -> 'SimpsonBB'",
+                    "2:11 !SET - PStore/root.prettyName = 'HomerA SimpsonBB' (prev: 'HomerA Simpson')",
+                    "2:12 !PCE - 2:8",
+                    "2:13 !PCE - 2:7",
+                    "3:1 !GET - PStore/root.prettyName -> 'HomerA SimpsonBB'",
                 ]);
             });
         });
@@ -573,6 +620,19 @@ describe('Trax Core', () => {
                     "0:3 !NEW - S: MyStoreABC",
                     '0:4 !NEW - O: MyStoreABC/root',
                     '0:5 !PCE - 0:2'
+                ]);
+
+                await trax.reconciliation();
+                st.add("AB>CD", { foo: "bar" });
+                expect(printLogs(1)).toMatchObject([
+                    "1:1 !ERR - [TRAX] Invalid trax id: AB>CD (changed into ABCD)",
+                    "1:2 !NEW - O: MyStoreABC/ABCD",
+                ]);
+
+                await trax.reconciliation();
+                st.add("AB%C%D", { foo: "bar" });
+                expect(printLogs(2)).toMatchObject([
+                    "2:1 !ERR - [TRAX] Invalid trax id: AB%C%D (changed into ABCD)",
                 ]);
             });
 

@@ -1,4 +1,5 @@
 import { createEventStream } from "./eventstream";
+import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
 import { TraxInternalProcessor, createTraxProcessor } from "./processor";
 import { Store, StoreWrapper, Trax, TraxIdDef, TraxProcessor, TrxObjectType, TraxLogProcessStart, traxEvents, TraxComputeFn, TraxEvent, ProcessingContext, TraxProcessorId, TraxObject } from "./types";
@@ -7,7 +8,7 @@ import { Store, StoreWrapper, Trax, TraxIdDef, TraxProcessor, TrxObjectType, Tra
 export const traxMD = Symbol("trax.md");
 /** Symbol used to attach the Object.keys() size to objects used as dictionaries - cf. getObjectKeys() */
 const dictSize = Symbol("trax.dict.size");
-const RX_INVALID_ID = /(\/|\>)/g;
+const RX_INVALID_ID = /(\/|\>|\.|\%)/g;
 const ROOT = "root";
 /** Separator used to join array id definitions */
 const ID_SEPARATOR1 = ":";
@@ -754,6 +755,18 @@ export function createTraxEnv(): Trax {
             },
             dispose(): boolean {
                 return dispose();
+            },
+            async<F extends (...args: any[]) => Generator<Promise<any>, any, any>>(fn: F): (...args: Parameters<F>) => Promise<any> {
+                let name = "[ASYNC]";
+                const f = wrapFunction(
+                    fn,
+                    () => log.startProcessingContext({ name: storeId + "." + name + "()", storeId }),
+                    (ex) => { error(`(${storeId}.${name}) error: ${ex}`) }
+                );
+                (f as any).updateAsyncName = (nm: string) => {
+                    name = nm;
+                }
+                return f as any;
             }
         };
         // attach meta data
@@ -811,33 +824,20 @@ export function createTraxEnv(): Trax {
 
         function wrapStoreAPIs(obj: Object) {
             const o = obj as any;
-            for (const k of Object.keys(o)) {
-                if (typeof o[k] === "function") {
-                    o[k] = wrapAPIFunction(k, o[k]);
+            for (const name of Object.keys(o)) {
+                if (typeof o[name] === "function") {
+                    const fn = o[name];
+                    if (typeof (fn as any).updateAsyncName === "function") {
+                        // this function was already wrapped through store.async()
+                        (fn as any).updateAsyncName(name);
+                    } else {
+                        o[name] = wrapFunction(
+                            fn,
+                            () => log.startProcessingContext({ name: storeId + "." + name + "()", storeId }),
+                            (ex) => { error(`(${storeId}.${name}) error: ${ex}`) }
+                        );
+                    }
                 }
-            }
-        }
-
-        function wrapAPIFunction(name: string, fn: Function) {
-            return (...args: any[]) => {
-                const c = log.startProcessingContext({ name: storeId + "." + name + "()", storeId });
-                let r: any;
-                try {
-                    r = fn(...args);
-                } catch (ex) {
-                    error(`(${storeId}.${name}) error: ${ex}`);
-                }
-                // check if r is a Promise
-                if (typeof r === "object" && typeof r.then === "function" && typeof r.catch === "function") {
-                    c.pause();
-                    // TODO: raise warning
-                    r.catch((err: any) => {
-                        error(`(${storeId}.${name}) error: ${err}`);
-                    });
-                } else {
-                    c.end();
-                }
-                return r;
             }
         }
 

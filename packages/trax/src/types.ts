@@ -212,6 +212,13 @@ export interface Store<T> {
      * so that they can be garbage collected
      */
     dispose(): boolean;
+    /**
+     * Create an async function from a generator function
+     * in order to have its logs properly tracked in the trax logger
+     * This is meant to be used in store wrapper objects to expose action functions
+     * @param fn 
+     */
+    async<F extends (...args: any[]) => Generator<Promise<any>, any, any>>(fn: F): (...args: Parameters<F>) => Promise<any>;
 }
 
 /**
@@ -273,7 +280,7 @@ export interface TraxProcessor {
      * Execute the compute function if the processor is dirty
      * @param forceExecution if true compute will be exececuted event if processor is not dirty
      */
-    compute(forceExecution?:boolean): void;
+    compute(forceExecution?: boolean): void;
     /** 
      * Dispose the current processor to stop further compute and
      * have it garbage collected

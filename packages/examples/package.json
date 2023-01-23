@@ -28,6 +28,7 @@
     "scripts": {
         "build": "tsc && vite build",
         "test": "vitest",
+        "coverage": "vitest run --coverage",
         "dev": "vite",
         "serve": "vite preview"
     },

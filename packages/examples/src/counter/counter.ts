@@ -1,5 +1,5 @@
 
-import { createStore } from "@traxjs/trax";
+import { Store, trax } from "@traxjs/trax";
 
 interface Counter {
     value: number;
@@ -8,23 +8,23 @@ interface Counter {
     minValue: number;
 }
 
-export const counterStore = createStore("Counter", (store) => {
-    const counter: Counter = store.object("root", {
+export const counterStore = trax.createStore("Counter", (store: Store<Counter>) => {
+    const counter = store.init({
         value: 0,
         nbrOfOperations: 0,
         maxValue: 0,
         minValue: 0
     });
 
-    // store.compute("MinMax", () => {
-    //     if (counter.value > counter.maxValue) {
-    //         // update max
-    //         counter.maxValue = counter.value;
-    //     } else if (counter.value < counter.minValue) {
-    //         // update min
-    //         counter.minValue = counter.value;
-    //     }
-    // });
+    store.compute("MinMax", () => {
+        if (counter.value > counter.maxValue) {
+            // update max
+            counter.maxValue = counter.value;
+        } else if (counter.value < counter.minValue) {
+            // update min
+            counter.minValue = counter.value;
+        }
+    });
 
     return {
         /** Expose the counter object */
@@ -43,5 +43,4 @@ export const counterStore = createStore("Counter", (store) => {
         }
     }
 });
-
 

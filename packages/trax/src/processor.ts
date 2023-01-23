@@ -1,7 +1,7 @@
 import { tmd } from "./core";
 import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
-import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogProcessStart, TraxProcessor, TrxObjectType } from "./types";
+import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogProcessStart, TraxProcessor, TraxObjectType } from "./types";
 
 /**
  * Extend the public API with internal APIs
@@ -203,13 +203,13 @@ export function createTraxProcessor(
                     md.propListeners.delete(pr);
                 }
             }
-            logTraxEvent({ type: "!DEL", objectId: processorId, objectType: TrxObjectType.Processor });
+            logTraxEvent({ type: "!DEL", objectId: processorId, objectType: TraxObjectType.Processor });
             return true;
         }
     }
 
     // initialization
-    logTraxEvent({ type: "!NEW", objectId: processorId, objectType: TrxObjectType.Processor });
+    logTraxEvent({ type: "!NEW", objectId: processorId, objectType: TraxObjectType.Processor });
     pr.compute(false, "Init");
 
     return pr;

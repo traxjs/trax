@@ -17,7 +17,7 @@ export type StoreWrapper = {
 /**
  * Trax object types
  */
-export enum TrxObjectType {
+export enum TraxObjectType {
     NotATraxObject = "",
     Object = "O",
     Array = "A",
@@ -60,7 +60,7 @@ export interface Trax {
      * Get the trax type associated to an object
      * @param obj 
      */
-    getTraxObjectType(obj: any): TrxObjectType;
+    getTraxObjectType(obj: any): TraxObjectType;
     /**
      * Get a processor from its id
      * @param id 
@@ -342,7 +342,7 @@ export type TraxComputeTrigger = "Init" | "Reconciliation" | "DirectCall";
 export interface TraxLogObjectLifeCycle {
     type: "!NEW" | "!DEL";
     objectId: string;
-    objectType: TrxObjectType
+    objectType: TraxObjectType
 }
 
 export interface TraxLogPropGet {
@@ -511,7 +511,7 @@ export interface EventStream {
     lastEvent(): StreamEvent | undefined;
     /**
      * Await a certain event. Typical usage:
-     * await log.await(trxEvents.CycleComplete);
+     * await log.await(traxEvents.CycleComplete);
      * @param evenType 
      */
     await(evenType: string | "*"): Promise<StreamEvent>;

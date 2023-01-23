@@ -6,9 +6,9 @@ export default defineConfig({
     build: {
         lib: {
             // Could also be a dictionary or array of multiple entry points
-            entry: resolve(__dirname, 'lib/trax.js'),
+            entry: resolve(__dirname, 'lib/index.js'),
             name: 'trax',
-            fileName: 'trax'
+            fileName: 'trax',
         },
         rollupOptions: {
 

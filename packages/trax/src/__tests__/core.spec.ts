@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { Store, Trax, TrxObjectType } from '../types';
+import { Store, Trax, TraxObjectType, trax as trx } from '../index';
 import { createTraxEnv } from '../core';
 import { pause, Person, printEvents } from './utils';
 
@@ -62,10 +62,10 @@ describe('Trax Core', () => {
             expect(trax.getTraxId({})).toBe("");
             expect(trax.getTraxId(true)).toBe("");
 
-            expect(trax.getTraxObjectType(undefined)).toBe(TrxObjectType.NotATraxObject);
-            expect(trax.getTraxObjectType(42)).toBe(TrxObjectType.NotATraxObject);
-            expect(trax.getTraxObjectType({})).toBe(TrxObjectType.NotATraxObject);
-            expect(trax.getTraxObjectType(true)).toBe(TrxObjectType.NotATraxObject);
+            expect(trax.getTraxObjectType(undefined)).toBe(TraxObjectType.NotATraxObject);
+            expect(trax.getTraxObjectType(42)).toBe(TraxObjectType.NotATraxObject);
+            expect(trax.getTraxObjectType({})).toBe(TraxObjectType.NotATraxObject);
+            expect(trax.getTraxObjectType(true)).toBe(TraxObjectType.NotATraxObject);
         });
     });
 
@@ -935,6 +935,12 @@ describe('Trax Core', () => {
                 "2:1 !GET - MyStore/root.prettyName -> 'Bart Simpson'",
             ]);
 
+        });
+    });
+
+    describe('Main trax', () => {
+        it('should be accessible from index.ts', async () => {
+            expect(typeof trx.createStore).toBe("function");
         });
     });
 });

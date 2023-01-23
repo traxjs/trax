@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createTraxEnv } from '../core';
-import { Store, Trax } from '../types';
+import { Store, Trax } from '../index';
 import { ArrayFamilyStore, printEvents } from './utils';
 
 

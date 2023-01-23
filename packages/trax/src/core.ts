@@ -2,7 +2,7 @@ import { createEventStream } from "./eventstream";
 import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
 import { TraxInternalProcessor, createTraxProcessor } from "./processor";
-import { Store, StoreWrapper, Trax, TraxIdDef, TraxProcessor, TrxObjectType, TraxLogProcessStart, traxEvents, TraxComputeFn, TraxEvent, ProcessingContext, TraxProcessorId, TraxObject } from "./types";
+import { Store, StoreWrapper, Trax, TraxIdDef, TraxProcessor, TraxObjectType, TraxLogProcessStart, traxEvents, TraxComputeFn, TraxEvent, ProcessingContext, TraxProcessorId, TraxObject } from "./types";
 
 /** Symbol used to attach meta data to trax objects */
 export const traxMD = Symbol("trax.md");
@@ -32,7 +32,7 @@ interface TraxMd {
     /** The trax unique id */
     id: string;
     /** The object type */
-    type: TrxObjectType;
+    type: TraxObjectType;
     /** Store that the object belongs to. Empty string for root stores */
     storeId: string;
     /**
@@ -77,7 +77,7 @@ export function tmd(o: any): TraxMd | undefined {
 /**
  * Create and attach meta data to a given object
 */
-function attachMetaData(o: Object, id: string, type: TrxObjectType, storeId: string): TraxMd {
+function attachMetaData(o: Object, id: string, type: TraxObjectType, storeId: string): TraxMd {
     const md: TraxMd = { id, type, storeId };
     (o as any)[traxMD] = md;
     return md;
@@ -171,8 +171,8 @@ export function createTraxEnv(): Trax {
         getTraxId(obj: any): string {
             return tmd(obj)?.id || "";
         },
-        getTraxObjectType(obj: any): TrxObjectType {
-            return tmd(obj)?.type || TrxObjectType.NotATraxObject;
+        getTraxObjectType(obj: any): TraxObjectType {
+            return tmd(obj)?.type || TraxObjectType.NotATraxObject;
         },
         getProcessor(id: TraxProcessorId): TraxProcessor | void {
             return processors.get(id);
@@ -496,9 +496,9 @@ export function createTraxEnv(): Trax {
         let md: TraxMd;
         if (isArray(obj)) {
             // TODO
-            md = attachMetaData(obj, id, TrxObjectType.Array, storeId);
+            md = attachMetaData(obj, id, TraxObjectType.Array, storeId);
         } else {
-            md = attachMetaData(obj, id, TrxObjectType.Object, storeId);
+            md = attachMetaData(obj, id, TraxObjectType.Object, storeId);
         }
         logTraxEvent({ type: "!NEW", objectId: id, objectType: md.type });
         const prx = new Proxy(obj, proxyHandler);
@@ -637,7 +637,7 @@ export function createTraxEnv(): Trax {
         const ref = dataRefs.get(id);
         if (ref) {
             const o = ref.deref() || null;
-            let objectType = TrxObjectType.NotATraxObject;
+            let objectType = TraxObjectType.NotATraxObject;
             if (o) {
                 const md = tmd(o);
                 if (md) {
@@ -710,9 +710,9 @@ export function createTraxEnv(): Trax {
                 let id = "";
                 if (md) {
                     id = md.id;
-                    if (md.type === TrxObjectType.Processor) {
+                    if (md.type === TraxObjectType.Processor) {
                         error(`(${id}) Processors cannot be disposed through store.delete()`);
-                    } else if (md.type === TrxObjectType.Store) {
+                    } else if (md.type === TraxObjectType.Store) {
                         error(`(${id}) Stores cannot be disposed through store.delete()`);
                     } else {
                         return removeDataObject(id);
@@ -740,7 +740,7 @@ export function createTraxEnv(): Trax {
                     autoCompute,
                     isRenderer
                 );
-                attachMetaData(pr, pid, TrxObjectType.Processor, storeId);
+                attachMetaData(pr, pid, TraxObjectType.Processor, storeId);
                 processors.set(pid, pr);
                 storeProcessors.add(pid);
                 return pr;
@@ -781,8 +781,8 @@ export function createTraxEnv(): Trax {
             }
         };
         // attach meta data
-        attachMetaData(store, storeId, TrxObjectType.Store, "");
-        logTraxEvent({ type: "!NEW", objectId: storeId, objectType: TrxObjectType.Store });
+        attachMetaData(store, storeId, TraxObjectType.Store, "");
+        logTraxEvent({ type: "!NEW", objectId: storeId, objectType: TraxObjectType.Store });
 
         // register store in parent
         stores.set(storeId, store);

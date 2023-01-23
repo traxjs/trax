@@ -219,6 +219,14 @@ export interface Store<T> {
      * @param fn 
      */
     async<F extends (...args: any[]) => Generator<Promise<any>, any, any>>(fn: F): (...args: Parameters<F>) => Promise<any>;
+    /**
+     * Create an async function from a generator function
+     * in order to have its logs properly tracked in the trax logger
+     * This can be used to define an async block that will be called asychronously (e.g. store async initialization)
+     * @param name the name of the function as it should appear in the logs
+     * @param fn 
+     */
+    async<F extends (...args: any[]) => Generator<Promise<any>, any, any>>(name: string, fn: F): (...args: Parameters<F>) => Promise<any>;
 }
 
 /**

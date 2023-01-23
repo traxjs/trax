@@ -328,7 +328,7 @@ describe('Trax Core', () => {
                             return r;
                         })
                     }
-                })
+                });
             }
 
             it('should wrap sync functions and log calls', async () => {
@@ -504,6 +504,83 @@ describe('Trax Core', () => {
                     "2:12 !PCE - 2:8",
                     "2:13 !PCE - 2:7",
                     "3:1 !GET - PStore/root.prettyName -> 'HomerA SimpsonBB'",
+                ]);
+            });
+
+            it('should provide means to support async init', async () => {
+                const ps = trax.createStore("PStore", (store: Store<Person>) => {
+                    const root = store.init({ firstName: "Homer", lastName: "Simpson" });
+
+                    store.compute("PrettyName", () => {
+                        root.prettyName = root.firstName + " " + root.lastName;
+                    });
+
+                    let initialized = false;
+
+                    store.async("Init", function* () {
+                        // allows to perform asyn operation to initialize the store
+                        // e.g. call a server / read from local storage / etc.
+                        yield pause(1);
+                        initialized = true;
+                        root.avatar = "AVATAR";
+                        root.lastName += "!"; // will trigger PrettyName update
+                        trax.log.event("@traxjs/trax/test/core/asyncInitDone");
+                    })();
+
+                    return {
+                        person: root,
+                        get initialized() {
+                            return initialized;
+                        },
+                        updateNameSync(value1: string, value2: string) {
+                            root.firstName += value1;
+                            const r = root.lastName + value2 + value2;
+                            root.lastName = r;
+                            return r;
+                        }
+                    }
+                });
+                expect(ps.person.prettyName).toBe("Homer Simpson");
+                expect(ps.person.avatar).toBe(undefined);
+                expect(ps.initialized).toBe(false);
+
+                await trax.log.await("@traxjs/trax/test/core/asyncInitDone");
+                await trax.reconciliation();
+                expect(ps.person.prettyName).toBe("Homer Simpson!");
+                expect(ps.person.avatar).toBe("AVATAR");
+                expect(ps.initialized).toBe(true);
+
+                expect(printLogs(0)).toMatchObject([
+                    "0:1 !PCS - StoreInit (PStore)",
+                    "0:2 !NEW - S: PStore",
+                    "0:3 !NEW - O: PStore/root",
+                    "0:4 !NEW - P: PStore/%PrettyName",
+                    "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                    "0:6 !GET - PStore/root.firstName -> 'Homer'",
+                    "0:7 !GET - PStore/root.lastName -> 'Simpson'",
+                    "0:8 !SET - PStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
+                    "0:9 !PCE - 0:5",
+                    "0:10 !PCS - PStore.Init() - parentId=0:1",
+                    "0:11 !PCP - 0:10",
+                    "0:12 !PCE - 0:1",
+                    "0:13 !GET - PStore/root.prettyName -> 'Homer Simpson'",
+                    "0:14 !GET - PStore/root.avatar -> undefined",
+                    "1:1 !PCR - 0:10",
+                    "1:2 !SET - PStore/root.avatar = 'AVATAR' (prev: undefined)",
+                    "1:3 !GET - PStore/root.lastName -> 'Simpson'",
+                    "1:4 !SET - PStore/root.lastName = 'Simpson!' (prev: 'Simpson')",
+                    "1:5 !DRT - PStore/%PrettyName <- PStore/root.lastName",
+                    "1:6 @traxjs/trax/test/core/asyncInitDone - NO-DATA",
+                    "1:7 !PCE - 0:10",
+                    "1:8 !PCS - Reconciliation #1 - 1 processor",
+                    "1:9 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=1:8",
+                    "1:10 !GET - PStore/root.firstName -> 'Homer'",
+                    "1:11 !GET - PStore/root.lastName -> 'Simpson!'",
+                    "1:12 !SET - PStore/root.prettyName = 'Homer Simpson!' (prev: 'Homer Simpson')",
+                    "1:13 !PCE - 1:9",
+                    "1:14 !PCE - 1:8",
+                    "2:1 !GET - PStore/root.prettyName -> 'Homer Simpson!'",
+                    "2:2 !GET - PStore/root.avatar -> 'AVATAR'",
                 ]);
             });
         });

@@ -756,10 +756,21 @@ export function createTraxEnv(): Trax {
             dispose(): boolean {
                 return dispose();
             },
-            async<F extends (...args: any[]) => Generator<Promise<any>, any, any>>(fn: F): (...args: Parameters<F>) => Promise<any> {
+            async<F extends (...args: any[]) => Generator<Promise<any>, any, any>>(
+                nameOrFn: string | F,
+                fn?: F
+            ): (...args: Parameters<F>) => Promise<any> {
                 let name = "[ASYNC]";
+                let func: F;
+                if (typeof nameOrFn === "string") {
+                    name = nameOrFn;
+                    func = fn!;
+                } else {
+                    func = nameOrFn as F;
+                }
+
                 const f = wrapFunction(
-                    fn,
+                    func,
                     () => log.startProcessingContext({ name: storeId + "." + name + "()", storeId }),
                     (ex) => { error(`(${storeId}.${name}) error: ${ex}`) }
                 );

@@ -10,7 +10,8 @@ export const SimpleList = component("SimpleList", (props: { list: ListStore }) =
     return <div className="simplelist">
         <h1> Simple List </h1>
         <header>
-            <button onClick={list.addItem}>Add Item</button> <button onClick={list.clear}>Clear List</button>
+            <button className='addItem' onClick={list.addItem}>Add Item</button>
+            <button className='clearList' onClick={list.clear}>Clear List</button>
         </header>
         <ul>
             {items.length ?
@@ -18,8 +19,8 @@ export const SimpleList = component("SimpleList", (props: { list: ListStore }) =
                 : "[Empty List]"}
         </ul>
         <footer>
-            <div>Urgent: {data.nbrOfUrgentItems}</div>
-            <div>Total: {items.length}</div>
+            <div className='urgent'>Urgent: {data.nbrOfUrgentItems}</div>
+            <div className='total'>Total: {items.length}</div>
         </footer>
     </div>
 });
@@ -27,9 +28,9 @@ export const SimpleList = component("SimpleList", (props: { list: ListStore }) =
 const ListItem = component("ListItem", (props: { item: ListItem, list: ListStore }) => {
     const { item, list } = props;
 
-    return <li className="listItem" data-id={traxId(item)}>
-        {item.description} {item.urgent ? " (urgent) " : " "}
-        <button onClick={removeItem} title="Delete Item"> x </button>
+    return <li className='listItem' data-id={traxId(item)}>
+        <span className='text'>{item.description} {item.urgent ? " (urgent) " : " "}</span>
+        <button className='del' onClick={removeItem} title="Delete Item"> x </button>
     </li>
 
     function removeItem() {

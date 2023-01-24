@@ -1,16 +1,16 @@
 import React from 'react';
-import { component, traxId } from '../index';
+import { component, componentId, traxId } from '../index';
 import { ListStore, ListItem } from './liststore';
 
-export const SimpleList = component("SimpleList", (props: { list: ListStore }) => {
+export const SimpleList = component("Test:SL:SimpleList", (props: { list: ListStore }) => {
     const { list } = props;
     const data = list.data;
     const items = data.items
 
-    return <div className="simplelist">
+    return <div className="simplelist" data-id={componentId()}>
         <h1> Simple List </h1>
         <header>
-            <button className='addItem' onClick={list.addItem}>Add Item</button>
+            <button className='addItem' onClick={list.addItem}>Add Item</button>&nbsp;
             <button className='clearList' onClick={list.clear}>Clear List</button>
         </header>
         <ul>
@@ -25,10 +25,10 @@ export const SimpleList = component("SimpleList", (props: { list: ListStore }) =
     </div>
 });
 
-const ListItem = component("ListItem", (props: { item: ListItem, list: ListStore }) => {
+const ListItem = component("Test:SL:ListItem", (props: { item: ListItem, list: ListStore }) => {
     const { item, list } = props;
 
-    return <li className='listItem' data-id={traxId(item)}>
+    return <li className='listItem' data-id={componentId()}>
         <span className='text'>{item.description} {item.urgent ? " (urgent) " : " "}</span>
         <button className='del' onClick={removeItem} title="Delete Item"> x </button>
     </li>

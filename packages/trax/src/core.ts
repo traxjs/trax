@@ -183,6 +183,9 @@ export function createTraxEnv(): Trax {
         getData<T>(id: string): T | void {
             return getDataObject(id) || undefined;
         },
+        getActiveProcessor(): TraxProcessor | void {
+            return processorStack.peek();
+        },
         updateArray(array: any[], newContent: any[]) {
             if (!isArray(array) || !isArray(newContent)) {
                 error(`updateArray: Invalid argument (array expected)`);

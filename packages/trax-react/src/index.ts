@@ -1,5 +1,7 @@
 
 export {
     component,
-    traxId
+    traxId,
+    componentId,
+    resetReactEnv
 } from './core';

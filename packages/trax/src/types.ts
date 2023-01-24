@@ -77,6 +77,12 @@ export interface Trax {
      */
     getData<T>(id: string): T | void;
     /**
+     * Return the processor that is being computing if called in a compute call stack
+     * Return void otherwise
+     * @seealso componentId in trax-react
+     */
+    getActiveProcessor(): TraxProcessor | void;
+    /**
      * Tell if some changes are pending (i.e. dirty processors)
      * Return true if there are some dirty processors - which means that all computed values
      * can be safely read with no risks of invalid value

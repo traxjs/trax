@@ -819,6 +819,27 @@ describe('Sync Processors', () => {
             ps.dispose();
             expect(namesPr.dirty).toBe(false);
         });
+
+        it('should support trax.getActiveProcessor()', async () => {
+            let lastActiveProcessor: TraxProcessor | void = undefined;
+
+            expect(trax.getActiveProcessor()).toBe(undefined);
+
+            const ps = trax.createStore("PStore", (store: Store<Person>) => {
+                const p = store.init({ firstName: "Homer", lastName: "Simpson" });
+
+                store.compute("PrettyName", () => {
+                    let nm = p.firstName + " " + p.lastName;
+                    lastActiveProcessor = trax.getActiveProcessor();
+                    p.prettyName = nm;
+                    p.prettyNameLength = nm.length;
+                });
+            });
+
+            const pr = ps.getProcessor("PrettyName");
+            expect(lastActiveProcessor).toBe(pr);
+            expect(trax.getActiveProcessor()).toBe(undefined);
+        });
     });
 
     describe('Dispose', () => {

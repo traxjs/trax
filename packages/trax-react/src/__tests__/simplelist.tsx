@@ -1,8 +1,11 @@
 import React from 'react';
-import { component, componentId, traxId } from '../index';
+import { component, componentId, traxId } from '..';
 import { ListStore, ListItem } from './liststore';
 
-export const SimpleList = component("Test:SL:SimpleList", (props: { list: ListStore }) => {
+/**
+ * Simple list that uses a store passed as a prop
+ */
+export const SimpleList = component("Test:SimpleList", (props: { list: ListStore }) => {
     const { list } = props;
     const data = list.data;
     const items = data.items
@@ -25,7 +28,7 @@ export const SimpleList = component("Test:SL:SimpleList", (props: { list: ListSt
     </div>
 });
 
-const ListItem = component("Test:SL:ListItem", (props: { item: ListItem, list: ListStore }) => {
+const ListItem = component("Test:ListItem", (props: { item: ListItem, list: ListStore }) => {
     const { item, list } = props;
 
     return <li className='listItem' data-id={componentId()}>

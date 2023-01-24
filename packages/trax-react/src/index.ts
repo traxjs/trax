@@ -3,5 +3,6 @@ export {
     component,
     traxId,
     componentId,
-    resetReactEnv
+    resetReactEnv,
+    useStore
 } from './core';

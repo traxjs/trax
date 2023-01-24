@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Store, trax, TraxProcessor } from '@traxjs/trax';
+import { StoreWrapper } from '@traxjs/trax/lib/types';
 
 interface TraxReactCptCtxt {
     id?: string;
@@ -60,7 +61,7 @@ function createReactStore() {
 let reactStore = createReactStore();
 
 /**
- * Wrap a react functional component into a trax processor
+ * Wrap a react function component into a trax processor
  * Note: the functional component will be then considered as a pure function and 
  * will only be re-rendered if
  * - one of its trax dependencies changed (these dependencies can be passed by any means, 
@@ -70,7 +71,7 @@ let reactStore = createReactStore();
  * @param reactFunctionCpt the functional component
  * @returns 
  */
-export function component(name: string, reactFunctionCpt: (prop?: any) => JSX.Element) {
+export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.Element): (props: T) => JSX.Element {
     // Make the component pure (React.memo) to avoid re-processing if prop reference didn't change
     return React.memo(function (props?: any) {
         // Use an internal state variable to trigger refresh
@@ -92,7 +93,7 @@ export function component(name: string, reactFunctionCpt: (prop?: any) => JSX.El
         cc.props = props;
         cc.processor!.compute();
         return cc.jsx;
-    });
+    }) as any;
 }
 
 /**
@@ -121,4 +122,27 @@ export function componentId(): string {
 export function resetReactEnv() {
     reactStore.dispose()
     reactStore = createReactStore();
+}
+
+/**
+ * Helper function to create or retrieve a store instance
+ * attached to the caller component
+ * @param factory a function to call to create the store instance
+ * @returns the store object
+ */
+export function useStore<T>(factory: () => T): T {
+    const ref = (useRef({})).current as any;
+    let store: T = ref.store;
+    if (!store) {
+        // create it
+        ref.store = store = factory();
+    }
+    if (typeof (store as any).dispose === "function") {
+        useEffect(() => {
+            return () => {
+                (store as any)?.dispose!();
+            }
+        }, [store]);
+    }
+    return store;
 }

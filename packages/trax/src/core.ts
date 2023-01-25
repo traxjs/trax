@@ -162,7 +162,7 @@ export function createTraxEnv(): Trax {
             // wait for the end of the current cycle if a cycle already started
             // (reconcilation will be automatically triggered at the end of the cycle)
             if (lastEvent && lastEvent.type !== traxEvents.CycleComplete) {
-                await log.await(traxEvents.CycleComplete);
+                await log.awaitEvent(traxEvents.CycleComplete);
             }
         },
         isTraxObject(obj: any): boolean {

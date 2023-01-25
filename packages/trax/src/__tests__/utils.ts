@@ -72,11 +72,13 @@ function formatData(eventType: string, data?: any) {
             return `0`; // 0 = elapsedTime
         } else if (eventType === traxEvents.Info
             || eventType === traxEvents.Warning
-            || eventType === traxEvents.Error
-            || eventType === traxEvents.ProcessingPause
-            || eventType === traxEvents.ProcessingResume
-            || eventType === traxEvents.ProcessingeEnd) {
+            || eventType === traxEvents.Error) {
             return `${data.replace(/"/g, "")}`;
+        } else if (eventType === traxEvents.ProcessingPause
+            || eventType === traxEvents.ProcessingResume
+            || eventType === traxEvents.ProcessingEnd) {
+            const d = JSON.parse(data);
+            return `${(d as any).processId}`;
         } else if (eventType === traxEvents.ProcessingStart) {
             const d = sd as TraxLogProcessStart;
             if (d.name === "StoreInit") {

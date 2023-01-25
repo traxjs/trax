@@ -1,6 +1,13 @@
 import { LinkedList } from "./linkedlist";
-import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents } from "./types";
+import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, JSONValue } from "./types";
 
+/**
+ * Resolve function used in the await map
+ * This function will check the event details
+ * If the event matches the awaitEvent args, then it resolves the pending promise and returns true
+ * Otherwise it will return false and keep the promis unfullfiled
+ */
+type awaitResolve = (e: StreamEvent) => boolean;
 
 /**
  * Create an event stream
@@ -13,7 +20,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
     let maxSize = 500;
     let head: StreamListEvent | undefined;
     let tail: StreamListEvent | undefined;
-    const awaitMap = new Map<string, { p: Promise<StreamEvent>, resolve: (e: StreamEvent) => void }>();
+    const awaitMap = new Map<string, awaitResolve[]>();
     const consumers: ((e: StreamEvent) => void)[] = [];
 
     // ----------------------------------------------
@@ -81,36 +88,40 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
         }
     }
 
-    function createProcessingContext(id: string): ProcessingContext {
+    function createProcessingContext(logId: string, data: ProcessingContextData): ProcessingContext {
         let state = START;
+        const evtData = {
+            processId: logId,
+            ...data
+        }
         const pc = {
             get id() {
-                return id;
+                return logId;
             },
             pause() {
                 if (state !== START) {
-                    error("[trax/processing context] Only started or resumed contexts can be paused:", id);
+                    error("[trax/processing context] Only started or resumed contexts can be paused:", logId);
                 } else {
                     unstackPc(pc);
-                    logEvent(traxEvents.ProcessingPause, id, internalSrcKey);
+                    logEvent(traxEvents.ProcessingPause, evtData, internalSrcKey);
                     state = PAUSE;
                 }
             },
             resume() {
                 if (state !== PAUSE) {
-                    error("[trax/processing context] Only paused contexts can be resumed:", id);
+                    error("[trax/processing context] Only paused contexts can be resumed:", logId);
                 } else {
                     stackPc(pc);
-                    logEvent(traxEvents.ProcessingResume, id, internalSrcKey);
+                    logEvent(traxEvents.ProcessingResume, evtData, internalSrcKey);
                     state = START;
                 }
             },
             end() {
                 if (state === END) {
-                    error("[trax/processing context] Contexts cannot be ended twice:", id);
+                    error("[trax/processing context] Contexts cannot be ended twice:", logId);
                 } else {
                     unstackPc(pc);
-                    logEvent(traxEvents.ProcessingeEnd, id, internalSrcKey);
+                    logEvent(traxEvents.ProcessingEnd, evtData, internalSrcKey);
                     state = END;
                 }
             }
@@ -160,10 +171,17 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
     }
 
     function resolveAwaitPromises(eventType: string, e: StreamEvent) {
-        const promiseData = awaitMap.get(eventType);
-        if (promiseData) {
-            awaitMap.delete(eventType);
-            promiseData.resolve({ id: e.id, type: e.type, data: e.data, parentId: e.parentId });
+        const resolveList = awaitMap.get(eventType);
+        if (resolveList) {
+            const ls = resolveList.filter((resolve) => {
+                // if resolve returns true => resolution was ok, so we remove the resolve callback from the list
+                return !resolve({ id: e.id, type: e.type, data: e.data, parentId: e.parentId });
+            });
+            if (ls.length === 0) {
+                awaitMap.delete(eventType);
+            } else {
+                awaitMap.set(eventType, ls);
+            }
         }
     }
 
@@ -197,11 +215,11 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
                 }
             }
         },
-        startProcessingContext(data?: LogData): ProcessingContext {
+        startProcessingContext(data: ProcessingContextData): ProcessingContext {
             const last = pcStack.peek();
             const parentId = last ? last.id : undefined;
             const evt = logEvent(traxEvents.ProcessingStart, data, internalSrcKey, parentId);
-            return createProcessingContext(evt.id);
+            return createProcessingContext(evt.id, data);
         },
         get maxSize(): number {
             return maxSize;
@@ -223,23 +241,29 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
         lastEvent(): StreamEvent | undefined {
             return tail;
         },
-        async await(eventType: string): Promise<StreamEvent> {
+        async awaitEvent(eventType: string, targetData?: string | number | boolean | Record<string, string | number | boolean>): Promise<StreamEvent> {
             if (eventType === "" || eventType === "*") {
                 logEvent(traxEvents.Error, `[trax/eventStream.await] Invalid event type: '${eventType}'`);
                 return { id: tail!.id, type: tail!.type, data: tail!.data };
             }
-            let promiseData = awaitMap.get(eventType);
-            if (promiseData === undefined) {
-                let r: any, pd: any = {
-                    p: new Promise((resolve: (e: StreamEvent) => void) => {
-                        r = resolve;
-                    })
-                }
-                pd.resolve = r;
-                awaitMap.set(eventType, pd);
-                promiseData = pd;
+            let resolveList = awaitMap.get(eventType);
+            if (resolveList === undefined) {
+                resolveList = [];
+                awaitMap.set(eventType, resolveList);
             }
-            return promiseData!.p;
+
+            let r: any, p = new Promise((resolve: (e: StreamEvent) => void) => {
+                r = resolve;
+            });
+
+            resolveList.push((e: StreamEvent) => {
+                if (checkPropMatch(e, targetData)) {
+                    r(e);
+                    return true;
+                }
+                return false;
+            });
+            return p;
         },
         subscribe(eventType: string | "*", callback: (e: StreamEvent) => void): SubscriptionId {
             let fn: (e: StreamEvent) => void;
@@ -265,6 +289,22 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
         }
     }
 
+}
+
+function checkPropMatch(e: StreamEvent, targetData?: string | number | boolean | Record<string, string | number | boolean>): boolean {
+    if (targetData === undefined || e.data === undefined) return true;
+    const data = JSON.parse(e.data);
+    if (typeof targetData !== "object" && targetData !== null) {
+        return data === targetData;
+    } else if (targetData !== null && data !== null && typeof data === "object") {
+        for (const k of Object.keys(targetData)) {
+            if ((data as any)[k] !== targetData[k]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    return false;
 }
 
 function mergeMessageData(data: LogData[]): LogData | undefined {

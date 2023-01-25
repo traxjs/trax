@@ -337,7 +337,7 @@ export const traxEvents = Object.freeze({
     /** When an async  processing context resumes */
     "ProcessingResume": "!PCR",
     /** When a processing context ends */
-    "ProcessingeEnd": "!PCE"
+    "ProcessingEnd": "!PCE"
 });
 
 export type TraxEvent = TraxLogError | TraxLogObjectLifeCycle | TraxLogPropGet | TraxLogPropSet | TraxLogProcDirty;
@@ -413,7 +413,7 @@ export interface TraxLogReconciliation {
 }
 
 /** JSON type */
-type JSONValue = string | number | boolean | null | { [key: string]: JSONValue } | Array<JSONValue>;
+export type JSONValue = string | number | boolean | null | { [key: string]: JSONValue } | Array<JSONValue>;
 
 /**
  * Data type that can be used in logs
@@ -432,8 +432,8 @@ export interface StreamEvent {
     id: string;
     /** Event type - allows to determine how to interprete data */
     type: string;
-    /** Event data */
-    data?: LogData;
+    /** Event data - JSON stringified */
+    data?: string;
     /** Id of another event that the current event relates to */
     parentId?: string;
 }
@@ -462,6 +462,8 @@ export interface ProcessingContext {
     /** Raise an end event in the event stream */
     end(): void;
 }
+
+export type ProcessingContextData = { name: string, id?: string } & { [key: string]: JSONValue };
 
 export type SubscriptionId = Object;
 
@@ -492,8 +494,10 @@ export interface EventStream {
      * Create a processing context and raise a start event in the event stream
      * Processing contexts are used to virtually regroup events that occur in a given context
      * Processing contexts can be stacked
+     * @param data data associated with the processing context. Must contain a name (e.g. process name) 
+     * and may contain an id (useful for awaitEvent())
      */
-    startProcessingContext(data?: LogData): ProcessingContext;
+    startProcessingContext(data: ProcessingContextData): ProcessingContext;
     /**
      * Number of items in the stream
      */
@@ -518,9 +522,10 @@ export interface EventStream {
     /**
      * Await a certain event. Typical usage:
      * await log.await(traxEvents.CycleComplete);
-     * @param evenType 
+     * @param eventType 
+     * @param targetData [optional] value or fields that should be matched against the event data (depends on the event type)
      */
-    await(evenType: string | "*"): Promise<StreamEvent>;
+    awaitEvent(eventType: string | "*", targetData?: string | number | boolean | Record<string, string | number | boolean>): Promise<StreamEvent>;
     /**
      * Register an event consumer that will be synchronously called when a given event occurs
      * @param eventType an event type or "*" to listen to all events

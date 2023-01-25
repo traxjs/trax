@@ -59,16 +59,9 @@ describe('Simple List', () => {
         return host.querySelector("div.simplelist .urgent")!.innerHTML;
     }
 
-    async function pause(timeMs = 10) {
-        return new Promise((resolve) => {
-            setTimeout(resolve, timeMs);
-        });
-    }
-
     async function click(e: Element) {
         await act(async () => {
             Simulate.click(e);
-            await pause(1); // TODO change with proper event-based solution
         });
     }
 

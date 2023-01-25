@@ -95,7 +95,7 @@ describe('Async processors', () => {
                 "PStore/root.firstName"
             ]);
 
-            await trax.log.await("GetFriendlyName");
+            await trax.log.awaitEvent("GetFriendlyName");
             await trax.reconciliation();
 
             expect(p.prettyName).toBe("Friendly(Homer) Simpson");
@@ -134,7 +134,7 @@ describe('Async processors', () => {
 
             expect(p.prettyName).toBe("Friendly(Homer) Simpson"); // not re-processed yet
 
-            await trax.log.await("GetFriendlyName");
+            await trax.log.awaitEvent("GetFriendlyName");
             await trax.reconciliation();
 
             expect(p.prettyName).toBe("Friendly(Bart) Simpson");
@@ -171,7 +171,7 @@ describe('Async processors', () => {
 
             expect(p.avatar).toBe(undefined);
 
-            await trax.log.await("GetAvatar");
+            await trax.log.awaitEvent("GetAvatar");
             await trax.reconciliation();
 
             expect(p.prettyName).toBe("Friendly(Bart) Simpson");
@@ -206,7 +206,7 @@ describe('Async processors', () => {
             await trax.reconciliation(); // next cycle
             p.lastName = "SIM";
 
-            await trax.log.await("GetAvatar");
+            await trax.log.awaitEvent("GetAvatar");
             expect(p.avatar).toBe("Avatar(Bart)");
 
             expect(printLogs(6)).toMatchObject([
@@ -247,7 +247,7 @@ describe('Async processors', () => {
             ]);
             p.firstName = "Lisa";
 
-            await trax.log.await("GetAvatar");
+            await trax.log.awaitEvent("GetAvatar");
             await trax.reconciliation();
 
             expect(p.prettyName).toBe("Friendly(Lisa) Simpson");
@@ -335,7 +335,7 @@ describe('Async processors', () => {
             });
 
             expect(ps.root.prettyName).toBe(undefined);
-            await trax.log.await("Done");
+            await trax.log.awaitEvent("Done");
             expect(ps.root.prettyName).toBe("Friendly(Bart) Simpson");
 
             expect(printLogs(0)).toMatchObject([
@@ -399,7 +399,7 @@ describe('Async processors', () => {
             const pr = ps.getProcessor("PrettyName")!;
 
             expect(ps.root.prettyName).toBe(undefined);
-            await trax.log.await("GetFriendlyName");
+            await trax.log.awaitEvent("GetFriendlyName");
             await trax.reconciliation();
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - StoreInit (PStore)",
@@ -432,7 +432,7 @@ describe('Async processors', () => {
             const pr = ps.getProcessor("PrettyName")!;
 
             expect(ps.root.prettyName).toBe(undefined);
-            await trax.log.await("GetFriendlyName");
+            await trax.log.awaitEvent("GetFriendlyName");
             await trax.reconciliation();
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - StoreInit (PStore)",

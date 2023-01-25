@@ -400,7 +400,7 @@ describe('Trax Core', () => {
                 await trax.reconciliation();
                 trax.log.info("A")
                 ps.updateNameAsync("A", "B");
-                await trax.log.await("@traxjs/trax/test/updateNameAsyncDone");
+                await trax.log.awaitEvent("@traxjs/trax/test/updateNameAsyncDone");
                 await trax.reconciliation();
                 expect(ps.person.prettyName).toBe("HomerA SimpsonBB");
 
@@ -440,7 +440,7 @@ describe('Trax Core', () => {
                 await trax.reconciliation();
                 trax.log.info("A")
                 ps.updateNameAsync("A", "B");
-                await trax.log.await("@traxjs/trax/test/updateNameAsyncDone");
+                await trax.log.awaitEvent("@traxjs/trax/test/updateNameAsyncDone");
                 await trax.reconciliation();
                 expect(ps.person.prettyName).toBe("HomerA Simpson"); // half processed
 
@@ -544,7 +544,7 @@ describe('Trax Core', () => {
                 expect(ps.person.avatar).toBe(undefined);
                 expect(ps.initialized).toBe(false);
 
-                await trax.log.await("@traxjs/trax/test/core/asyncInitDone");
+                await trax.log.awaitEvent("@traxjs/trax/test/core/asyncInitDone");
                 await trax.reconciliation();
                 expect(ps.person.prettyName).toBe("Homer Simpson!");
                 expect(ps.person.avatar).toBe("AVATAR");

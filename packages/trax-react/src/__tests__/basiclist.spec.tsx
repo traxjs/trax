@@ -36,17 +36,10 @@ describe('Simple List', () => {
     function clearListButton(listIdx: number) {
         return listHost(listIdx).querySelector("button.clearList")!;
     }
-
-    async function pause(timeMs = 10) {
-        return new Promise((resolve) => {
-            setTimeout(resolve, timeMs);
-        });
-    }
-
+    
     async function click(e: Element) {
         await act(async () => {
             Simulate.click(e);
-            await pause(1); // TODO change with proper event-based solution
         });
     }
 
@@ -183,7 +176,6 @@ describe('Simple List', () => {
             // Remove the list
             await act(async () => {
                 context.showList = false;
-                await pause(1); // TODO remove
             });
 
             expect(listHost(0)).toBe(undefined);
@@ -192,7 +184,6 @@ describe('Simple List', () => {
             // Show again
             await act(async () => {
                 context.showList = true;
-                await pause(1); // TODO remove
             });
 
             expect(listHost(0).dataset.id).toBe("React/%FC:Test:BasicList:2"); // new id as previous instance was disposed

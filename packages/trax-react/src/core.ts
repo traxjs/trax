@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Store, trax, TraxProcessor } from '@traxjs/trax';
-import { StoreWrapper } from '@traxjs/trax/lib/types';
+import { StoreWrapper, traxEvents } from '@traxjs/trax/lib/types';
 
 interface TraxReactCptCtxt {
     id?: string;

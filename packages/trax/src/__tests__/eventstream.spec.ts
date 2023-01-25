@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createEventStream } from '../eventstream';
-import { EventStream, StreamEvent,  traxEvents } from '../types';
+import { EventStream, StreamEvent, traxEvents } from '../types';
 import { pause, printEvents } from './utils';
 
 describe('Event Stream', () => {
@@ -8,8 +8,8 @@ describe('Event Stream', () => {
     let count = 0;
     const internalSrcKey = {};
 
-    function printLogs(ignoreCycleEvents = true): string[] {
-        return printEvents(log, ignoreCycleEvents);
+    function printLogs(minCycleId = 0, ignoreCycleEvents = true): string[] {
+        return printEvents(log, ignoreCycleEvents, minCycleId);
     }
 
     function getLogArray() {
@@ -19,8 +19,6 @@ describe('Event Stream', () => {
         });
         return arr;
     }
-
-
 
     beforeEach(() => {
         count = 0;
@@ -89,7 +87,7 @@ describe('Event Stream', () => {
             log.event(traxEvents.New, {}, internalSrcKey);
             expect(log.size).toBe(4);
 
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 "0:0 !CS - 0",
                 "0:1 foo.bar - NO-DATA",
                 '0:2 blah - {"v":"value"}',
@@ -197,7 +195,7 @@ describe('Event Stream', () => {
             log.info("B");
             log.info("C");
             expect(log.size).toBe(3 + 1);
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:0 !CS - 0',
                 '0:1 !LOG - A',
                 '0:2 !LOG - B',
@@ -205,7 +203,7 @@ describe('Event Stream', () => {
             ]);
             log.info("D");
             expect(log.size).toBe(3 + 1);
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:1 !LOG - A',
                 '0:2 !LOG - B',
                 '0:3 !LOG - C',
@@ -225,7 +223,7 @@ describe('Event Stream', () => {
             log.info("F");
             log.info("G");
             expect(log.size).toBe(5);
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:3 !LOG - C',
                 '0:4 !LOG - D',
                 '0:5 !LOG - E',
@@ -240,7 +238,7 @@ describe('Event Stream', () => {
             log.info("B");
             log.info("C");
             expect(log.size).toBe(4);
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:0 !CS - 0',
                 '0:1 !LOG - A',
                 '0:2 !LOG - B',
@@ -248,7 +246,7 @@ describe('Event Stream', () => {
             ]);
             log.maxSize = 2;
             expect(log.size).toBe(2);
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:2 !LOG - B',
                 '0:3 !LOG - C'
             ]);
@@ -266,7 +264,7 @@ describe('Event Stream', () => {
             expect(log.size).toBe(7 + 1);
             log.maxSize = 3;
             expect(log.size).toBe(3);
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:5 !LOG - E',
                 '0:6 !LOG - F',
                 '0:7 !LOG - G'
@@ -287,7 +285,7 @@ describe('Event Stream', () => {
             expect(log.size).toBe(7 + 1);
             await Promise.resolve();
             expect(log.size).toBe(7 + 2);
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:0 !CS - 0',
                 '0:1 !LOG - A',
                 '0:2 !LOG - B',
@@ -314,7 +312,7 @@ describe('Event Stream', () => {
             log.warn("D");
             log.info("E");
 
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:0 !CS - 0',
                 '0:1 !LOG - A',
                 '0:2 !LOG - B',
@@ -348,7 +346,7 @@ describe('Event Stream', () => {
             log.warn("D");
             log.info("E");
 
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:0 !CS - 0',
                 '0:1 !LOG - A',
                 '0:2 !LOG - B',
@@ -381,16 +379,17 @@ describe('Event Stream', () => {
             log.info("A");
             expect(log.lastEvent()!.type).toBe(traxEvents.Info);
 
-            await log.await(traxEvents.CycleComplete);
+            await log.awaitEvent(traxEvents.CycleComplete);
             expect(log.lastEvent()!.type).toBe(traxEvents.CycleComplete);
         });
     });
 
     describe('Subscription', () => {
+
         it('should allow to await a specific event', async () => {
             let count = 0, lastEvent: StreamEvent | null = null;
 
-            log.await(traxEvents.Warning).then((e) => {
+            log.awaitEvent(traxEvents.Warning).then((e) => {
                 count++;
                 lastEvent = e;
             });
@@ -410,7 +409,7 @@ describe('Event Stream', () => {
 
             await pause(1); // flushes all pending promises
             expect(count).toBe(1);
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:0 !CS - 0',
                 '0:1 !LOG - A',
                 '0:2 !LOG - B',
@@ -431,10 +430,10 @@ describe('Event Stream', () => {
         it('should allow to await cycle end', async () => {
             log.info("A");
             log.info("B");
-            await log.await(traxEvents.CycleComplete);
+            await log.awaitEvent(traxEvents.CycleComplete);
 
 
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 '0:0 !CS - 0',
                 '0:1 !LOG - A',
                 '0:2 !LOG - B',
@@ -448,12 +447,12 @@ describe('Event Stream', () => {
                 lastEvent1: StreamEvent | null = null,
                 lastEvent2: StreamEvent | null = null;
 
-            log.await(traxEvents.Warning).then((e) => {
+            log.awaitEvent(traxEvents.Warning).then((e) => {
                 count1++;
                 lastEvent1 = e;
             });
 
-            log.await(traxEvents.Warning).then((e) => {
+            log.awaitEvent(traxEvents.Warning).then((e) => {
                 count2++;
                 lastEvent2 = e;
             });
@@ -472,6 +471,126 @@ describe('Event Stream', () => {
             expect(count1).toBe(1);
             expect(count2).toBe(1);
             expect(lastEvent1).toMatchObject(lastEvent2!);
+        });
+
+        it('should allow to await an event matching certain data properties (data object)', async () => {
+            let count = 0, lastEvent: StreamEvent | null = null
+
+            log.awaitEvent(traxEvents.ProcessingEnd, { name: "processX" }).then((e) => {
+                count++;
+                lastEvent = e;
+            });
+
+            log.info("A");
+            let c = log.startProcessingContext({ name: "processA" });
+            log.info("B");
+            c.end();
+
+            expect(count).toBe(0);
+            await pause(1);
+            expect(count).toBe(0); // would be 1 if name filter didn't work
+
+            expect(printLogs()).toMatchObject([
+                "0:1 !LOG - A",
+                "0:2 !PCS - processA",
+                "0:3 !LOG - B",
+                "0:4 !PCE - 0:2",
+            ]);
+
+            log.info("C");
+            let pc = log.startProcessingContext({ name: "processX" })
+            pc.end()
+            expect(count).toBe(0);
+            log.info("D");
+
+            await pause(1);
+            expect(count).toBe(1); // was called
+
+            expect(printLogs(1)).toMatchObject([
+                "1:1 !LOG - C",
+                "1:2 !PCS - processX",
+                "1:3 !PCE - 1:2",
+                "1:4 !LOG - D",
+            ]);
+            expect(JSON.parse((lastEvent as any).data).processId).toBe("1:2")
+
+            log.info("E");
+            pc = log.startProcessingContext({ name: "processX" })
+            pc.end()
+            expect(count).toBe(1);
+            log.info("F");
+
+            await pause(1);
+            expect(count).toBe(1); // no more calls (awaitEvent is only called once)
+        });
+
+        it('should allow to await an event matching certain data properties (primitive type data)', async () => {
+            let count = 0, lastEvent: StreamEvent | null = null
+
+            log.awaitEvent("MyEvent", "MyData").then((e) => {
+                count++;
+                lastEvent = e;
+            });
+
+            log.info("A");
+            log.event("MyEvent", "SomeData");
+            log.info("B");
+
+            expect(count).toBe(0);
+            await pause(1);
+            expect(count).toBe(0); // would be 1 if name filter didn't work
+
+            expect(printLogs()).toMatchObject([
+                "0:1 !LOG - A",
+                "0:2 MyEvent - \"SomeData\"",
+                "0:3 !LOG - B",
+            ]);
+
+            log.info("C");
+            log.event("MyEvent", "MyData");
+            expect(count).toBe(0);
+            log.info("D");
+
+            await pause(1);
+            expect(count).toBe(1); // was called
+
+            expect(printLogs(1)).toMatchObject([
+                "1:1 !LOG - C",
+                "1:2 MyEvent - \"MyData\"",
+                "1:3 !LOG - D",
+            ]);
+            expect((lastEvent as any).data).toBe('"MyData"'); // JSON stringified
+
+            log.info("E");
+            log.event("MyEvent", "MyData");
+            expect(count).toBe(1);
+            log.info("F");
+
+            await pause(1);
+            expect(count).toBe(1); // no more calls (awaitEvent is only called once)
+        });
+
+        it('should ignore await for unmatching types', async () => {
+            let count = 0, lastEvent: StreamEvent | null = null
+
+            log.awaitEvent("MyEvent", { value: "MyData" }).then((e) => {
+                count++;
+                lastEvent = e;
+            });
+
+            log.info("A");
+            log.event("MyEvent", "MyData");
+            log.info("B");
+
+            expect(count).toBe(0);
+            await pause(1);
+            expect(count).toBe(0); // would be 1 if name filter didn't work
+
+            expect(printLogs()).toMatchObject([
+                "0:1 !LOG - A",
+                "0:2 MyEvent - \"MyData\"",
+                "0:3 !LOG - B",
+            ]);
         });
 
         it('should accept multiple subscriptions with the same callback', async () => {
@@ -545,7 +664,7 @@ describe('Event Stream', () => {
             expect(traces).toBe("");
             expect(warnings).toBe("0:5/!WRN;");
 
-            await log.await(traxEvents.CycleComplete);
+            await log.awaitEvent(traxEvents.CycleComplete);
 
             traces = warnings = "";
             log.warn("F");
@@ -563,11 +682,11 @@ describe('Event Stream', () => {
 
         it('should log an error in case of invalid subscription event', async () => {
             log.info("A");
-            await log.await("*");
-            await log.await("");
+            await log.awaitEvent("*");
+            await log.awaitEvent("");
 
 
-            expect(printLogs(false)).toMatchObject([
+            expect(printLogs(0, false)).toMatchObject([
                 "0:0 !CS - 0",
                 "0:1 !LOG - A",
                 "0:2 !ERR - [trax/eventStream.await] Invalid event type: '*'",
@@ -606,12 +725,12 @@ describe('Event Stream', () => {
             c.pause();
             log.info("D");
 
-            await log.await(traxEvents.CycleComplete);
+            await log.awaitEvent(traxEvents.CycleComplete);
             c.resume();
             log.info("E");
             c.pause();
 
-            await log.await(traxEvents.CycleComplete);
+            await log.awaitEvent(traxEvents.CycleComplete);
             c.resume();
             log.info("F");
             c.end();
@@ -761,7 +880,7 @@ describe('Event Stream', () => {
                 const c = log.startProcessingContext({ name: 'MyAction' });
                 log.info("B");
                 log.warn("C");
-                await log.await(traxEvents.CycleComplete);
+                await log.awaitEvent(traxEvents.CycleComplete);
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !LOG - A',
@@ -778,7 +897,7 @@ describe('Event Stream', () => {
                 log.info("B");
                 const cs = log.startProcessingContext({ name: 'SubAction' });
                 log.warn("C");
-                await log.await(traxEvents.CycleComplete);
+                await log.awaitEvent(traxEvents.CycleComplete);
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !LOG - A',
@@ -798,7 +917,7 @@ describe('Event Stream', () => {
                 const cs = log.startProcessingContext({ name: 'SubAction' });
                 log.warn("C");
                 c.end();
-                await log.await(traxEvents.CycleComplete);
+                await log.awaitEvent(traxEvents.CycleComplete);
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !LOG - A',
@@ -818,7 +937,7 @@ describe('Event Stream', () => {
                 const cs = log.startProcessingContext({ name: 'SubAction' });
                 log.warn("C");
                 c.pause();
-                await log.await(traxEvents.CycleComplete);
+                await log.awaitEvent(traxEvents.CycleComplete);
 
                 expect(printLogs()).toMatchObject([
                     '0:1 !LOG - A',

@@ -1,0 +1,37 @@
+{
+    "name": "@traxjs/todomvc",
+    "version": "0.0.1",
+    "description": "Todo MVC impplementation with trax and preact",
+    "author": "Bertrand Laporte",
+    "license": "MIT",
+    "keywords": [
+        "trax",
+        "state management",
+        "todomvc",
+        "todo",
+        "reactjs",
+        "preact",
+        "react",
+        "reactive"
+    ],
+    "scripts": {
+        "build": "tsc && vite build",
+        "test": "vitest",
+        "coverage": "vitest run --coverage",
+        "dev": "vite",
+        "serve": "vite preview"
+    },
+    "dependencies": {
+        "@traxjs/trax": "0.0.1",
+        "@traxjs/trax-react": "0.0.1",
+        "preact": "^10.11.3",
+        "preact-dom": "^1.0.1"
+    },
+    "devDependencies": {
+        "@preact/preset-vite": "^2.5.0",
+        "@babel/core": "^7.0.0",
+        "typescript": "^4.9.4",
+        "vite": "^4.0.3",
+        "vitest": "^0.26.3"
+    }
+}

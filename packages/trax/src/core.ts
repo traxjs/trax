@@ -289,8 +289,10 @@ export function createTraxEnv(): Trax {
                     }
                     // don't add log for common internal built-in props
                     addLog = ((prop !== "then" && prop !== "constructor") || v !== undefined);
-                    v = target[prop] = wrapPropObject(target[prop], target, prop, md);
-
+                    if (target[prop]!==undefined) {
+                        // don't set the value if undefined (otherwise it may create items in arrays)
+                        v = target[prop] = wrapPropObject(target[prop], prop, md);
+                    }
                     addLog && logTraxEvent({ type: "!GET", objectId: md.id, propName: prop as string, propValue: v });
                 } else {
                     v = target[prop];
@@ -374,10 +376,10 @@ export function createTraxEnv(): Trax {
                         if (isArray(target)) {
                             // we need to notify length change as functions like Array.push won't explicitely do it
                             const len = target.length;
-                            value = target[prop as any] = wrapPropObject(value, target, "" + prop, md);
+                            value = target[prop as any] = wrapPropObject(value, "" + prop, md);
                             lengthChange = target.length !== len;
                         } else {
-                            value = target[prop] = wrapPropObject(value, target, "" + prop, md);
+                            value = target[prop] = wrapPropObject(value, "" + prop, md);
 
                             // Compute dictSize if object is used as a dictionary
                             const dictSize1 = md.dictSize;
@@ -433,7 +435,7 @@ export function createTraxEnv(): Trax {
     /**
      * Auto-wrap a trax object property into a sub trax object
      */
-    function wrapPropObject(v: any, target: any, propName: string, targetMd: TraxMd) {
+    function wrapPropObject(v: any, propName: string, targetMd: TraxMd) {
         if (v !== null && v !== undefined && typeof v === "object") {
             // automatically wrap sub-objects
             let vmd = tmd(v);

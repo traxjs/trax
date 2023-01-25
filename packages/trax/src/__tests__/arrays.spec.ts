@@ -420,6 +420,17 @@ describe('Arrays', () => {
             ]);
         });
 
+        it('should not autowrap values when accessing an out-of-bound value', async () => {
+            const fs = createFamilyStore(false);
+            const f = fs.root;
+
+            expect(f.members.length).toBe(2);
+            f.members.push({ firstName: "Bart", lastName: "Simpson" });
+            expect(f.members.length).toBe(3);
+            expect(f.members[5]).toBe(undefined);
+            expect(f.members.length).toBe(3);
+        });
+
         describe('Arrays of Arrays', () => {
             it('should support creation as JSON (empty)', async () => {
                 let output = "";

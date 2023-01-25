@@ -11,12 +11,14 @@
     "license": "MIT",
     "scripts": {
         "test-trax": "yarn workspace @traxjs/trax test run",
+        "test-todomvc": "yarn workspace @traxjs/todomvc test run",
         "test-examples": "yarn workspace @traxjs/examples test run",
         "test": "yarn test-trax && yarn test-examples",
         "build-trax": "yarn workspace @traxjs/trax build",
         "build-examples": "yarn workspace @traxjs/examples build",
+        "build-todomvc": "yarn workspace @traxjs/todomvc build",
         "build-trax-react": "yarn workspace @traxjs/trax-react build",
-        "build": "yarn build-trax && yarn build-trax-react && yarn build-examples",
+        "build": "yarn build-trax && yarn build-trax-react && yarn build-todomvc && yarn build-examples",
         "prepublish": "yarn build && yarn test"
     }
 }

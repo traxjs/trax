@@ -8,7 +8,8 @@
         "moduleResolution": "node",
         "strict": true,
         "removeComments": false,
-        "preserveConstEnums": true
+        "preserveConstEnums": true,
+        "jsx": "react-jsx",
     },
     "exclude": [
         "node_modules",

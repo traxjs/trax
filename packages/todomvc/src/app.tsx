@@ -1,8 +1,9 @@
 import { render } from 'preact';
+import { TodoList } from './todolist';
 
 async function main() {
     render(<div>
-        Hello World
+        <TodoList/>
     </div>, document.getElementById('main')!);
 }
 

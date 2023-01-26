@@ -279,4 +279,144 @@ describe('Todo Store', () => {
         ]);
         expect(data.itemsLeft).toBe(2);
     });
+
+    it('should support editing', async () => {
+        initTodos();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Second thing ✅",
+            "3. Third thing ✅",
+            "4. Last thing",
+        ]);
+
+        todoStore.startEditing(todos[1]);
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Second thing ✅ [EDITMODE] [EDITVALUE:Second thing]",
+            "3. Third thing ✅",
+            "4. Last thing",
+        ]);
+
+        todoStore.updateEditDescription(todos[1], "Foobar");
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Second thing ✅ [EDITMODE] [EDITVALUE:Foobar]",
+            "3. Third thing ✅",
+            "4. Last thing",
+        ]);
+
+        todoStore.stopEditing(todos[1]);
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Foobar ✅",
+            "3. Third thing ✅",
+            "4. Last thing",
+        ]);
+    });
+
+    it('should support edit cancellation', async () => {
+        initTodos();
+        todoStore.startEditing(todos[1]);
+        todoStore.updateEditDescription(todos[1], "Foobar");
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Second thing ✅ [EDITMODE] [EDITVALUE:Foobar]",
+            "3. Third thing ✅",
+            "4. Last thing",
+        ]);
+
+        todoStore.stopEditing(todos[1], false);
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Second thing ✅",
+            "3. Third thing ✅",
+            "4. Last thing",
+        ]);
+    });
+
+    it('should support edit switch and cancellation', async () => {
+        initTodos();
+        todoStore.startEditing(todos[1]);
+        todoStore.updateEditDescription(todos[1], "Foobar");
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Second thing ✅ [EDITMODE] [EDITVALUE:Foobar]",
+            "3. Third thing ✅",
+            "4. Last thing",
+        ]);
+
+        todoStore.startEditing(todos[2]);
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Second thing ✅",
+            "3. Third thing ✅ [EDITMODE] [EDITVALUE:Third thing]",
+            "4. Last thing",
+        ]);
+    });
+
+    it('should delete a todo if edit results in an empty or blank description', async () => {
+        initTodos();
+        todoStore.startEditing(todos[1]);
+        todoStore.updateEditDescription(todos[1], "  ");
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Second thing ✅ [EDITMODE] [EDITVALUE:  ]",
+            "3. Third thing ✅",
+            "4. Last thing",
+        ]);
+
+        todoStore.stopEditing(todos[1]);
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Third thing ✅",
+            "3. Last thing",
+        ]);
+
+        // same with empty edit
+        todoStore.startEditing(todos[0]);
+        todoStore.updateEditDescription(todos[0], "");
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing [EDITMODE]",
+            "2. Third thing ✅",
+            "3. Last thing",
+        ]);
+
+        todoStore.stopEditing(todos[0]);
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Third thing ✅",
+            "2. Last thing",
+        ]);
+    });
+
+    it('should ignore stopEditing if called on an item that is not being edited', async () => {
+        initTodos();
+        todoStore.startEditing(todos[1]);
+        todoStore.updateEditDescription(todos[1], "Foobar");
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Second thing ✅ [EDITMODE] [EDITVALUE:Foobar]",
+            "3. Third thing ✅",
+            "4. Last thing",
+        ]);
+
+        todoStore.stopEditing(todos[2]);
+        await trax.reconciliation();
+        expect(printTodos(data.filteredTodos)).toMatchObject([
+            "1. Firth thing",
+            "2. Second thing ✅ [EDITMODE] [EDITVALUE:Foobar]",
+            "3. Third thing ✅",
+            "4. Last thing",
+        ]);
+    });
 });

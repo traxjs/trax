@@ -69,7 +69,7 @@ export function createTodoStore() {
             data.itemsLeft = todos.length - count;
         });
 
-        return {
+        const api = {
             /** Todo store data */
             data,
             /** Create a new Todo item based on the newEntry value */
@@ -111,7 +111,35 @@ export function createTodoStore() {
             /** Update the filtered view */
             setFilter(filter: TodoFilter) {
                 data.filter = filter;
+            },
+            /** Set a todo item in edit mode and cancel other todos that may be in edit mode */
+            startEditing(todo: Todo) {
+                todos.forEach((item) => {
+                    const editing = (item === todo);
+                    item.editing = editing;
+                    item.editDescription = editing? item.description : "";
+                });
+            },
+            /** Stop edit mode for a given todo */
+            stopEditing(todo: Todo, updateDescription = true) {
+                if (!todo.editing) return;
+                if (updateDescription) {
+                    const v = todo.editDescription.trim();
+                    if (v === "") {
+                        api.deleteTodo(todo);
+                        return;
+                    } else {
+                        todo.description = v;
+                    }
+                }
+                todo.editing = false;
+                todo.editDescription = "";
+            },
+            /** Update the edit description */
+            updateEditDescription(todo: Todo, value: string) {
+                todo.editDescription = value;
             }
         }
+        return api;
     });
 };

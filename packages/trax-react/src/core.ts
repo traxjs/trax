@@ -73,7 +73,7 @@ let reactStore = createReactStore();
  */
 export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.Element): (props: T) => JSX.Element {
     // Make the component pure (React.memo) to avoid re-processing if prop reference didn't change
-    return React.memo(function (props?: any) {
+    function fc(props: T) {
         // Use an internal state variable to trigger refresh
         const [$$traxRefreshCount, $$setTraxRefreshCount] = useState(0);
         let c: React.MutableRefObject<TraxReactCptCtxt> = useRef({} as any);
@@ -93,7 +93,12 @@ export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.E
         cc.props = props;
         cc.processor!.compute();
         return cc.jsx;
-    }) as any;
+    }
+    
+    // use a dynamic function to keep the component name (will show in react dev tools)
+    const fcName = name.replace(/\:/g, "_");
+    const func = new Function("fc", `return function ${fcName}(props){ return fc(props) }`);
+    return React.memo(func(fc)) as any;
 }
 
 /**

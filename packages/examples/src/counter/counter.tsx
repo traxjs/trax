@@ -1,13 +1,14 @@
 import { Store, trax } from "@traxjs/trax";
 import { component, componentId, useStore } from "@traxjs/trax-react";
 
+// example adapted from https://www.solidjs.com/examples/counter
 interface CounterData {
     count: number;
 }
 
 export function createCounterStore() {
     return trax.createStore("CounterStore", (store: Store<CounterData>) => {
-        const data = store.init({ count: 0 });
+        const data = store.init({ count: 0 }); // init the store root object
         const interval = setInterval(() => data.count++, 1000);
         return {
             data,

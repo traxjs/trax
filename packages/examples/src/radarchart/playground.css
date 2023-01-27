@@ -1,0 +1,64 @@
+.radar-chart svg polygon {
+    fill: #26c015;
+    opacity: 0.75;
+}
+
+.radar-chart svg circle {
+    fill: transparent;
+    stroke: #999;
+}
+
+.radar-chart svg text {
+    font-size: .8rem;
+    fill: #666;
+}
+
+.radar-chart svg label {
+    display: inline-block;
+    margin-left: 10px;
+    width: 20px;
+}
+
+.radar-chart-playground label {
+    padding: 0 .2rem;
+}
+
+.radar-chart-playground .control-panel input[type='range'] {
+    position: relative;
+    top: .1rem;
+    overflow: hidden;
+}
+
+.radar-chart-playground .control-panel .value {
+    padding-left: .4rem;
+}
+
+.radar-chart-playground div.control-panel {
+    margin: 1rem 0;
+}
+
+.radar-chart-playground div.value-panel {
+    display: flex;
+}
+
+.radar-chart-playground div.value-panel label {
+    width: 2rem;
+}
+
+.radar-chart-playground div.value-panel input[type='range'] {
+    width: 10rem;
+}
+
+.radar-chart-playground div.value-panel .value {
+    width: 2.5rem;
+    padding-left: .9rem;
+}
+
+.radar-chart-playground div.value-panel .delete {
+    width: 2rem;
+    cursor: pointer;
+}
+
+.radar-chart-playground a.add-value {
+    color: #1079c5;
+}

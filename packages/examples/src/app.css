@@ -1,0 +1,25 @@
+
+:root {
+    --vt-font-family-base: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    --vt-font-family-mono: Menlo, Monaco, Consolas, "Courier New", monospace;
+    --vt-c-text-1: #101010;
+}
+
+body {
+    width: 100%;
+    min-width: 320px;
+    min-height: 100vh;
+    font-family: var(--vt-font-family-base);
+    letter-spacing: .2px;
+    line-height: 24px;
+    font-size: 16px;
+    font-weight: 400;
+    color: var(--vt-c-text-1);
+    background-color: var(--vt-c-bg);
+    direction: ltr;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 1rem 2rem;
+}

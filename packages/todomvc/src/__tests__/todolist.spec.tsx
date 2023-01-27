@@ -1,9 +1,9 @@
+import React from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetReactEnv } from "@traxjs/trax-react";
 import { render, fireEvent, RenderResult } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event'
 import { TodoList } from '../todolist';
-import React from 'react';
 import { trax, traxEvents } from '@traxjs/trax';
 
 describe('TodoList', () => {

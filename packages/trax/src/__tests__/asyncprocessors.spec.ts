@@ -356,6 +356,47 @@ describe('Async processors', () => {
                 "2:1 !GET - PStore/root.prettyName -> 'Friendly(Bart) Simpson'",
             ]);
         });
+
+        it('should register dependencies of async sections', async () => {
+            const miscStore = trax.createStore("Misc", {
+                text: "Some Text"
+            });
+
+            const ps = trax.createStore("PStore", (store: Store<Person>) => {
+                const p = store.init({ firstName: "Homer", lastName: "Simpson" });
+
+                store.compute("PrettyName", function* () {
+                    let fn = p.firstName, nm = "";
+                    const ffn: string = yield getFriendlyName(fn);
+                    nm = ffn + " " + p.lastName + " " + miscStore.root.text;
+                    p.prettyName = nm;
+                    trax.log.event("PrettyNameSet");
+                });
+            });
+            const pr = ps.getProcessor("PrettyName")!;
+
+            expect(ps.root.prettyName).toBe(undefined);
+            expect(pr.dependencies).toMatchObject([
+                "PStore/root.firstName",
+            ]);
+
+            await trax.log.awaitEvent("PrettyNameSet");
+
+            expect(pr.dependencies).toMatchObject([
+                "Misc/root.text",
+                "PStore/root.firstName",
+                "PStore/root.lastName",
+            ]);
+
+            expect(ps.root.prettyName).toBe("Friendly(Homer) Simpson Some Text");
+
+            miscStore.root.text = "Blahblah";
+
+            await trax.reconciliation();
+            expect(ps.root.prettyName).toBe("Friendly(Homer) Simpson Some Text"); // unchanged yet
+            await trax.log.awaitEvent("PrettyNameSet");
+            expect(ps.root.prettyName).toBe("Friendly(Homer) Simpson Blahblah");
+        });
     });
 
     describe('Errors', () => {

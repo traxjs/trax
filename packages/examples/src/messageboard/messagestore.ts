@@ -28,14 +28,14 @@ export function createMessageStore() {
         return {
             data,
             // The following methods should be called following SSE events received from the server
-            addMessage(m: Message) {
+            syncNewMessage(m: Message) {
                 messages.push(m);
             },
-            deleteMessage(messageId: string) {
+            syncMessageDelete(messageId: string) {
                 const idx = messages.findIndex((msg) => msg.id === messageId);
                 (idx > -1) && messages.splice(idx, 1);
             },
-            updateMessage(m: Partial<Message> & { id: string }) {
+            syncMessageUpdate(m: Partial<Message> & { id: string }) {
                 const msg = messages.find((msg) => msg.id === m.id);
                 if (msg) {
                     // update exisiting message

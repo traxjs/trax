@@ -6,9 +6,9 @@ interface UserStoreData {
     [userId: string]: User;
 }
 
-
 /** Internal message use to ease test synchronization */
 export const LOG_USER_STORE_GET_USERS = "@traxjs/examples/messageboard/userstore:GetUsers";
+export const LOG_USER_STORE_USERS_RECEIVED = "@traxjs/examples/messageboard/userstore:UsersReceived";
 
 export type UserStore = ReturnType<typeof createUserStore>;
 
@@ -82,6 +82,7 @@ export function createUserStore() {
                         resolvePromise(k[0], null);
                     }
                 }
+                trax.log.event(LOG_USER_STORE_USERS_RECEIVED, { src: store.id });
             }
 
             function resolvePromise(userId: string, result: User | null) {

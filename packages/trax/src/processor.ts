@@ -65,6 +65,7 @@ export function createTraxProcessor(
      * We cannot keep direct object references as it would prevent object garbage collection
      */
     let objectDependencies = new Set<string>();
+    let oldObjectDependencies: Set<string> | undefined;
     /** Log processing context */
     let processingContext: ProcessingContext | null = null;
     /** Reconciliation id used during the last compute() call - used to track invalid cycles */
@@ -100,6 +101,7 @@ export function createTraxProcessor(
             // onProcessEnd
             computing = false;
             processorStack.shift();
+            updateDependencies();
         }
     );
 
@@ -165,7 +167,7 @@ export function createTraxProcessor(
                 dirty = false;
 
                 propDependencies.clear();
-                const oldObjectDependencies = objectDependencies;
+                oldObjectDependencies = objectDependencies;
                 objectDependencies = new Set<string>();
 
                 // core compute
@@ -177,10 +179,9 @@ export function createTraxProcessor(
                 if (r && typeof r === "object" && typeof (r as any).catch === "function") {
                     // r is a promise
                     // no need to log the error as it was already caught up by the wrapped function
-                    (r as any as Promise<any>).catch(() => {});
+                    (r as any as Promise<any>).catch(() => { });
                 }
 
-                updateDependencies(oldObjectDependencies);
                 if (autoCompute && propDependencies.size === 0) {
                     error(`(${processorId}) No dependencies found: processor will never be re-executed`);
                 }
@@ -218,15 +219,18 @@ export function createTraxProcessor(
         return objectId + "." + propName;
     }
 
-    function updateDependencies(oldObjectDependencies: Set<string>) {
+    function updateDependencies() {
         // remove old dependencies
-        for (const objectId of oldObjectDependencies) {
-            if (!objectDependencies.has(objectId)) {
-                const md = tmd(getDataObject(objectId));
-                if (md && md.propListeners) {
-                    md.propListeners.delete(pr);
+        if (oldObjectDependencies) {
+            for (const objectId of oldObjectDependencies) {
+                if (!objectDependencies.has(objectId)) {
+                    const md = tmd(getDataObject(objectId));
+                    if (md && md.propListeners) {
+                        md.propListeners.delete(pr);
+                    }
                 }
             }
+            oldObjectDependencies = undefined;
         }
         // register current dependencies
         for (const objectId of objectDependencies) {

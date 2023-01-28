@@ -289,7 +289,7 @@ export function createTraxEnv(): Trax {
                     }
                     // don't add log for common internal built-in props
                     addLog = ((prop !== "then" && prop !== "constructor") || v !== undefined);
-                    if (target[prop]!==undefined) {
+                    if (target[prop] !== undefined) {
                         // don't set the value if undefined (otherwise it may create items in arrays)
                         v = target[prop] = wrapPropObject(target[prop], prop, md);
                     }

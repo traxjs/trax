@@ -39,7 +39,7 @@ describe('Message Store', () => {
     });
 
     it('should support adding messages', async () => {
-        store.addMessage({ id: "X1", authorId: "U1", timeStamp: 121212, text: "Hi there!" });
+        store.syncNewMessage({ id: "X1", authorId: "U1", timeStamp: 121212, text: "Hi there!" });
         await trax.reconciliation();
         expect(printContent()).toMatchObject([
             "Initialized: false",
@@ -58,7 +58,7 @@ describe('Message Store', () => {
             "- M6/U2/1674839003000: Homer, we have to do something. Today Bart's drinking people's blood. Tomorrow he could be smoking.",
             "- M7/U2/1674839005000: And all this time I Thought 'Googling Yourself' Meant The Other Thing",
         ]);
-        store.addMessage({ id: "X2", authorId: "U2", timeStamp: 343434, text: "Glad to see you!" });
+        store.syncNewMessage({ id: "X2", authorId: "U2", timeStamp: 343434, text: "Glad to see you!" });
         await trax.reconciliation();
         expect(printContent()).toMatchObject([
             "Initialized: true",
@@ -76,7 +76,7 @@ describe('Message Store', () => {
 
     it('should support deleting messages', async () => {
         await trax.log.awaitEvent(LOG_MESSAGE_STORE_INITIALIZED, { src: store.id });
-        store.deleteMessage("M6");
+        store.syncMessageDelete("M6");
         await trax.reconciliation();
         expect(printContent()).toMatchObject([
             "Initialized: true",
@@ -91,8 +91,8 @@ describe('Message Store', () => {
 
     it('should support message update', async () => {
         await trax.log.awaitEvent(LOG_MESSAGE_STORE_INITIALIZED, { src: store.id });
-        store.updateMessage({ id: "M6", text: "Blah Blah" });
-        store.updateMessage({ id: "M5", timeStamp: 101010, authorId: "U3" });
+        store.syncMessageUpdate({ id: "M6", text: "Blah Blah" });
+        store.syncMessageUpdate({ id: "M5", timeStamp: 101010, authorId: "U3" });
         await trax.reconciliation();
         expect(printContent()).toMatchObject([
             "Initialized: true",

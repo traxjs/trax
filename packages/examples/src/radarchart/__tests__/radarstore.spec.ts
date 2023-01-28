@@ -1,5 +1,5 @@
 import { trax } from '@traxjs/trax';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createRadarStore, RadarStore } from '../radarstore';
 
 describe('Radar Store', () => {

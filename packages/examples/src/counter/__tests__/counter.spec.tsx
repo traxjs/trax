@@ -95,23 +95,27 @@ describe('Counter', () => {
             return container.container.querySelector("div.counter")! as HTMLDivElement;
         }
 
+        function counterValue() {
+            return counterDiv().querySelector(".counter-value")!.innerHTML.trim();
+        }
+
         it('should render and reset counter', async () => {
             expect(counterDiv().dataset.id).toBe("React/%FC:Counter:1");
-            expect(counterDiv().innerHTML.trim()).toBe("0");
+            expect(counterValue()).toBe("0");
             setIntervalCb();
             await renderComplete();
-            expect(counterDiv().innerHTML.trim()).toBe("1");
+            expect(counterValue()).toBe("1");
             setIntervalCb();
             await renderComplete();
-            expect(counterDiv().innerHTML.trim()).toBe("2");
+            expect(counterValue()).toBe("2");
 
             // reset
             fireEvent.click(counterDiv());
             await renderComplete();
-            expect(counterDiv().innerHTML.trim()).toBe("0");
+            expect(counterValue()).toBe("0");
             setIntervalCb();
             await renderComplete();
-            expect(counterDiv().innerHTML.trim()).toBe("1");
+            expect(counterValue()).toBe("1");
         });
     });
 });

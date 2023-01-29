@@ -291,14 +291,22 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
 
 }
 
-function checkPropMatch(e: StreamEvent, targetData?: string | number | boolean | Record<string, string | number | boolean>): boolean {
+function checkPropMatch(e: StreamEvent, targetData?: string | number | boolean | Record<string, string | number | boolean | RegExp>): boolean {
     if (targetData === undefined || e.data === undefined) return true;
     const data = JSON.parse(e.data);
     if (typeof targetData !== "object" && targetData !== null) {
         return data === targetData;
     } else if (targetData !== null && data !== null && typeof data === "object") {
         for (const k of Object.keys(targetData)) {
-            if ((data as any)[k] !== targetData[k]) {
+            const value = (data as any)[k];
+            const target = targetData[k];
+            if (target instanceof RegExp) {
+                if (typeof value === "string") {
+                    if (value.match(target) === null) return false;
+                } else {
+                    return false;
+                }
+            } else if (value !== targetData[k]) {
                 return false;
             }
         }

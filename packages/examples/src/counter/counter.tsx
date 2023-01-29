@@ -27,7 +27,7 @@ export const Counter = component("Counter", () => {
     const cs = useStore(createCounterStore);
 
     return <div data-id={componentId()} className='counter'
-        title="Click me to reset" onClick={cs.reset}>
-        {cs.data.count}
+        title="Click to reset" onClick={cs.reset}>
+        <h1> Counter:  <span className="counter-value">{cs.data.count}</span></h1>
     </div>
 });

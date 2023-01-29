@@ -1,4 +1,3 @@
-
 :root {
     --vt-font-family-base: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
     --vt-font-family-mono: Menlo, Monaco, Consolas, "Courier New", monospace;
@@ -6,7 +5,6 @@
 }
 
 body {
-    width: 100%;
     min-width: 320px;
     min-height: 100vh;
     font-family: var(--vt-font-family-base);
@@ -21,5 +19,19 @@ body {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    margin: 1rem 2rem;
+    margin: 0;
+    padding: 1rem 2rem;
+}
+
+.counter h1 {
+    cursor: pointer;
+}
+
+hr {
+    margin: 2rem 0;
+    border: 1px solid #dddddd;
+}
+
+h1 {
+    margin-bottom: 1.7rem;
 }

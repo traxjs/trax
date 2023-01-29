@@ -525,7 +525,7 @@ export interface EventStream {
      * @param eventType 
      * @param targetData [optional] value or fields that should be matched against the event data (depends on the event type)
      */
-    awaitEvent(eventType: string | "*", targetData?: string | number | boolean | Record<string, string | number | boolean>): Promise<StreamEvent>;
+    awaitEvent(eventType: string | "*", targetData?: string | number | boolean | Record<string, string | number | boolean | RegExp>): Promise<StreamEvent>;
     /**
      * Register an event consumer that will be synchronously called when a given event occurs
      * @param eventType an event type or "*" to listen to all events

@@ -18,6 +18,7 @@ export const RcPlayground = component("RcPlayground", () => {
     const values = data.values;
 
     return <div data-id={componentId()} className='radar-chart-playground'>
+        <h1> Radar Chart </h1>
         <RadarChart store={rs} />
         <div>
             <div>

@@ -3,7 +3,7 @@ import { messageStore as globalMessageStore, MessageStore } from "./messagestore
 import { userStore as globalUserStore, UserStore } from "./userstore";
 import { Message, User } from "./types";
 
-interface MessageGroup {
+export interface MessageBoardGroup {
     authorId: string;
     authorName: string;
     authorAvatar: string;
@@ -13,7 +13,7 @@ interface MessageGroup {
 
 interface MessageBoardData {
     loading: boolean;
-    groups: MessageGroup[];
+    groups: MessageBoardGroup[];
 }
 
 export type MessageBoardStore = ReturnType<typeof createMessageBoardStore>;
@@ -27,21 +27,21 @@ export function createMessageBoardStore(msgStore?: MessageStore, usrStore?: User
             loading: true,
             groups: []
         });
-        const messages = messageStore.data.messages;
-        const sortedMessage = store.add("SortedMessages", []);
+        const messageStoreMsgs = messageStore.data.messages;
 
         store.compute("Loading", () => {
             data.loading = !messageStore.data.initialized;
         });
 
-        store.compute("MessageSort", () => {
-            messages.sort((m1, m2) => m1.timeStamp - m2.timeStamp);
-        });
-
         store.compute("MessageGroups", () => {
+            // we need to clone messages as sort mutates the array 
+            // and we don't want to sort the messageStore collection
+            const messages = messageStoreMsgs.slice(0);
+            messages.sort((m1, m2) => m1.timeStamp - m2.timeStamp);
+
             // create the MessageGroup objects based on the messages collection
-            const groups: MessageGroup[] = [];
-            let currentMsgGroup: MessageGroup | null = null;
+            const groups: MessageBoardGroup[] = [];
+            let currentMsgGroup: MessageBoardGroup | null = null;
             let currentMessages: Message[] = [];
             for (const msg of messages) {
                 if (!currentMsgGroup || currentMsgGroup.authorId !== msg.authorId) {
@@ -85,14 +85,9 @@ export function createMessageBoardStore(msgStore?: MessageStore, usrStore?: User
             }
         });
 
-        // Store API
+        // Simply expose the data as API
         return {
-            data,
-            deleteMessage(messageId: string) {
-                // This method should normaly make a server request that
-                // would translate into the following call (e.g. through SSE push event):
-                messageStore.syncMessageDelete(messageId);
-            }
+            data
         }
     });
 };

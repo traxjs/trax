@@ -1,0 +1,83 @@
+.message-group {
+    display: flex;
+    margin-top: .9rem;
+}
+
+.message-group .avatar-panel {
+    width: 4rem;
+    margin: 0;
+    padding: 0;
+}
+
+.message-group img.avatar {
+    height: 3rem;
+    width: 3rem;
+    border-radius: 1.5rem;
+    border: 1px solid;
+}
+
+.message-group .author-name {
+    margin: 0;
+    padding-top: .3rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    line-height: 1rem;
+}
+
+.message-group .status {
+    margin: 0;
+    padding: 0;
+    color: #777777;
+    font-size: .9rem;
+}
+
+.message-group .status.online {
+    color: #28b700;
+    font-weight: 600;
+}
+
+.message-group .status.away {
+    color: #c19400;
+    font-weight: 600;
+}
+
+.message-group ul {
+    margin: 0;
+    padding-left: 1rem;
+}
+
+.message-control-panel {
+    padding: 1rem;
+    background-color: #dddddd;
+    border-radius: 8px;
+    margin: 2rem 0;
+}
+
+.message-control-panel .del {
+    padding-left: .5rem;
+    cursor: pointer;
+}
+
+.message-control-panel p {
+    margin: 0;
+    font-size: 1rem;;
+}
+
+.message-control-panel .meta-data {
+    font-family: var(--vt-font-family-mono);
+    color: #555555;
+    font-weight: 600;
+}
+
+.message-control-panel ul {
+    padding: 0 0 0 1rem;
+    margin: .5rem 0 0 0;
+}
+
+.message-control-panel h2 {
+    margin-top: 0;
+}
+
+.message-control-panel .cols {
+    display: flex;
+}

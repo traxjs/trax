@@ -524,6 +524,57 @@ describe('Event Stream', () => {
             expect(count).toBe(1); // no more calls (awaitEvent is only called once)
         });
 
+        it('should allow to await an event matching certain data properties (object + regexp)', async () => {
+            let count = 0, lastEvent: StreamEvent | null = null;
+
+            log.awaitEvent(traxEvents.ProcessingEnd, { name: /process/, src: "abc" }).then((e) => {
+                count++;
+                lastEvent = e;
+            });
+
+            log.info("A");
+            let c = log.startProcessingContext({ name: "processA" });
+            log.info("B");
+            c.end();
+
+            expect(count).toBe(0);
+            await pause(1);
+            expect(count).toBe(0); // src doesn't match
+
+            expect(printLogs()).toMatchObject([
+                "0:1 !LOG - A",
+                "0:2 !PCS - processA",
+                "0:3 !LOG - B",
+                "0:4 !PCE - 0:2",
+            ]);
+
+            log.info("C");
+            let pc = log.startProcessingContext({ name: "XYZ/processX", src: "abc" });
+            pc.end()
+            expect(count).toBe(0);
+            log.info("D");
+
+            await pause(1);
+            expect(count).toBe(1); // was called
+
+            expect(printLogs(1)).toMatchObject([
+                "1:1 !LOG - C",
+                "1:2 !PCS - XYZ/processX",
+                "1:3 !PCE - 1:2",
+                "1:4 !LOG - D",
+            ]);
+            expect(JSON.parse((lastEvent as any).data).processId).toBe("1:2")
+
+            log.info("E");
+            pc = log.startProcessingContext({ name: "XYZ/processX", src: "abc" })
+            pc.end()
+            expect(count).toBe(1);
+            log.info("F");
+
+            await pause(1);
+            expect(count).toBe(1); // no more calls (awaitEvent is only called once)
+        });
+
         it('should allow to await an event matching certain data properties (primitive type data)', async () => {
             let count = 0, lastEvent: StreamEvent | null = null
 

@@ -154,7 +154,7 @@ describe('TodoList', () => {
     }
 
     it('should load properly', async () => {
-        expect(todoList().dataset.id).toBe("React/%FC:TodoList:1");
+        expect(todoList().dataset.id).toBe("React/%TodoList:1");
         expect(mainInput().value).toBe("");
         expect(todoItemsLength()).toBe(0);
     });

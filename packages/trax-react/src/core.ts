@@ -17,7 +17,7 @@ interface ReactData {
 let CHANGE_COUNT = 0;
 
 function buildProcessorId(name: string, instanceCount: number) {
-    return "FC:" + name + ":" + instanceCount;
+    return name + ":" + instanceCount;
 }
 
 function createReactStore() {
@@ -35,7 +35,6 @@ function createReactStore() {
                 } else {
                     instanceCount = ++creationCounts[name];
                 }
-                // FC: Function Component
                 const id = buildProcessorId(name, instanceCount);
                 cc.id = id;
 

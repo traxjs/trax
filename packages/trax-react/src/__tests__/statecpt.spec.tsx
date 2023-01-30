@@ -37,8 +37,8 @@ describe('StateCpt', () => {
 
     it('should support multiple state objects', async () => {
         await init();
-        expect(valueSpans(3)!.innerHTML.trim()).toBe("State[FC:StateCpt:1]/root");
-        expect(valueSpans(4)!.innerHTML.trim()).toBe("State[FC:StateCpt:1]1/root");
+        expect(valueSpans(3)!.innerHTML.trim()).toBe("State[StateCpt:1]/root");
+        expect(valueSpans(4)!.innerHTML.trim()).toBe("State[StateCpt:1]1/root");
     });
 
     it('should support counters increment on multiple state objects', async () => {

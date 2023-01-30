@@ -100,7 +100,7 @@ describe('Counter', () => {
         }
 
         it('should render and reset counter', async () => {
-            expect(counterDiv().dataset.id).toBe("React/%FC:Counter:1");
+            expect(counterDiv().dataset.id).toBe("React/%Counter:1");
             expect(counterValue()).toBe("0");
             setIntervalCb();
             await renderComplete();

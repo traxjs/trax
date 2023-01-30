@@ -66,6 +66,4 @@ The example demonstrate
 - how to support asynchronous transformations (cf. ```store.compute(["AuthorInfo"...```) to retrieve user data associated to a group of messages
 - how to update mutable lists (cf. ```trax.updateArray```)
 
-[example still under construction]
-
 [SSE]: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events

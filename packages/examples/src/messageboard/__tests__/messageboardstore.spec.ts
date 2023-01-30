@@ -50,7 +50,7 @@ describe('MessageBoard Store', () => {
             "#U1/Unknown/ - ",
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Unknown/ - ",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
             "#U1/Unknown/ - ",
             "- M4/U1/1674839006000 Give me the number for 911!",
         ]);
@@ -67,7 +67,7 @@ describe('MessageBoard Store', () => {
             "#U1/Away/homer.png - Homer Simpson",
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Online/marge.png - Marge Simpson",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
             "#U1/Away/homer.png - Homer Simpson",
             "- M4/U1/1674839006000 Give me the number for 911!",
         ]);
@@ -95,7 +95,7 @@ describe('MessageBoard Store', () => {
             "#U1/Away/homer.png - Homer Simpson",
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Online/marge.png - Marge Simpson",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
             "#U1/Away/homer.png - Homer Simpson",
             "- M4/U1/1674839006000 Give me the number for 911!",
             "#U2/Online/marge.png - Marge Simpson",
@@ -123,7 +123,7 @@ describe('MessageBoard Store', () => {
             "#U1/Away/homer.png - Homer Simpson",
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Online/marge.png - Marge Simpson",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
             "#U1/Away/homer.png - Homer Simpson",
             "- M4/U1/1674839006000 Give me the number for 911!",
             "#U2/Online/marge.png - Marge Simpson",
@@ -150,7 +150,7 @@ describe('MessageBoard Store', () => {
             "#U1/Away/homer.png - Homer Simpson",
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Online/marge.png - Marge Simpson",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
             "#U1/Away/homer.png - Homer Simpson",
             "- M4/U1/1674839006000 Give me the number for 911!",
             "#U3/Unknown/ - ", // pending
@@ -173,7 +173,7 @@ describe('MessageBoard Store', () => {
             "#U1/Away/homer.png - Homer Simpson",
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Online/marge.png - Marge Simpson",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
             "#U1/Away/homer.png - Homer Simpson",
             "- M4/U1/1674839006000 Give me the number for 911!",
             "#U3/OOO/bart.png - Bart Simpson", // updated
@@ -198,7 +198,7 @@ describe('MessageBoard Store', () => {
             "#U1/Away/homer.png - Homer Simpson",
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Online/marge.png - Marge Simpson",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
             "#U1/Away/homer.png - Homer Simpson",
             "- M4/U1/1674839006000 Give me the number for 911!",
         ]);
@@ -212,7 +212,7 @@ describe('MessageBoard Store', () => {
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Online/marge.png - Marge Simpson",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
             "#U1/Away/homer.png - Homer Simpson",
             "- M4/U1/1674839006000 Give me the number for 911!",
         ]);
@@ -225,7 +225,7 @@ describe('MessageBoard Store', () => {
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Online/marge.png - Marge Simpson",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
         ]);
     });
 
@@ -241,7 +241,7 @@ describe('MessageBoard Store', () => {
             "#U1/Away/homer.png - Homer Simpson",
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Online/marge.png - Marge Simpson",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
             "#U1/Away/homer.png - Homer Simpson",
             "- M4/U1/1674839006000 Give me the number for 911!",
         ]);
@@ -259,7 +259,7 @@ describe('MessageBoard Store', () => {
             "#U1/Online/homer.png - HOMER", // change
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Online/marge.png - Marge Simpson",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
             "#U1/Online/homer.png - HOMER", // change
             "- M4/U1/1674839006000 Give me the number for 911!",
         ]);
@@ -273,17 +273,17 @@ describe('MessageBoard Store', () => {
         });
         await trax.reconciliation();
         expect(printContent()).toMatchObject([
-            "#U1/Online/homer.png - HOMER",
+            "#U1/Away/homer.png - Homer Simpson",
             "- M1/U1/1674839000000 Trying is the first step towards failure.",
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",
             "#U2/Online/marge.png - Marge Simpson",
             "- M5/U2/1674839002000 NEW TEXT", // update
             "- M6/U2/1674839003000 Homer, we have to do something. Today Bart's drinking people's blood. Tomorrow he could be smoking.",
-            "#U1/Online/homer.png - HOMER",
+            "#U1/Away/homer.png - Homer Simpson",
             "- M3/U1/1674839004000 Stupidity got us into this mess, and stupidity will get us out.",
             "#U2/Online/marge.png - Marge Simpson",
-            "- M7/U2/1674839005000 And all this time I Thought 'Googling Yourself' Meant The Other Thing",
-            "#U1/Online/homer.png - HOMER",
+            "- M7/U2/1674839005000 Aim low. Aim so low no one will even care if you succeed",
+            "#U1/Away/homer.png - Homer Simpson",
             "- M4/U1/1674839006000 Give me the number for 911!",
         ]);
     });

@@ -22,6 +22,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
     let tail: StreamListEvent | undefined;
     const awaitMap = new Map<string, awaitResolve[]>();
     const consumers: ((e: StreamEvent) => void)[] = [];
+    let consoleOutput = false;
 
     // ----------------------------------------------
     // cycle id managment
@@ -167,6 +168,9 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
             }
             resolveAwaitPromises(evt.type, evt);
         }
+        if (consoleOutput) {
+            console.log(`TRAX ${evt.id} ${evt.type}${evt.data ? " " + JSON.stringify(evt.data) : ""}`);
+        }
         return evt;
     }
 
@@ -186,6 +190,12 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
     }
 
     return {
+        get consoleOutput() {
+            return consoleOutput
+        },
+        set consoleOutput(v: boolean) {
+            consoleOutput = v;
+        },
         event(type: string, data?: LogData, src?: any) {
             logEvent(type, data, src);
         },

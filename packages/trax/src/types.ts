@@ -510,6 +510,11 @@ export interface EventStream {
      */
     maxSize: number;
     /**
+     * Output all logs on the dev console if set to true
+     * Default: false
+     */
+    consoleOutput: boolean;
+    /**
      * Scan all current entries in the log stream
      * (oldest to newest)
      * @param eventProcessor the function called for each event - can return false to stop the scan

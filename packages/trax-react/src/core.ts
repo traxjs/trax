@@ -94,7 +94,7 @@ export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.E
         cc.processor!.compute();
         return cc.jsx;
     }
-    
+
     // use a dynamic function to keep the component name (will show in react dev tools)
     const fcName = name.replace(/\:/g, "_");
     const func = new Function("fc", `return function ${fcName}(props){ return fc(props) }`);
@@ -103,6 +103,7 @@ export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.E
 
 /**
  * Get the trax identifier associated to a trax object
+ * Shortcut to trax.getTraxId(...)
  * @param o 
  * @returns 
  */
@@ -111,7 +112,7 @@ export function traxId(o: any) {
 }
 
 /**
- * Return the id of the trax processor assiated to a react component
+ * Return the id of the trax processor associated to a react component
  * when called in in the component render function
  * Useful to insert the component id in the component HTML 
  * (e.g. through the data-id attribute)
@@ -132,7 +133,7 @@ export function resetReactEnv() {
 /**
  * Helper function to create or retrieve a store instance
  * attached to the caller component
- * @param factory a function to call to create the store instance
+ * @param factory a factory function to create the store instance
  * @returns the store object
  */
 export function useStore<T = any>(factory: () => T): T {

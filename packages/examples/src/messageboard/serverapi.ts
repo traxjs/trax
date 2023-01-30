@@ -18,7 +18,7 @@ export const serverAPI = {
         add("U1", 6000, "Give me the number for 911!");
         add("U2", 2000, "I guess one person can make a difference. But most of the time, they probably shouldn't.");
         add("U2", 3000, "Homer, we have to do something. Today Bart's drinking people's blood. Tomorrow he could be smoking.");
-        add("U2", 5000, "And all this time I Thought 'Googling Yourself' Meant The Other Thing");
+        add("U2", 5000, "Aim low. Aim so low no one will even care if you succeed");
 
         return msgs;
         function add(userId: string, tsShift: number, text: string) {
@@ -38,7 +38,7 @@ export const serverAPI = {
             if (!processedIds.has(id)) {
                 processedIds.add(id);
                 if (users[id]) {
-                    res.push(users[id]);
+                    res.push({ ...users[id] });
                 }
             }
         }
@@ -52,7 +52,7 @@ async function pause(ms: number) {
     });
 }
 
-const users: { [id: string]: User } = {
+export const users: { [id: string]: User } = {
     "U1": {
         id: "U1",
         name: "Homer Simpson",

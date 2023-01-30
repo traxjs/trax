@@ -34,7 +34,7 @@ describe('Message Store', () => {
             "- M4/U1/1674839006000: Give me the number for 911!",
             "- M5/U2/1674839002000: I guess one person can make a difference. But most of the time, they probably shouldn't.",
             "- M6/U2/1674839003000: Homer, we have to do something. Today Bart's drinking people's blood. Tomorrow he could be smoking.",
-            "- M7/U2/1674839005000: And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000: Aim low. Aim so low no one will even care if you succeed",
         ]);
     });
 
@@ -56,7 +56,7 @@ describe('Message Store', () => {
             "- M4/U1/1674839006000: Give me the number for 911!",
             "- M5/U2/1674839002000: I guess one person can make a difference. But most of the time, they probably shouldn't.",
             "- M6/U2/1674839003000: Homer, we have to do something. Today Bart's drinking people's blood. Tomorrow he could be smoking.",
-            "- M7/U2/1674839005000: And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000: Aim low. Aim so low no one will even care if you succeed",
         ]);
         store.syncNewMessage({ id: "X2", authorId: "U2", timeStamp: 343434, text: "Glad to see you!" });
         await trax.reconciliation();
@@ -69,7 +69,7 @@ describe('Message Store', () => {
             "- M4/U1/1674839006000: Give me the number for 911!",
             "- M5/U2/1674839002000: I guess one person can make a difference. But most of the time, they probably shouldn't.",
             "- M6/U2/1674839003000: Homer, we have to do something. Today Bart's drinking people's blood. Tomorrow he could be smoking.",
-            "- M7/U2/1674839005000: And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000: Aim low. Aim so low no one will even care if you succeed",
             "- X2/U2/343434: Glad to see you!",
         ]);
     });
@@ -85,7 +85,7 @@ describe('Message Store', () => {
             "- M3/U1/1674839004000: Stupidity got us into this mess, and stupidity will get us out.",
             "- M4/U1/1674839006000: Give me the number for 911!",
             "- M5/U2/1674839002000: I guess one person can make a difference. But most of the time, they probably shouldn't.",
-            "- M7/U2/1674839005000: And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000: Aim low. Aim so low no one will even care if you succeed",
         ]);
     });
 
@@ -102,7 +102,7 @@ describe('Message Store', () => {
             "- M4/U1/1674839006000: Give me the number for 911!",
             "- M5/U3/101010: I guess one person can make a difference. But most of the time, they probably shouldn't.",
             "- M6/U2/1674839003000: Blah Blah",
-            "- M7/U2/1674839005000: And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- M7/U2/1674839005000: Aim low. Aim so low no one will even care if you succeed",
         ]);
     });
 

@@ -1,9 +1,9 @@
 import { trax } from "@traxjs/trax";
 import { component, componentId, useStore } from "@traxjs/trax-react";
 import { createMessageBoardStore, MessageBoardGroup } from "./messageboardstore";
+import { ControlPanel } from "./controlpanel";
 import { Message } from "./types";
 import './css/messageboard.css';
-import { messageStore } from "./messagestore";
 
 export const MessageBoard = component("MessageBoard", () => {
     const store = useStore(createMessageBoardStore);
@@ -32,6 +32,12 @@ const MessageGroup = component("MessageGroup", (props: { group: MessageBoardGrou
     if (group.authorAvatar) {
         avatar = <img className="avatar" alt={group.authorName} src={"/avatars/" + group.authorAvatar} />
     }
+    let status:string = group.authorStatus || " ";
+    if (status === "OOO") {
+        status = " Out of Office ";
+    } else     if (status === "Unknown") {
+        status = " - ";
+    }
 
     return <div className="message-group" data-id={componentId()}>
         <div className="avatar-panel">
@@ -40,7 +46,7 @@ const MessageGroup = component("MessageGroup", (props: { group: MessageBoardGrou
         <div className="content">
             <section className="author">
                 <p className="author-name"> {group.authorName || " - "} </p>
-                <p className={"status " + group.authorStatus.toLowerCase()}> {group.authorStatus || " "} </p>
+                <p className={"status " + group.authorStatus.toLowerCase()}> {status} </p>
             </section>
             <ul className="messages">
                 {group.messages.map(m =>
@@ -57,20 +63,4 @@ const MessageCpt = component("MessageCpt", (props: { message: Message }) => {
     return <li className="message" data-id={componentId()}> {message.text} </li>
 });
 
-const ControlPanel = component("ControlPanel", () => {
-    const messages = messageStore.data.messages;
 
-    return <div className="message-control-panel" data-id={componentId()}>
-        <div>
-            {/* <h2> Control Panel </h2> */}
-            <p> Unprocessed messages, as received from the server: </p>
-            <ul>
-                {messages.map(m => <li>
-                    <span className="meta-data">{m.id} at {m.timeStamp} from {m.authorId}: </span>
-                    <span className="text">{m.text}</span>
-                    <span className="del" onClick={() => messageStore.syncMessageDelete(m.id)} title="Delete this message"> ✕ </span>
-                </li>)}
-            </ul>
-        </div>
-    </div>
-});

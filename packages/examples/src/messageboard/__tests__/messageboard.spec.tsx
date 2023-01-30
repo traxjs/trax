@@ -63,17 +63,17 @@ describe('MessageBoard', () => {
         await trax.log.awaitEvent(LOG_USER_STORE_GET_USERS);
         // intermediary state
         expect(printContent()).toMatchObject([
-            "# - (Unknown) x",
+            "# - (-) x",
             "- Trying is the first step towards failure.",
             "- If he's so smart, how come he's dead?",
-            "# - (Unknown) x",
+            "# - (-) x",
             "- I guess one person can make a difference. But most of the time, they probably shouldn't.",
             "- Homer, we have to do something. Today Bart's drinking people's blood. Tomorrow he could be smoking.",
-            "# - (Unknown) x",
+            "# - (-) x",
             "- Stupidity got us into this mess, and stupidity will get us out.",
-            "# - (Unknown) x",
-            "- And all this time I Thought 'Googling Yourself' Meant The Other Thing",
-            "# - (Unknown) x",
+            "# - (-) x",
+            "- Aim low. Aim so low no one will even care if you succeed",
+            "# - (-) x",
             "- Give me the number for 911!",
         ]);
 
@@ -89,7 +89,7 @@ describe('MessageBoard', () => {
             "# Homer Simpson (Away) homer.png",
             "- Stupidity got us into this mess, and stupidity will get us out.",
             "# Marge Simpson (Online) marge.png",
-            "- And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- Aim low. Aim so low no one will even care if you succeed",
             "# Homer Simpson (Away) homer.png",
             "- Give me the number for 911!",
         ]);
@@ -108,7 +108,7 @@ describe('MessageBoard', () => {
             "# Homer Simpson (Away) homer.png",
             "- Stupidity got us into this mess, and stupidity will get us out.",
             "# Marge Simpson (Online) marge.png",
-            "- And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- Aim low. Aim so low no one will even care if you succeed",
             "# Homer Simpson (Away) homer.png",
             "- Give me the number for 911!",
         ]);
@@ -126,7 +126,7 @@ describe('MessageBoard', () => {
             "# Homer Simpson (Away) homer.png",
             "- Stupidity got us into this mess, and stupidity will get us out.",
             "# Marge Simpson (Online) marge.png",
-            "- And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- Aim low. Aim so low no one will even care if you succeed",
             "# Homer Simpson (Away) homer.png",
             "- Give me the number for 911!",
         ]);
@@ -144,7 +144,7 @@ describe('MessageBoard', () => {
 
         expect(printContent()).toMatchObject([
             "# Marge Simpson (Online) marge.png",
-            "- And all this time I Thought 'Googling Yourself' Meant The Other Thing",
+            "- Aim low. Aim so low no one will even care if you succeed",
         ]);
 
         fireEvent.click(controlPanelDeleteBtn(0)!);

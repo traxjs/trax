@@ -53,14 +53,34 @@
     margin: 2rem 0;
 }
 
+.message-control-panel .server-sim {
+    margin: 0 0 .5rem 0;
+}
+
+.message-control-panel p.messages {
+    margin: 1rem 0 .5rem 0;
+    font-size: 1rem;
+}
+
+.message-control-panel div.user-actions {
+    margin: .5rem 0 0 0;
+}
+
+.message-control-panel button {
+    border-radius: 5px;
+    border: 1px solid #bbbbbb;
+    color: #FFFFFF;
+    background-color: #068bff;
+    margin: 0 .1rem;
+    padding: .2rem .7rem;
+}
+
 .message-control-panel .del {
-    padding-left: .5rem;
     cursor: pointer;
 }
 
-.message-control-panel p {
-    margin: 0;
-    font-size: 1rem;;
+.message-control-panel button:hover {
+    background-color: #027de9;
 }
 
 .message-control-panel .meta-data {
@@ -71,13 +91,9 @@
 
 .message-control-panel ul {
     padding: 0 0 0 1rem;
-    margin: .5rem 0 0 0;
+    margin: 0;
 }
 
 .message-control-panel h2 {
     margin-top: 0;
-}
-
-.message-control-panel .cols {
-    display: flex;
 }

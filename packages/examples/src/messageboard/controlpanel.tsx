@@ -1,5 +1,6 @@
 import { trax } from "@traxjs/trax";
 import { component, componentId, useStore } from "@traxjs/trax-react";
+import { useTraxState } from "@traxjs/trax-react/lib/core";
 import './css/messageboard.css';
 import { messageStore } from "./messagestore";
 import { users } from "./serverapi";
@@ -7,12 +8,11 @@ import { userStore } from "./userstore";
 
 export const ControlPanel = component("ControlPanel", () => {
     const messages = messageStore.data.messages;
-    const uid = componentId()
-    const store = useStore(() => trax.createStore("ControlPanelStore", {
+    const uid = componentId();
+    const state = useTraxState({
         selectedUser: "U1",
         newMessageCount: 0
-    }));
-    const data = store.root;
+    });
 
     return <div className="message-control-panel" data-id={componentId()}>
         <div>
@@ -29,8 +29,8 @@ export const ControlPanel = component("ControlPanel", () => {
                         const htmlId = uid + "-" + user.id;
                         return <>
                             <input id={htmlId} type="radio" value={user.id} name="user"
-                                checked={data.selectedUser === user.id}
-                                onChange={() => data.selectedUser = user.id} />
+                                checked={state.selectedUser === user.id}
+                                onChange={() => state.selectedUser = user.id} />
                             <label htmlFor={htmlId}> {user.id}({user.name}) </label>
                         </>
                     })}
@@ -72,34 +72,34 @@ export const ControlPanel = component("ControlPanel", () => {
     </div >
 
     function setUserStatus(status: "Online" | "Away" | "OOO" | "Unknown") {
-        userStore.updateUser({ id: data.selectedUser, status });
+        userStore.updateUser({ id: state.selectedUser, status });
     }
 
     async function toggleUserName() {
-        const usr = await userStore.getUser(data.selectedUser);
+        const usr = await userStore.getUser(state.selectedUser);
         if (usr) {
             const name = usr.name;
             userStore.updateUser({
-                id: data.selectedUser,
-                name: name.match(/[a-z]/) ? name.toLocaleUpperCase() : users[data.selectedUser].name
+                id: state.selectedUser,
+                name: name.match(/[a-z]/) ? name.toLocaleUpperCase() : users[state.selectedUser].name
             });
         }
     }
 
     async function toggleAvatar() {
-        const usr = await userStore.getUser(data.selectedUser);
+        const usr = await userStore.getUser(state.selectedUser);
         if (usr) {
             const avatar = usr.avatar;
             userStore.updateUser({
-                id: data.selectedUser,
-                avatar: avatar === "ned.png" ? users[data.selectedUser].avatar : "ned.png"
+                id: state.selectedUser,
+                avatar: avatar === "ned.png" ? users[state.selectedUser].avatar : "ned.png"
             });
         }
     }
 
     function addMessage(position: "First" | "Middle" | "Last") {
-        const idx = data.newMessageCount % homerQuotes.length;
-        data.newMessageCount++;
+        const idx = state.newMessageCount % homerQuotes.length;
+        state.newMessageCount++;
         let minTs = Number.MAX_SAFE_INTEGER, maxTs = 0;
         if (messages.length === 0) {
             minTs = maxTs = 1674839000000;
@@ -125,8 +125,8 @@ export const ControlPanel = component("ControlPanel", () => {
 
         // Add Message: First, Middle, Last
         messageStore.syncNewMessage({
-            id: "X" + data.newMessageCount,
-            authorId: data.selectedUser,
+            id: "X" + state.newMessageCount,
+            authorId: state.selectedUser,
             timeStamp,
             text: homerQuotes[idx]
         });

@@ -5,8 +5,9 @@ This package contains trax bindings for [react] and [preact].
 
 They allow to wrap components into trax processors and have them automatically re-rendered when one of their dependencies change (no need to re-render the react tree from the root);
 
-This library main exports 3 functions
+This library mainly exports 4 functions
 - ```component(...)```: to wrap a react/preact function component into a trax processor
+- ```useTraxState(...)```: to create a simple reactive state object
 - ```useStore(...)```: to instantiate a store and associate it to a component
 - ```componentId()```: to retrieve the processor id associated to a given component (this function must be called in the component render function)
 
@@ -37,6 +38,15 @@ export const TodoList = component("TodoList", () => {
 });
 ```
 
+### useTraxState()
+```typescript
+function useTraxState<T extends Object>(state: T): T
+```
+Create a trax state object to hold state values associated to a component.
+Note: this function should only be called once in a given component as multiple state values can be set in a given state object
+
+Behind the scenes, ```useTraxState``` creates a simple store object and calls ```useStore``` - this is why it it is visible in the 
+Store section in the dev tools.
 ### useStore()
 ```typescript
 function useStore<T = any>(factory: () => T): T {...}

@@ -152,3 +152,18 @@ export function useStore<T = any>(factory: () => T): T {
     }
     return store;
 }
+
+/**
+ * Create a trax state object to hold state values associated to a component.
+ * Note: this function should only be called once in a given component as multiple state 
+ * values can be set in a given state object
+ * @param state the default state value 
+ * @returns the current state value
+ */
+export function useTraxState<T extends Object>(state: T): T {
+    const store = useStore(() => {
+        const name = "State[" + componentId().replace(/(^[^\/]+\/)|(%)/g, "") + "]";
+        return trax.createStore(name, state);
+    });
+    return store.root as T;
+}

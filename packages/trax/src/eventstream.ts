@@ -1,5 +1,6 @@
+import { traxMD } from "./core";
 import { LinkedList } from "./linkedlist";
-import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, JSONValue } from "./types";
+import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, JSONValue, TraxLogProcessStart, TraxLogObjectLifeCycle, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet } from "./types";
 
 /**
  * Resolve function used in the await map
@@ -22,7 +23,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
     let tail: StreamListEvent | undefined;
     const awaitMap = new Map<string, awaitResolve[]>();
     const consumers: ((e: StreamEvent) => void)[] = [];
-    let consoleOutput = false;
+    let consoleOutput: "None" | "All" | "AllButGet" = "None";
 
     // ----------------------------------------------
     // cycle id managment
@@ -168,8 +169,17 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
             }
             resolveAwaitPromises(evt.type, evt);
         }
-        if (consoleOutput) {
-            console.log(`TRAX ${evt.id} ${evt.type}${evt.data ? " " + JSON.stringify(evt.data) : ""}`);
+        if (consoleOutput !== "None") {
+            // output the event on the console (debug mode)
+            const etp = evt.type;
+            if (etp !== traxEvents.CycleStart && etp !== traxEvents.CycleComplete && (etp !== traxEvents.Get || consoleOutput === "All")) {
+                let data = formatEventData(evt.type, evt.data);
+                let pid = "";
+                if (evt.parentId) {
+                    pid = " - parent:" + evt.parentId;
+                }
+                console.log(`${evt.id} ${evt.type}${data ? " - " + data : ""}${pid}`);
+            }
         }
         return evt;
     }
@@ -193,7 +203,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
         get consoleOutput() {
             return consoleOutput
         },
-        set consoleOutput(v: boolean) {
+        set consoleOutput(v: "None" | "All" | "AllButGet") {
             consoleOutput = v;
         },
         event(type: string, data?: LogData, src?: any) {
@@ -298,7 +308,6 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
             return false;
         }
     }
-
 }
 
 function checkPropMatch(e: StreamEvent, targetData?: string | number | boolean | Record<string, string | number | boolean | RegExp>): boolean {
@@ -391,5 +400,72 @@ function format(internalSrcKey: any, entry: StreamListEvent, type: string, dataS
         // transform event into an error event
         entry.type = traxEvents.Error;
         entry.data = errMsg;
+    }
+}
+
+export function formatEventData(eventType: string, data?: any) {
+    if (!data || !eventType || eventType.charAt(0) !== "!") return data;
+    try {
+        const sd = JSON.parse("" + data);
+
+        if (eventType === traxEvents.CycleStart || eventType === traxEvents.CycleComplete) {
+            return `0`; // 0 = elapsedTime
+        } else if (eventType === traxEvents.Info
+            || eventType === traxEvents.Warning
+            || eventType === traxEvents.Error) {
+            return `${data.replace(/"/g, "")}`;
+        } else if (eventType === traxEvents.ProcessingPause
+            || eventType === traxEvents.ProcessingResume
+            || eventType === traxEvents.ProcessingEnd) {
+            const d = JSON.parse(data);
+            return `${(d as any).processId}`;
+        } else if (eventType === traxEvents.ProcessingStart) {
+            const d = sd as TraxLogProcessStart;
+            if (d.name === "StoreInit") {
+                return `${d.name} (${d.storeId})`;
+            } else if (d.name === "Compute") {
+                const R = d.isRenderer ? " R" : "";
+                return `${d.name} #${d.computeCount} (${d.processorId}) P${d.processorPriority} ${d.trigger}${R}`;
+            } else if (d.name === "Reconciliation") {
+                return `${d.name} #${d.index} - ${d.processorCount} processor${d.processorCount !== 1 ? "s" : ""}`;
+            } else if (d.name === "ArrayUpdate") {
+                return `${d.name} (${d.objectId})`;
+            } else {
+                return `${(d as any).name}`;
+            }
+        } else if (eventType === traxEvents.New) {
+            const d = sd as TraxLogObjectLifeCycle;
+            if (d.objectId === undefined) return data;
+            return `${d.objectType}: ${d.objectId}`;
+        } else if (eventType === traxEvents.Dispose) {
+            const d = sd as TraxLogObjectLifeCycle;
+            if (d.objectId === undefined) return data;
+            return `${d.objectType ? d.objectType + ": " : ""}${d.objectId}`;
+        } else if (eventType === traxEvents.Get) {
+            const d = sd as TraxLogPropGet;
+            return `${d.objectId}.${d.propName} -> ${stringify(d.propValue)}`;
+        } else if (eventType === traxEvents.Set) {
+            const d = sd as TraxLogPropSet;
+            return `${d.objectId}.${d.propName} = ${stringify(d.toValue)} (prev: ${stringify(d.fromValue)})`;
+        } else if (eventType === traxEvents.ProcessorDirty) {
+            const d = sd as TraxLogProcDirty;
+            return `${d.processorId} <- ${d.objectId}.${d.propName}`;
+        }
+    } catch (ex) { }
+    return data;
+}
+
+function stringify(v: any) {
+    if (v === undefined) {
+        return "undefined";
+    } else if (v === null) {
+        return "null";
+    } else if (typeof v === "object") {
+        if (v[traxMD]) return v[traxMD].id;
+        return JSON.stringify(v);
+    } else if (typeof v === "string") {
+        return "'" + v.replace(/\'/g, "\\'") + "'"
+    } else {
+        return "" + v;
     }
 }

@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createEventStream } from '../eventstream';
 import { EventStream, StreamEvent, traxEvents } from '../types';
-import { pause, printEvents } from './utils';
+import { mockGlobalConsole, pause, printEvents, resetGlobalConsole } from './utils';
 
 describe('Event Stream', () => {
     let log: EventStream;
@@ -873,6 +873,50 @@ describe('Event Stream', () => {
                 '0:8 !PCP - 0:2',
                 '0:9 !LOG - E',
             ]);
+        });
+
+        describe('Console output', () => {
+
+            afterEach(() => {
+                resetGlobalConsole();
+            });
+
+            it('should support console output', async () => {
+                expect(log.consoleOutput).toBe("None");
+                const logs = mockGlobalConsole();
+                log.consoleOutput = "All";
+                expect(log.consoleOutput).toBe("All");
+
+                log.info("A");
+                const c = log.startProcessingContext({ name: 'MyAction' });
+                log.warn("B");
+                const sc = log.startProcessingContext({ name: 'SubAction' });
+                log.error("C");
+                sc.pause();
+                log.info("D");
+
+                c.end();
+                log.info("E");
+                log.event("MyEvent", null);
+
+                expect(log.consoleOutput).toBe("All");
+                log.consoleOutput = "None";
+                expect(log.consoleOutput).toBe("None");
+
+                expect(logs).toMatchObject([
+                    "0:1 !LOG - A",
+                    "0:2 !PCS - MyAction",
+                    "0:3 !WRN - B",
+                    "0:4 !PCS - SubAction - parent:0:2",
+                    "0:5 !ERR - C",
+                    "0:6 !PCP - 0:4",
+                    "0:7 !LOG - D",
+                    "0:8 !PCE - 0:2",
+                    "0:9 !LOG - E",
+                    "0:10 MyEvent - null",
+                ]);
+                resetGlobalConsole();
+            });
         });
 
         describe('Errors', () => {

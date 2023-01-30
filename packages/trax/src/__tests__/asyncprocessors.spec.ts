@@ -1,7 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTraxEnv } from '../core';
 import { Store, Trax } from '../types';
-import { Person, pause, printEvents } from './utils';
+import { Person, pause, printEvents, mockGlobalConsole, resetGlobalConsole } from './utils';
 
 describe('Async processors', () => {
     let trax: Trax;
@@ -396,6 +396,111 @@ describe('Async processors', () => {
             expect(ps.root.prettyName).toBe("Friendly(Homer) Simpson Some Text"); // unchanged yet
             await trax.log.awaitEvent("PrettyNameSet");
             expect(ps.root.prettyName).toBe("Friendly(Homer) Simpson Blahblah");
+        });
+
+        describe('Console output', () => {
+            afterEach(() => {
+                resetGlobalConsole();
+                trax.log.consoleOutput = "None";
+            });
+
+            it('should support console output (All)', async () => {
+                const logs = mockGlobalConsole();
+
+                trax.log.consoleOutput = "All";
+                const ps = createPStore("Bart", true);
+                const p = ps.root;
+
+
+                await trax.log.awaitEvent("GetAvatar");
+                await trax.reconciliation();
+                p.lastName = "SIM";
+                await trax.log.awaitEvent("GetAvatar");
+
+                expect(logs.slice(0)).toMatchObject([
+                    "0:1 !PCS - StoreInit (PStore)",
+                    "0:2 !NEW - S: PStore",
+                    "0:3 !NEW - O: PStore/root",
+                    "0:4 !NEW - P: PStore/%PrettyName",
+                    "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parent:0:1",
+                    "0:6 !GET - PStore/root.firstName -> 'Bart'",
+                    "0:7 !PCP - 0:5",
+                    "0:8 !PCE - 0:1",
+                    "1:1 GetFriendlyName",
+                    "2:1 !PCR - 0:5",
+                    "2:2 !GET - PStore/root.lastName -> 'Simpson'",
+                    "2:3 !SET - PStore/root.prettyName = 'Friendly(Bart) Simpson' (prev: undefined)",
+                    "2:4 !SET - PStore/root.prettyNameLength = 22 (prev: undefined)",
+                    "2:5 !PCP - 0:5",
+                    "3:1 GetAvatar",
+                    "4:1 !PCR - 0:5",
+                    "4:2 !SET - PStore/root.avatar = 'Avatar(Bart)' (prev: undefined)",
+                    "4:3 !PCE - 0:5",
+                    "5:1 !SET - PStore/root.lastName = 'SIM' (prev: 'Simpson')",
+                    "5:2 !DRT - PStore/%PrettyName <- PStore/root.lastName",
+                    "5:3 !PCS - Reconciliation #1 - 1 processor",
+                    "5:4 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parent:5:3",
+                    "5:5 !GET - PStore/root.firstName -> 'Bart'",
+                    "5:6 !PCP - 5:4",
+                    "5:7 !PCE - 5:3",
+                    "6:1 GetFriendlyName",
+                    "7:1 !PCR - 5:4",
+                    "7:2 !GET - PStore/root.lastName -> 'SIM'",
+                    "7:3 !SET - PStore/root.prettyName = 'Friendly(Bart) SIM' (prev: 'Friendly(Bart) Simpson')",
+                    "7:4 !SET - PStore/root.prettyNameLength = 18 (prev: 22)",
+                    "7:5 !PCP - 5:4",
+                    "8:1 GetAvatar",
+                    "9:1 !PCR - 5:4",
+                    "9:2 !PCE - 5:4",
+                ]);
+            });
+
+            it('should support console output (AllButGet)', async () => {
+                const logs = mockGlobalConsole();
+
+                trax.log.consoleOutput = "AllButGet";
+                const ps = createPStore("Bart", true);
+                const p = ps.root;
+
+                await trax.log.awaitEvent("GetAvatar");
+                await trax.reconciliation();
+                p.lastName = "SIM";
+                await trax.log.awaitEvent("GetAvatar");
+
+                expect(logs.slice(0)).toMatchObject([
+                    "0:1 !PCS - StoreInit (PStore)",
+                    "0:2 !NEW - S: PStore",
+                    "0:3 !NEW - O: PStore/root",
+                    "0:4 !NEW - P: PStore/%PrettyName",
+                    "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parent:0:1",
+                    "0:7 !PCP - 0:5",
+                    "0:8 !PCE - 0:1",
+                    "1:1 GetFriendlyName",
+                    "2:1 !PCR - 0:5",
+                    "2:3 !SET - PStore/root.prettyName = 'Friendly(Bart) Simpson' (prev: undefined)",
+                    "2:4 !SET - PStore/root.prettyNameLength = 22 (prev: undefined)",
+                    "2:5 !PCP - 0:5",
+                    "3:1 GetAvatar",
+                    "4:1 !PCR - 0:5",
+                    "4:2 !SET - PStore/root.avatar = 'Avatar(Bart)' (prev: undefined)",
+                    "4:3 !PCE - 0:5",
+                    "5:1 !SET - PStore/root.lastName = 'SIM' (prev: 'Simpson')",
+                    "5:2 !DRT - PStore/%PrettyName <- PStore/root.lastName",
+                    "5:3 !PCS - Reconciliation #1 - 1 processor",
+                    "5:4 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parent:5:3",
+                    "5:6 !PCP - 5:4",
+                    "5:7 !PCE - 5:3",
+                    "6:1 GetFriendlyName",
+                    "7:1 !PCR - 5:4",
+                    "7:3 !SET - PStore/root.prettyName = 'Friendly(Bart) SIM' (prev: 'Friendly(Bart) Simpson')",
+                    "7:4 !SET - PStore/root.prettyNameLength = 18 (prev: 22)",
+                    "7:5 !PCP - 5:4",
+                    "8:1 GetAvatar",
+                    "9:1 !PCR - 5:4",
+                    "9:2 !PCE - 5:4",
+                ]);
+
+            });
         });
     });
 

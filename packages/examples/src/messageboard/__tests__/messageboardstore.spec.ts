@@ -1,4 +1,4 @@
-import { trax, traxEvents } from '@traxjs/trax';
+import { trax } from '@traxjs/trax';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createMessageBoardStore, MessageBoardStore } from '../messageboardstore';
 import { createMessageStore, LOG_MESSAGE_STORE_INITIALIZED, MessageStore } from '../messagestore';

@@ -1,4 +1,5 @@
 import { traxMD } from "../core";
+import { formatEventData } from "../eventstream";
 import { EventStream, TraxLogObjectLifeCycle, TraxLogProcDirty, TraxLogProcessStart, TraxLogPropGet, TraxLogPropSet, traxEvents } from "../index";
 
 export interface Person {
@@ -41,6 +42,26 @@ export async function pause(timeMs = 10) {
     });
 }
 
+const console1 = globalThis.console;
+
+export function mockGlobalConsole() {
+    const logs:string[] = [];
+    globalThis.console = Object.create(console1, {
+        log: {
+            writable: true,
+            configurable: true,
+            value: (...args: any[]) => {
+                logs.push(args[0]);
+            }
+        }
+    });
+    return logs;
+}
+
+export function resetGlobalConsole() {
+    globalThis.console = console1;
+}
+
 export function printEvents(log: EventStream, ignoreCycleEvents = true, minCycleId = 0): string[] {
     const arr: string[] = [];
     log.scan((evt) => {
@@ -52,7 +73,7 @@ export function printEvents(log: EventStream, ignoreCycleEvents = true, minCycle
             }
         }
         if (!ignoreCycleEvents || (evt.type !== traxEvents.CycleStart && evt.type !== traxEvents.CycleComplete)) {
-            let data = formatData(evt.type, evt.data);
+            let data = formatEventData(evt.type, evt.data);
             let pid = "";
             if (evt.parentId) {
                 pid = " - parentId=" + evt.parentId;
@@ -61,71 +82,4 @@ export function printEvents(log: EventStream, ignoreCycleEvents = true, minCycle
         }
     });
     return arr;
-}
-
-function formatData(eventType: string, data?: any) {
-    if (!data || !eventType || eventType.charAt(0) !== "!") return data;
-    try {
-        const sd = JSON.parse("" + data);
-
-        if (eventType === traxEvents.CycleStart || eventType === traxEvents.CycleComplete) {
-            return `0`; // 0 = elapsedTime
-        } else if (eventType === traxEvents.Info
-            || eventType === traxEvents.Warning
-            || eventType === traxEvents.Error) {
-            return `${data.replace(/"/g, "")}`;
-        } else if (eventType === traxEvents.ProcessingPause
-            || eventType === traxEvents.ProcessingResume
-            || eventType === traxEvents.ProcessingEnd) {
-            const d = JSON.parse(data);
-            return `${(d as any).processId}`;
-        } else if (eventType === traxEvents.ProcessingStart) {
-            const d = sd as TraxLogProcessStart;
-            if (d.name === "StoreInit") {
-                return `${d.name} (${d.storeId})`;
-            } else if (d.name === "Compute") {
-                const R = d.isRenderer ? " R" : "";
-                return `${d.name} #${d.computeCount} (${d.processorId}) P${d.processorPriority} ${d.trigger}${R}`;
-            } else if (d.name === "Reconciliation") {
-                return `${d.name} #${d.index} - ${d.processorCount} processor${d.processorCount !== 1 ? "s" : ""}`;
-            } else if (d.name === "ArrayUpdate") {
-                return `${d.name} (${d.objectId})`;
-            } else {
-                return `${(d as any).name}`;
-            }
-        } else if (eventType === traxEvents.New) {
-            const d = sd as TraxLogObjectLifeCycle;
-            if (d.objectId === undefined) return data;
-            return `${d.objectType}: ${d.objectId}`;
-        } else if (eventType === traxEvents.Dispose) {
-            const d = sd as TraxLogObjectLifeCycle;
-            if (d.objectId === undefined) return data;
-            return `${d.objectType ? d.objectType + ": " : ""}${d.objectId}`;
-        } else if (eventType === traxEvents.Get) {
-            const d = sd as TraxLogPropGet;
-            return `${d.objectId}.${d.propName} -> ${stringify(d.propValue)}`;
-        } else if (eventType === traxEvents.Set) {
-            const d = sd as TraxLogPropSet;
-            return `${d.objectId}.${d.propName} = ${stringify(d.toValue)} (prev: ${stringify(d.fromValue)})`;
-        } else if (eventType === traxEvents.ProcessorDirty) {
-            const d = sd as TraxLogProcDirty;
-            return `${d.processorId} <- ${d.objectId}.${d.propName}`;
-        }
-    } catch (ex) { }
-    return data;
-}
-
-function stringify(v: any) {
-    if (v === undefined) {
-        return "undefined";
-    } else if (v === null) {
-        return "null";
-    } else if (typeof v === "object") {
-        if (v[traxMD]) return v[traxMD].id;
-        return JSON.stringify(v);
-    } else if (typeof v === "string") {
-        return "'" + v.replace(/\'/g, "\\'") + "'"
-    } else {
-        return "" + v;
-    }
 }

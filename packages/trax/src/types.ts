@@ -510,10 +510,14 @@ export interface EventStream {
      */
     maxSize: number;
     /**
-     * Output all logs on the dev console if set to true
-     * Default: false
+     * Tell if logs should be logged on the console.
+     * Useful in jest/vitest environments where dev tools are not available
+     * Possible values:
+     * - None: no output
+     * - All: log all events except Cycle Start/End
+     * - AllButGet: log all events except Cycle Start/End and Property Getters
      */
-    consoleOutput: boolean;
+    consoleOutput: "None" | "All" | "AllButGet";
     /**
      * Scan all current entries in the log stream
      * (oldest to newest)

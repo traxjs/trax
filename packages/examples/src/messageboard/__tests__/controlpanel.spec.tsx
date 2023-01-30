@@ -5,9 +5,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { fireEvent, render, RenderResult } from '@testing-library/preact';
 import { ControlPanel } from '../controlpanel';
 import { LOG_MESSAGE_STORE_INITIALIZED, messageStore } from '../messagestore';
-import { act } from 'preact/test-utils';
 import { userStore } from '../userstore';
-
 
 describe('Control Panel', () => {
     let container: RenderResult, cptDiv: HTMLDivElement;
@@ -41,7 +39,7 @@ describe('Control Panel', () => {
     function addMsgButton(idx: number) {
         return cptDiv.querySelectorAll("button.add-msg")[idx]! as HTMLButtonElement;
     }
-    
+
     function changeStatusButton(idx: number) {
         return cptDiv.querySelectorAll("button.change-status")[idx]! as HTMLButtonElement;
     }

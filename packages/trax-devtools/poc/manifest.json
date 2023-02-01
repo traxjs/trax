@@ -1,0 +1,31 @@
+{
+	"manifest_version": 3,
+	"name": "Trax Developer Tools",
+	"description": "Trax Debugging tools for Chrome",
+	"version": "4.6.1",
+	"devtools_page": "panel/devtools.html",
+	"content_security_policy": {
+		"extension_pages": "script-src 'self'; object-src 'self'"
+	},
+	"permissions": [
+		"scripting"
+	],
+	"host_permissions": [
+		"<all_urls>"
+	],
+	"background": {
+		"service_worker": "background.js"
+	},
+	"content_scripts": [
+		{
+			"matches": [
+				"<all_urls>"
+			],
+			"js": [
+				"content-script.js"
+			],
+			"all_frames": true,
+			"run_at": "document_start"
+		}
+	]
+}

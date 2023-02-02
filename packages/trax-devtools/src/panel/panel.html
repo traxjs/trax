@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<title>Trax Devtools Extension</title>
+	<style>
+		* {
+			box-sizing: border-box;
+		}
+
+		html,
+		body {
+			margin: 0;
+		}
+
+		#root {
+			height: 100vh;
+		}
+
+		#fallback {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			display: flex;
+			flex: 1;
+			justify-content: center;
+			align-items: center;
+			color: var(--color-text);
+		}
+	</style>
+</head>
+
+<body>
+	<div>
+		<div id="main">Unable to find Trax on the page...</div>
+	</div>
+	<script type="module" src="/src/panel/panel.tsx"></script>
+</body>
+
+</html>

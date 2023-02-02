@@ -13,7 +13,6 @@ body {
     font-size: 16px;
     font-weight: 400;
     color: var(--vt-c-text-1);
-    background-color: var(--vt-c-bg);
     direction: ltr;
     font-synthesis: none;
     text-rendering: optimizeLegibility;

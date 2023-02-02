@@ -32,18 +32,18 @@
     });
 
     // Simple Test: send click messages to the Background Script
-    let count = 0;
-    window.addEventListener("click", () => {
-        count++;
-        trace("Click", count);
-        // Send a message to the content script that will forward it to the Background script
-        window.postMessage({
-            type: EVT_TYPES.ACTION,
-            from: SCRIPT_NAME,
-            to: PANEL_SCRIPT_NAME,
-            data: { msg: "Page Click #" + count }
-        }, "*");
-    });
+    // let count = 0;
+    // window.addEventListener("click", () => {
+    //     count++;
+    //     trace("Click", count);
+    //     // Send a message to the content script that will forward it to the Background script
+    //     window.postMessage({
+    //         type: EVT_TYPES.ACTION,
+    //         from: SCRIPT_NAME,
+    //         to: PANEL_SCRIPT_NAME,
+    //         data: { msg: "Page Click #" + count }
+    //     }, "*");
+    // });
 
     window.__TRAX_DEVTOOLS__ = {
         connectTrax(traxInstance) {

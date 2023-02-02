@@ -25,8 +25,19 @@
         console.warn("[" + SCRIPT_NAME + "]", ...args);
     }
 
+    // extract theme 
+    // url looks like chrome-extension://lmpancgapnccmjmicgmjhjendcaogjii/panel/panel.html?theme=dark
+    let theme = "light";
+    const m = window.location.href.match(/theme=([a-zA-Z]+)/);
+    if (m && m[1] === "dark") {
+        theme = "dark";
+    }
 
-    trace("init");
+    trace(`init - theme:${theme}`);
+    const body = document.querySelector("body");
+    if (body) {
+        body.classList.add(theme);
+    }
 
     /**
      * Connect to the Background Script

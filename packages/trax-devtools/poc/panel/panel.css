@@ -1,0 +1,30 @@
+body.dark {
+    /* 1 = strongest */
+    --color-text1: #f0f0f0;
+    --color-text2: #e0e0e0;
+    --color-text3: #b0b0b0;
+    --color-text4: #808080;
+
+    --color-bkg1: #252525;
+    --color-bkg2: #373737;
+    --color-bkg3: #444444;
+    --color-bkg4: #808080;
+}
+
+body.light {
+    /* 1 = strongest */
+    --color-text1: #333333;
+    --color-text2: #404040;
+    --color-text3: #505050;
+    --color-text4: #757575;
+
+    --color-bkg1: #ffffff;
+    --color-bkg2: #f7f7f7;
+    --color-bkg3: #f5f5f5;
+    --color-bkg4: #e0e0e0;
+}
+
+body {
+    color: var(--color-text2);
+    background-color: var(--color-bkg1);
+}

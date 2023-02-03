@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Store, trax, TraxProcessor } from '@traxjs/trax';
-import { StoreWrapper, traxEvents } from '@traxjs/trax/lib/types';
+import { trax, TraxProcessor } from '@traxjs/trax';
 
 interface TraxReactCptCtxt {
     id?: string;
@@ -21,43 +20,40 @@ function buildProcessorId(name: string, instanceCount: number) {
 }
 
 function createReactStore() {
-    return trax.createStore("React", (store: Store<ReactData>) => {
-        const root = store.init({
-            creationCounts: {}
-        });
-        const creationCounts = root.creationCounts;
-        return {
-            addProcessor(name: string, reactFunctionCpt: (prop?: any) => JSX.Element, cc: TraxReactCptCtxt, setRefreshCount: (c: number) => void) {
-                cc.jsx = "" as any;
-                let instanceCount = 1;
-                if (!creationCounts[name]) {
-                    creationCounts[name] = 1;
-                } else {
-                    instanceCount = ++creationCounts[name];
-                }
-                const id = buildProcessorId(name, instanceCount);
-                cc.id = id;
-
-                const pr = store.compute(id, () => {
-                    try {
-                        cc.jsx = reactFunctionCpt(cc.props);
-                    } catch (ex) {
-                        trax.log.error(`[@traxjs/trax-react] Processing Error: ${ex}`);
-                    }
-                }, false, true);
-                pr.onDirty = () => {
-                    // onDirty is synchronous
-                    // mark react component as dirty
-                    queueMicrotask(() => setRefreshCount(++CHANGE_COUNT));
-                };
-                cc.processor = pr;
-            }
-        }
+    return trax.createStore<ReactData>("React", {
+        creationCounts: {}
     });
 }
 
 /** React store: gathers all react processors in the same store */
 let reactStore = createReactStore();
+
+function addProcessor(name: string, reactFunctionCpt: (prop?: any) => JSX.Element, cc: TraxReactCptCtxt, setRefreshCount: (c: number) => void) {
+    const creationCounts = reactStore.root.creationCounts;
+    cc.jsx = "" as any;
+    let instanceCount = 1;
+    if (!creationCounts[name]) {
+        creationCounts[name] = 1;
+    } else {
+        instanceCount = ++creationCounts[name];
+    }
+    const id = buildProcessorId(name, instanceCount);
+    cc.id = id;
+
+    const pr = reactStore.compute(id, () => {
+        try {
+            cc.jsx = reactFunctionCpt(cc.props);
+        } catch (ex) {
+            trax.log.error(`[@traxjs/trax-react] Processing Error: ${ex}`);
+        }
+    }, false, true);
+    pr.onDirty = () => {
+        // onDirty is synchronous
+        // mark react component as dirty
+        queueMicrotask(() => setRefreshCount(++CHANGE_COUNT));
+    };
+    cc.processor = pr;
+}
 
 /**
  * Wrap a react function component into a trax processor
@@ -78,7 +74,7 @@ export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.E
         let c: React.MutableRefObject<TraxReactCptCtxt> = useRef({} as any);
         const cc = c.current;
         if (!cc.processor) {
-            reactStore.addProcessor(name, reactFunctionCpt, cc, $$setTraxRefreshCount);
+            addProcessor(name, reactFunctionCpt, cc, $$setTraxRefreshCount);
         }
         useEffect(() => {
             // processor cleanup

@@ -1,6 +1,6 @@
 import { traxMD } from "./core";
 import { LinkedList } from "./linkedlist";
-import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, JSONValue, TraxLogProcessStart, TraxLogObjectLifeCycle, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet } from "./types";
+import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, JSONValue, TraxLogTraxProcessingCtxt, TraxLogObjectLifeCycle, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet } from "./types";
 
 /**
  * Resolve function used in the await map
@@ -420,7 +420,7 @@ export function formatEventData(eventType: string, data?: any) {
             const d = JSON.parse(data);
             return `${(d as any).processId}`;
         } else if (eventType === traxEvents.ProcessingStart) {
-            const d = sd as TraxLogProcessStart;
+            const d = sd as TraxLogTraxProcessingCtxt;
             if (d.name === "StoreInit") {
                 return `${d.name} (${d.storeId})`;
             } else if (d.name === "Compute") {

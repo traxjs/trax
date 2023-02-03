@@ -1,7 +1,7 @@
 import { tmd } from "./core";
 import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
-import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogProcessStart, TraxProcessor, TraxObjectType } from "./types";
+import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogTraxProcessingCtxt, TraxProcessor, TraxObjectType } from "./types";
 
 /**
  * Extend the public API with internal APIs
@@ -45,7 +45,7 @@ export function createTraxProcessor(
     processorStack: LinkedList<TraxInternalProcessor>,
     getDataObject: (id: string) => any,
     logTraxEvent: (e: TraxEvent) => void,
-    startProcessingContext: (event: TraxLogProcessStart) => ProcessingContext,
+    startProcessingContext: (event: TraxLogTraxProcessingCtxt) => ProcessingContext,
     onDispose?: (id: string) => void,
     autoCompute = true,
     isRenderer = false
@@ -66,12 +66,8 @@ export function createTraxProcessor(
      */
     let objectDependencies = new Set<string>();
     let oldObjectDependencies: Set<string> | undefined;
-    /** Log processing context */
-    let processingContext: ProcessingContext | null = null;
     /** Reconciliation id used during the last compute() call - used to track invalid cycles */
     let reconciliationId = -1;
-    /** Generator returned by the compute function in case of async processors */
-    let generator: Generator<Promise<any>, void, any> | undefined;
     /** Last reason that triggered a compute call */
     let lastTrigger: "Init" | "Reconciliation" | "DirectCall" = "DirectCall";
 
@@ -191,7 +187,6 @@ export function createTraxProcessor(
             if (disposed) return false;
             disposed = true;
             computing = false;
-            generator = undefined;
             // detach from parent store
             if (onDispose) {
                 onDispose(processorId);

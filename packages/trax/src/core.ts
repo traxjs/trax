@@ -2,7 +2,7 @@ import { createEventStream } from "./eventstream";
 import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
 import { TraxInternalProcessor, createTraxProcessor } from "./processor";
-import { Store, StoreWrapper, Trax, TraxIdDef, TraxProcessor, TraxObjectType, TraxLogProcessStart, traxEvents, TraxComputeFn, TraxEvent, ProcessingContext, TraxProcessorId, TraxObject } from "./types";
+import { Store, StoreWrapper, Trax, TraxIdDef, TraxProcessor, TraxObjectType, TraxLogTraxProcessingCtxt, traxEvents, TraxComputeFn, TraxEvent, ProcessingContext, TraxProcessorId, TraxObject } from "./types";
 
 /** Symbol used to attach meta data to trax objects */
 export const traxMD = Symbol("trax.md");
@@ -606,7 +606,7 @@ export function createTraxEnv(): Trax {
         }
     }
 
-    function startProcessingContext(event: TraxLogProcessStart): ProcessingContext {
+    function startProcessingContext(event: TraxLogTraxProcessingCtxt): ProcessingContext {
         return log.startProcessingContext(event as any);
     }
 

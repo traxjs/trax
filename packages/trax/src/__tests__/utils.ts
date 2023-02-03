@@ -1,6 +1,6 @@
 import { traxMD } from "../core";
 import { formatEventData } from "../eventstream";
-import { EventStream, TraxLogObjectLifeCycle, TraxLogProcDirty, TraxLogProcessStart, TraxLogPropGet, TraxLogPropSet, traxEvents } from "../index";
+import { EventStream, traxEvents } from "../index";
 
 export interface Person {
     firstName: string;

@@ -1,6 +1,6 @@
 import { component, componentId, useStore } from "@traxjs/trax-react";
 import { RadarChart } from "./radarchart";
-import { createRadarStore, RadarStore } from "./radarstore";
+import { createRadarStore } from "./radarstore";
 import './playground.css';
 
 // example adapted from https://vuejs.org/examples/#svg

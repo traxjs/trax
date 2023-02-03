@@ -11,10 +11,12 @@ export type {
     StreamEvent,
     TraxLogObjectLifeCycle,
     TraxLogProcDirty,
-    TraxLogProcessStart,
+    TraxLogTraxProcessingCtxt,
     TraxLogPropGet,
     TraxLogPropSet,
-    TraxComputeTrigger
+    TraxComputeTrigger,
+    TraxLogMsg,
+    TraxLogEvent
 } from "./types";
 
 export {

@@ -340,10 +340,22 @@ export const traxEvents = Object.freeze({
     "ProcessingEnd": "!PCE"
 });
 
-export type TraxEvent = TraxLogError | TraxLogObjectLifeCycle | TraxLogPropGet | TraxLogPropSet | TraxLogProcDirty;
+export type TraxEvent = TraxLogMsg | TraxLogObjectLifeCycle | TraxLogPropGet | TraxLogPropSet | TraxLogProcDirty;
 
 /** Reason that triggered a call to a processor's compute function */
 export type TraxComputeTrigger = "Init" | "Reconciliation" | "DirectCall";
+
+export type TraxLogSingleData = TraxLogObjectLifeCycle
+
+export type TraxLogEvent =
+    TraxLogMsg
+    | TraxLogCycle
+    | TraxLogObjectLifeCycle
+    | TraxLogPropSet
+    | TraxLogPropGet
+    | TraxLogProcDirty
+    | TraxLogTraxProcessingCtxt
+    | TraxLogProcessingCtxtEvent;
 
 export interface TraxLogObjectLifeCycle {
     type: "!NEW" | "!DEL";
@@ -374,21 +386,31 @@ export interface TraxLogProcDirty {
     propName: string;
 }
 
-export interface TraxLogError {
-    type: "!ERR";
+export interface TraxLogMsg {
+    type: "!LOG" | "!WRN" | "!ERR";
     data: JSONValue
 }
 
-export type TraxLogProcessStart = TraxLogProcessStoreInit | TraxLogProcessCompute | TraxLogReconciliation | TraxLogCollectionUpdate;
+export interface TraxLogCycle {
+    type: "!CS" | "!CC";
+    elapsedTime: number;
+}
+
+export interface TraxLogProcessingCtxtEvent {
+    type: "!PCS" | "!PCP" | "!PCR" | "!PCE";
+    data?: JSONValue;
+}
+
+export type TraxLogTraxProcessingCtxt = TraxLogProcessStoreInit | TraxLogProcessCompute | TraxLogReconciliation | TraxLogCollectionUpdate;
 
 export interface TraxLogProcessStoreInit {
-    type: "!PCS";
+    type: "!PCS" | "!PCE";
     name: "StoreInit";
     storeId: string;
 }
 
 export interface TraxLogProcessCompute {
-    type: "!PCS";
+    type: "!PCS" | "!PCP" | "!PCR" | "!PCE";
     name: "Compute";
     processorId: string;
     processorPriority: number;
@@ -398,15 +420,15 @@ export interface TraxLogProcessCompute {
 }
 
 export interface TraxLogCollectionUpdate {
-    type: "!PCS";
+    type: "!PCS" | "!PCE";
     name: "ArrayUpdate" | "DictionaryUpdate";
     objectId: string;
 }
 
 export interface TraxLogReconciliation {
-    type: "!PCS";
+    type: "!PCS" | "!PCE";
     name: "Reconciliation";
-    /** Counter incremeneted everytime a reconciliation runs */
+    /** Counter incremented everytime a reconciliation runs */
     index: number;
     /** Number of active processors when a reconciliation starts (allows to track memory leaks) */
     processorCount: number;

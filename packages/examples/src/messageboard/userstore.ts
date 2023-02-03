@@ -13,7 +13,7 @@ export const LOG_USER_STORE_USERS_RECEIVED = "@traxjs/examples/messageboard/user
 export type UserStore = ReturnType<typeof createUserStore>;
 
 export function createUserStore() {
-    return trax.createStore("MessageStore", (store: Store<UserStoreData>) => {
+    return trax.createStore("UserStore", (store: Store<UserStoreData>) => {
         const users = store.init({});
         let pendingRequestTimer: any = null;
         let pendingUserPromises = new Map<string, Promise<User | null>>();

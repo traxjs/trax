@@ -5,12 +5,14 @@ import { resetReactEnv } from "@traxjs/trax-react";
 import { fireEvent, render, RenderResult } from '@testing-library/preact';
 import { MessageBoard } from '../messageboard';
 import { LOG_USER_STORE_GET_USERS } from '../userstore';
+import { messageStore } from '../messagestore';
 
 describe('MessageBoard', () => {
     let container: RenderResult, cptDiv: HTMLDivElement;
 
     beforeEach(() => {
         resetReactEnv();
+        messageStore.reset();
     });
 
     async function init(awaitFullRender = true) {
@@ -31,10 +33,14 @@ describe('MessageBoard', () => {
         return trax.log.awaitEvent(traxEvents.ProcessingEnd, { isRenderer: true });
     }
 
+    function groupDivs() {
+        return cptDiv.querySelectorAll(".message-group") as any as HTMLDivElement[];
+    }
+
     function printContent() {
         const r: string[] = [];
 
-        const groups = cptDiv.querySelectorAll(".message-group") as any as HTMLDivElement[];
+        const groups = groupDivs();
         for (const div of groups) {
             let avatar = (div.querySelector("img.avatar") as HTMLImageElement)?.src || "x";
             const m = avatar.match(/[\w\.]+$/);
@@ -55,6 +61,10 @@ describe('MessageBoard', () => {
 
     function controlPanelDeleteBtn(idx: number) {
         return (cptDiv.querySelectorAll(".message-control-panel .del")[idx]) as HTMLSpanElement;
+    }
+
+    function controlPanelAdd1000MessagesBtn() {
+        return cptDiv.querySelector(".message-control-panel .add-msg-1000") as HTMLSpanElement;
     }
 
     it('should load correctly', async () => {
@@ -119,7 +129,7 @@ describe('MessageBoard', () => {
         expect(printContent()).toMatchObject([
             "# Homer Simpson (Away) homer.png",
             // First message deleted
-            "- If he's so smart, how come he's dead?", 
+            "- If he's so smart, how come he's dead?",
             "# Marge Simpson (Online) marge.png",
             "- I guess one person can make a difference. But most of the time, they probably shouldn't.",
             "- Homer, we have to do something. Today Bart's drinking people's blood. Tomorrow he could be smoking.",
@@ -150,6 +160,18 @@ describe('MessageBoard', () => {
         fireEvent.click(controlPanelDeleteBtn(0)!);
         await renderComplete();
         expect(printContent()).toMatchObject([]);
+    });
+
+    it('should support to create 1000 messages', async () => {
+        await init();
+        let btn = controlPanelAdd1000MessagesBtn();
+        expect(btn).not.toBe(undefined);
+        expect(groupDivs().length).toBe(5);
+
+        fireEvent.click(btn!);
+        await renderComplete();
+
+        expect(groupDivs().length).toBe(340); // >1000 messages in 340 groups
     });
 
 });

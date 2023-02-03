@@ -20,7 +20,9 @@ export const MessageBoard = component("MessageBoard", () => {
 
     return <div className="message-board">
         <h1> Message Board </h1>
-        {content}
+        <div className="messages">
+            {content}
+        </div>
         <ControlPanel />
     </div>
 });
@@ -32,10 +34,10 @@ const MessageGroup = component("MessageGroup", (props: { group: MessageBoardGrou
     if (group.authorAvatar) {
         avatar = <img className="avatar" alt={group.authorName} src={"/avatars/" + group.authorAvatar} />
     }
-    let status:string = group.authorStatus || " ";
+    let status: string = group.authorStatus || " ";
     if (status === "OOO") {
         status = " Out of Office ";
-    } else     if (status === "Unknown") {
+    } else if (status === "Unknown") {
         status = " - ";
     }
 

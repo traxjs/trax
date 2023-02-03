@@ -16,13 +16,15 @@ export function createMessageStore() {
     return trax.createStore("MessageStore", (store: Store<MessageStoreData>) => {
         const data = store.init({ messages: [], initialized: false });
         const messages = data.messages;
+        let serverMessages: any[];
 
         // initialize the store (async)
         store.async("Init", function* () {
             const msgs = yield serverAPI.getLastMessages();
+            serverMessages = msgs;
             trax.updateArray(messages, messages.concat(msgs));
             data.initialized = true;
-            trax.log.event(LOG_MESSAGE_STORE_INITIALIZED, {src: store.id});
+            trax.log.event(LOG_MESSAGE_STORE_INITIALIZED, { src: store.id });
         })();
 
         return {
@@ -48,6 +50,10 @@ export function createMessageStore() {
                         o[propName] = propValue;
                     }
                 }
+            },
+            reset() {
+                // reset original messages
+                trax.updateArray(messages, serverMessages);
             }
         }
     });

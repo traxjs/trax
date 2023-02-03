@@ -1,3 +1,9 @@
+
+.message-board .messages {
+    overflow: scroll;
+    max-height: 50vh;
+}
+
 .message-group {
     display: flex;
     margin-top: .9rem;

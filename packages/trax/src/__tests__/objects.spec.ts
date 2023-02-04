@@ -36,7 +36,7 @@ describe('Trax Objects', () => {
             expect(trax.getTraxId(r1)).toBe("SimpleFamilyStore/root");
 
             expect(printLogs(true, 0)).toMatchObject([
-                '0:1 !PCS - StoreInit (SimpleFamilyStore)',
+                '0:1 !PCS - !StoreInit (SimpleFamilyStore)',
                 '0:2 !NEW - S: SimpleFamilyStore',
                 '0:3 !NEW - O: SimpleFamilyStore/root',
                 '0:4 !PCE - 0:1',
@@ -91,7 +91,7 @@ describe('Trax Objects', () => {
             expect(trax.getTraxId(o)).toBe("SimpleFamilyStore/AnotherStore-root:foo");
 
             expect(printLogs()).toMatchObject([
-                "1:1 !PCS - StoreInit (AnotherStore)",
+                "1:1 !PCS - !StoreInit (AnotherStore)",
                 "1:2 !NEW - S: AnotherStore",
                 "1:3 !NEW - O: AnotherStore/root",
                 "1:4 !PCE - 1:1",

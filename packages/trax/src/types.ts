@@ -405,13 +405,13 @@ export type TraxLogTraxProcessingCtxt = TraxLogProcessStoreInit | TraxLogProcess
 
 export interface TraxLogProcessStoreInit {
     type: "!PCS" | "!PCE";
-    name: "StoreInit";
+    name: "!StoreInit";
     storeId: string;
 }
 
 export interface TraxLogProcessCompute {
     type: "!PCS" | "!PCP" | "!PCR" | "!PCE";
-    name: "Compute";
+    name: "!Compute";
     processorId: string;
     processorPriority: number;
     trigger: TraxComputeTrigger;
@@ -421,13 +421,13 @@ export interface TraxLogProcessCompute {
 
 export interface TraxLogCollectionUpdate {
     type: "!PCS" | "!PCE";
-    name: "ArrayUpdate" | "DictionaryUpdate";
+    name: "!ArrayUpdate" | "!DictionaryUpdate";
     objectId: string;
 }
 
 export interface TraxLogReconciliation {
     type: "!PCS" | "!PCE";
-    name: "Reconciliation";
+    name: "!Reconciliation";
     /** Counter incremented everytime a reconciliation runs */
     index: number;
     /** Number of active processors when a reconciliation starts (allows to track memory leaks) */
@@ -519,7 +519,7 @@ export interface EventStream {
      * @param data data associated with the processing context. Must contain a name (e.g. process name) 
      * and may contain an id (useful for awaitEvent())
      */
-    startProcessingContext(data: ProcessingContextData): ProcessingContext;
+    startProcessingContext(data: ProcessingContextData, src?: any): ProcessingContext;
     /**
      * Number of items in the stream
      */

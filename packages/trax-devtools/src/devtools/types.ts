@@ -100,12 +100,12 @@ interface DtProcessingGroup {
 }
 
 interface DtTraxPgStoreInit extends DtProcessingGroup {
-    name: "StoreInit";
+    name: "!StoreInit";
     storeId: string;
 }
 
 interface DtTraxPgCompute extends DtProcessingGroup {
-    name: "Compute";
+    name: "!Compute";
     processorId: string;
     processorPriority: number;
     trigger: TraxComputeTrigger;
@@ -114,12 +114,12 @@ interface DtTraxPgCompute extends DtProcessingGroup {
 }
 
 interface DtTraxPgCollectionUpdate extends DtProcessingGroup {
-    name: "ArrayUpdate" | "DictionaryUpdate";
+    name: "!ArrayUpdate" | "!DictionaryUpdate";
     objectId: string;
 }
 
 interface DtTraxPgReconciliation extends DtProcessingGroup {
-    name: "Reconciliation";
+    name: "!Reconciliation";
     objectId: string;
     /** Counter incremented everytime a reconciliation runs */
     index: number;

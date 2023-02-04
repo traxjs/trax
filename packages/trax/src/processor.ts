@@ -79,7 +79,7 @@ export function createTraxProcessor(
         compute,
         () => startProcessingContext({
             type: "!PCS",
-            name: "Compute",
+            name: "!Compute",
             processorId,
             processorPriority: priority,
             trigger: lastTrigger,

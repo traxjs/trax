@@ -768,6 +768,23 @@ describe('Event Stream', () => {
             ]);
         });
 
+        it('should have a valid name', async () => {
+            log.info("A");
+            const c = log.startProcessingContext({ name: '!MyAction' });
+            log.info("B");
+            c.end();
+            log.info("D");
+
+            expect(printLogs()).toMatchObject([
+                '0:1 !LOG - A',
+                "0:2 !ERR - Processing Context name cannot start with reserved prefix: !MyAction",
+                "0:3 !PCS - MyAction",
+                "0:4 !LOG - B",
+                "0:5 !PCE - 0:3",
+                "0:6 !LOG - D",
+            ]);
+        });
+
         it('should support async contexts', async () => {
             log.info("A");
             const c = log.startProcessingContext({ name: 'MyAsyncAction' });

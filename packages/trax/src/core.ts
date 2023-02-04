@@ -141,7 +141,7 @@ export function createTraxEnv(): Trax {
                 reconciliationCount++;
                 const recLog = startProcessingContext({
                     type: "!PCS",
-                    name: "Reconciliation",
+                    name: "!Reconciliation",
                     index: reconciliationCount,
                     processorCount
                 });
@@ -192,7 +192,7 @@ export function createTraxEnv(): Trax {
                 return;
             }
             const id = checkComputedContent(array);
-            const ctxt = startProcessingContext({ type: traxEvents.ProcessingStart, name: "ArrayUpdate", objectId: id });
+            const ctxt = startProcessingContext({ type: traxEvents.ProcessingStart, name: "!ArrayUpdate", objectId: id });
             const len1 = array.length;
             const len2 = newContent.length;
             for (let i = 0; len2 > i; i++) {
@@ -213,7 +213,7 @@ export function createTraxEnv(): Trax {
                 return;
             }
             const id = checkComputedContent(dict);
-            const ctxt = startProcessingContext({ type: traxEvents.ProcessingStart, name: "DictionaryUpdate", objectId: id });
+            const ctxt = startProcessingContext({ type: traxEvents.ProcessingStart, name: "!DictionaryUpdate", objectId: id });
 
             const oldContentKeys = trx.getObjectKeys(dict);
             const newContentKeys = trx.getObjectKeys(newContent);
@@ -607,7 +607,7 @@ export function createTraxEnv(): Trax {
     }
 
     function startProcessingContext(event: TraxLogTraxProcessingCtxt): ProcessingContext {
-        return log.startProcessingContext(event as any);
+        return log.startProcessingContext(event as any, privateEventKey);
     }
 
     function notifyPropChange(md: TraxMd, propName: string) {
@@ -667,7 +667,7 @@ export function createTraxEnv(): Trax {
         let root: any;
         let initPhase = true;
         let disposed = false;
-        const storeInit = startProcessingContext({ type: "!PCS", name: "StoreInit", storeId: storeId });
+        const storeInit = startProcessingContext({ type: "!PCS", name: "!StoreInit", storeId: storeId });
         const initFunction = typeof initFunctionOrRoot === "function" ? initFunctionOrRoot : (store: Store<T>) => {
             store.init(initFunctionOrRoot as any);
         }

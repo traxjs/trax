@@ -235,7 +235,13 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
                 }
             }
         },
-        startProcessingContext(data: ProcessingContextData): ProcessingContext {
+        startProcessingContext(data: ProcessingContextData, src?: any): ProcessingContext {
+            // prevent reserved names usage
+            let name = data.name;
+            if (name.charAt(0) === "!" && src !== internalSrcKey) {
+                error(`Processing Context name cannot start with reserved prefix: ${name}`);
+                data.name = name.replace(/\!+/, "");
+            }
             const last = pcStack.peek();
             const parentId = last ? last.id : undefined;
             const evt = logEvent(traxEvents.ProcessingStart, data, internalSrcKey, parentId);
@@ -421,14 +427,14 @@ export function formatEventData(eventType: string, data?: any) {
             return `${(d as any).processId}`;
         } else if (eventType === traxEvents.ProcessingStart) {
             const d = sd as TraxLogTraxProcessingCtxt;
-            if (d.name === "StoreInit") {
+            if (d.name === "!StoreInit") {
                 return `${d.name} (${d.storeId})`;
-            } else if (d.name === "Compute") {
+            } else if (d.name === "!Compute") {
                 const R = d.isRenderer ? " R" : "";
                 return `${d.name} #${d.computeCount} (${d.processorId}) P${d.processorPriority} ${d.trigger}${R}`;
-            } else if (d.name === "Reconciliation") {
+            } else if (d.name === "!Reconciliation") {
                 return `${d.name} #${d.index} - ${d.processorCount} processor${d.processorCount !== 1 ? "s" : ""}`;
-            } else if (d.name === "ArrayUpdate") {
+            } else if (d.name === "!ArrayUpdate") {
                 return `${d.name} (${d.objectId})`;
             } else {
                 return `${(d as any).name}`;

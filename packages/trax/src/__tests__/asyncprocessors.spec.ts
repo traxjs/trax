@@ -62,11 +62,11 @@ describe('Async processors', () => {
             expect(p.prettyNameLength).toBe(7);
 
             expect(printLogs()).toMatchObject([
-                "0:1 !PCS - StoreInit (PStore)",
+                "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
                 "0:3 !NEW - O: PStore/root",
                 "0:4 !NEW - P: PStore/%PrettyName",
-                "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                "0:5 !PCS - !Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
                 "0:6 !GET - PStore/root.firstName -> ''",
                 "0:7 !GET - PStore/root.lastName -> 'Simpson'",
                 "0:8 !SET - PStore/root.prettyName = 'Simpson' (prev: undefined)",
@@ -102,11 +102,11 @@ describe('Async processors', () => {
             expect(p.prettyNameLength).toBe(23);
 
             expect(printLogs()).toMatchObject([
-                "0:1 !PCS - StoreInit (PStore)",
+                "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
                 "0:3 !NEW - O: PStore/root",
                 "0:4 !NEW - P: PStore/%PrettyName",
-                "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                "0:5 !PCS - !Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
                 "0:6 !GET - PStore/root.firstName -> 'Homer'",
                 "0:7 !PCP - 0:5", // Pause
                 "0:8 !PCE - 0:1",
@@ -143,8 +143,8 @@ describe('Async processors', () => {
                 "4:1 !SET - PStore/root.firstName = 'Bart' (prev: 'Homer')",
                 "4:2 !DRT - PStore/%PrettyName <- PStore/root.firstName",
                 "4:3 !GET - PStore/root.prettyName -> 'Friendly(Homer) Simpson'",
-                "4:4 !PCS - Reconciliation #1 - 1 processor",
-                "4:5 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=4:4",
+                "4:4 !PCS - !Reconciliation #1 - 1 processor",
+                "4:5 !PCS - !Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=4:4",
                 "4:6 !GET - PStore/root.firstName -> 'Bart'",
                 "4:7 !PCP - 4:5",
                 "4:8 !PCE - 4:4",
@@ -179,11 +179,11 @@ describe('Async processors', () => {
             expect(p.avatar).toBe("Avatar(Bart)");
 
             expect(printLogs(0)).toMatchObject([
-                "0:1 !PCS - StoreInit (PStore)",
+                "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
                 "0:3 !NEW - O: PStore/root",
                 "0:4 !NEW - P: PStore/%PrettyName",
-                "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                "0:5 !PCS - !Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
                 "0:6 !GET - PStore/root.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5", // Pause
                 "0:8 !PCE - 0:1",
@@ -212,8 +212,8 @@ describe('Async processors', () => {
             expect(printLogs(6)).toMatchObject([
                 "6:1 !SET - PStore/root.lastName = 'SIM' (prev: 'Simpson')",
                 "6:2 !DRT - PStore/%PrettyName <- PStore/root.lastName",
-                "6:3 !PCS - Reconciliation #1 - 1 processor",
-                "6:4 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=6:3",
+                "6:3 !PCS - !Reconciliation #1 - 1 processor",
+                "6:4 !PCS - !Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=6:3",
                 "6:5 !GET - PStore/root.firstName -> 'Bart'",
                 "6:6 !PCP - 6:4", // Pause
                 "6:7 !PCE - 6:3",
@@ -254,19 +254,19 @@ describe('Async processors', () => {
             expect(p.avatar).toBe("Avatar(Lisa)");
 
             expect(printLogs(0)).toMatchObject([
-                "0:1 !PCS - StoreInit (PStore)",
+                "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
                 "0:3 !NEW - O: PStore/root",
                 "0:4 !NEW - P: PStore/%PrettyName",
-                "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                "0:5 !PCS - !Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
                 "0:6 !GET - PStore/root.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5", // Pause
                 "0:8 !PCE - 0:1",
                 "0:9 !GET - PStore/root.avatar -> undefined",
                 "0:10 !SET - PStore/root.firstName = 'Lisa' (prev: 'Bart')",
                 "0:11 !DRT - PStore/%PrettyName <- PStore/root.firstName",
-                "0:12 !PCS - Reconciliation #1 - 1 processor",
-                "0:13 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=0:12",
+                "0:12 !PCS - !Reconciliation #1 - 1 processor",
+                "0:13 !PCS - !Compute #2 (PStore/%PrettyName) P1 Reconciliation - parentId=0:12",
                 "0:14 !GET - PStore/root.firstName -> 'Lisa'",
                 "0:15 !PCP - 0:13", // Pause
                 "0:16 !PCE - 0:12",
@@ -303,11 +303,11 @@ describe('Async processors', () => {
 
             // GetAvatar will not be called
             expect(printLogs(0)).toMatchObject([
-                "0:1 !PCS - StoreInit (PStore)",
+                "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
                 "0:3 !NEW - O: PStore/root",
                 "0:4 !NEW - P: PStore/%PrettyName",
-                "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                "0:5 !PCS - !Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
                 "0:6 !GET - PStore/root.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5",
                 "0:8 !PCE - 0:1",
@@ -339,11 +339,11 @@ describe('Async processors', () => {
             expect(ps.root.prettyName).toBe("Friendly(Bart) Simpson");
 
             expect(printLogs(0)).toMatchObject([
-                "0:1 !PCS - StoreInit (PStore)",
+                "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
                 "0:3 !NEW - O: PStore/root",
                 "0:4 !NEW - P: PStore/%PrettyName",
-                "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                "0:5 !PCS - !Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
                 "0:6 !GET - PStore/root.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5",
                 "0:8 !PCE - 0:1",
@@ -418,11 +418,11 @@ describe('Async processors', () => {
                 await trax.log.awaitEvent("GetAvatar");
 
                 expect(logs.slice(0)).toMatchObject([
-                    "0:1 !PCS - StoreInit (PStore)",
+                    "0:1 !PCS - !StoreInit (PStore)",
                     "0:2 !NEW - S: PStore",
                     "0:3 !NEW - O: PStore/root",
                     "0:4 !NEW - P: PStore/%PrettyName",
-                    "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parent:0:1",
+                    "0:5 !PCS - !Compute #1 (PStore/%PrettyName) P1 Init - parent:0:1",
                     "0:6 !GET - PStore/root.firstName -> 'Bart'",
                     "0:7 !PCP - 0:5",
                     "0:8 !PCE - 0:1",
@@ -438,8 +438,8 @@ describe('Async processors', () => {
                     "4:3 !PCE - 0:5",
                     "5:1 !SET - PStore/root.lastName = 'SIM' (prev: 'Simpson')",
                     "5:2 !DRT - PStore/%PrettyName <- PStore/root.lastName",
-                    "5:3 !PCS - Reconciliation #1 - 1 processor",
-                    "5:4 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parent:5:3",
+                    "5:3 !PCS - !Reconciliation #1 - 1 processor",
+                    "5:4 !PCS - !Compute #2 (PStore/%PrettyName) P1 Reconciliation - parent:5:3",
                     "5:5 !GET - PStore/root.firstName -> 'Bart'",
                     "5:6 !PCP - 5:4",
                     "5:7 !PCE - 5:3",
@@ -468,11 +468,11 @@ describe('Async processors', () => {
                 await trax.log.awaitEvent("GetAvatar");
 
                 expect(logs.slice(0)).toMatchObject([
-                    "0:1 !PCS - StoreInit (PStore)",
+                    "0:1 !PCS - !StoreInit (PStore)",
                     "0:2 !NEW - S: PStore",
                     "0:3 !NEW - O: PStore/root",
                     "0:4 !NEW - P: PStore/%PrettyName",
-                    "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parent:0:1",
+                    "0:5 !PCS - !Compute #1 (PStore/%PrettyName) P1 Init - parent:0:1",
                     "0:7 !PCP - 0:5",
                     "0:8 !PCE - 0:1",
                     "1:1 GetFriendlyName",
@@ -486,8 +486,8 @@ describe('Async processors', () => {
                     "4:3 !PCE - 0:5",
                     "5:1 !SET - PStore/root.lastName = 'SIM' (prev: 'Simpson')",
                     "5:2 !DRT - PStore/%PrettyName <- PStore/root.lastName",
-                    "5:3 !PCS - Reconciliation #1 - 1 processor",
-                    "5:4 !PCS - Compute #2 (PStore/%PrettyName) P1 Reconciliation - parent:5:3",
+                    "5:3 !PCS - !Reconciliation #1 - 1 processor",
+                    "5:4 !PCS - !Compute #2 (PStore/%PrettyName) P1 Reconciliation - parent:5:3",
                     "5:6 !PCP - 5:4",
                     "5:7 !PCE - 5:3",
                     "6:1 GetFriendlyName",
@@ -518,11 +518,11 @@ describe('Async processors', () => {
             expect(ps.root.prettyName).toBe(undefined);
             await trax.reconciliation();
             expect(printLogs(0)).toMatchObject([
-                "0:1 !PCS - StoreInit (PStore)",
+                "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
                 "0:3 !NEW - O: PStore/root",
                 "0:4 !NEW - P: PStore/%PrettyName",
-                "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                "0:5 !PCS - !Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
                 "0:6 !ERR - [TRAX] (PStore/%PrettyName) Compute error: Error: Error 1",
                 "0:7 !PCE - 0:5",
                 "0:8 !ERR - [TRAX] (PStore/%PrettyName) No dependencies found: processor will never be re-executed",
@@ -548,11 +548,11 @@ describe('Async processors', () => {
             await trax.log.awaitEvent("GetFriendlyName");
             await trax.reconciliation();
             expect(printLogs(0)).toMatchObject([
-                "0:1 !PCS - StoreInit (PStore)",
+                "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
                 "0:3 !NEW - O: PStore/root",
                 "0:4 !NEW - P: PStore/%PrettyName",
-                "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                "0:5 !PCS - !Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
                 "0:6 !GET - PStore/root.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5",
                 "0:8 !PCE - 0:1",
@@ -581,11 +581,11 @@ describe('Async processors', () => {
             await trax.log.awaitEvent("GetFriendlyName");
             await trax.reconciliation();
             expect(printLogs(0)).toMatchObject([
-                "0:1 !PCS - StoreInit (PStore)",
+                "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
                 "0:3 !NEW - O: PStore/root",
                 "0:4 !NEW - P: PStore/%PrettyName",
-                "0:5 !PCS - Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
+                "0:5 !PCS - !Compute #1 (PStore/%PrettyName) P1 Init - parentId=0:1",
                 "0:6 !GET - PStore/root.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5",
                 "0:8 !PCE - 0:1",

@@ -1,4 +1,4 @@
-import { TraxComputeTrigger, TraxLogMsg, TraxLogObjectLifeCycle, TraxLogProcDirty, TraxLogPropGet, TraxLogPropSet, TraxObjectType } from "@traxjs/trax";
+import { StreamEvent, TraxComputeTrigger, TraxLogMsg, TraxLogObjectLifeCycle, TraxLogProcDirty, TraxLogPropGet, TraxLogPropSet, TraxObjectType } from "@traxjs/trax";
 
 /** Root data structure holding all dev tools data */
 export interface DtDevToolsData {
@@ -8,21 +8,45 @@ export interface DtDevToolsData {
     rendererStores: DtStore[];
     /** Logs received from the application */
     $$logs: DtLogCycle[];
-    /** Logs filtered according to the log filters */
-    $$filteredLogs: DtLogCycle[];
-    /** Log filters */
-    logFilters: {
-        /** Show the property get logs (by far the largets number of log entries)  */
-        showPropertyGet: boolean;
-        /** Show renderer logs only */
-        renderOnly: boolean;
-        /** Show only logs that set a processor dirty */
-        dirtyOnly: boolean;
-        /** Show logs that match certain object ids (store/data/processor) */
-        objectIds: string[];
-        // showLongProcessing?
-    },
+    // /** Logs filtered according to the log filters */
+    // $$filteredLogs: DtLogCycle[];
+    // /** Log filters */
+    // logFilters: {
+    //     /** Show the property get logs (by far the largets number of log entries)  */
+    //     showPropertyGet: boolean;
+    //     /** Show renderer logs only */
+    //     renderOnly: boolean;
+    //     /** Show only logs that set a processor dirty */
+    //     dirtyOnly: boolean;
+    //     /** Show logs that match certain object ids (store/data/processor) */
+    //     objectIds: string[];
+    //     // showLongProcessing?
+    // },
     // TODO: logSelection to keep the selection cursor on a given log entry
+}
+
+/**
+ * API used by the DevTools to retrieve data from the trax instance
+ * running in the client application
+ * Note: this API is composed of 2 types of functions
+ * - Actions: sync function with no return values 
+ * - Calls: async functions with a return value
+ */
+export interface DtClientAPI {
+    /** Activate client log push */
+    activateLogs(): void;
+    /** Deactivate client log push */
+    deactivateLogs(): void;
+    /** Register a listener to get cycle events (the listener will be called for each cycle with all event cycles) */
+    onChange(listener: (events: DtEventGroup) => void): void;
+}
+
+/**
+ * Group of all events belonging to a given cycle
+ */
+export interface DtEventGroup {
+    cycleId: number;
+    events: StreamEvent[];
 }
 
 /**
@@ -75,7 +99,7 @@ interface DtProcessor {
     // TODO childProcessors: DtProcessor;
 }
 
-interface DtLogCycle {
+export interface DtLogCycle {
     /** Cycle id (incremental number) */
     readonly cycleId: number;
     /** Elapsed time since previous cycle */
@@ -83,10 +107,10 @@ interface DtLogCycle {
     /** Cycle compute time */
     readonly computeMs: number;
     /** Logs (filtered for ) */
-    $$logs: DtLogEvent[];
+    $$events: DtLogEvent[];
 }
 
-type DtLogEvent = { id: string; } & (TraxLogMsg
+export type DtLogEvent = { id: string; } & (TraxLogMsg
     | TraxLogObjectLifeCycle
     | TraxLogPropSet
     | TraxLogPropGet
@@ -94,9 +118,10 @@ type DtLogEvent = { id: string; } & (TraxLogMsg
     | DtProcessingGroup | DtTraxPgStoreInit | DtTraxPgCompute | DtTraxPgCollectionUpdate | DtTraxPgReconciliation);
 
 interface DtProcessingGroup {
+    type: "!PCG";
     name: string;
     async: boolean;
-    $$logs: DtLogEvent[];
+    $$events: DtLogEvent[];
 }
 
 interface DtTraxPgStoreInit extends DtProcessingGroup {

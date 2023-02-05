@@ -84,7 +84,9 @@ function attachMetaData(o: Object, id: string, type: TraxObjectType, storeId: st
 }
 
 /**
- * Create a trax environment
+ * Create a trax environment. This function must only be used in test environments:
+ * applications must use the global trax object instead
+ * @see trax
  */
 export function createTraxEnv(): Trax {
     /** Private key to authorize reserved events in the log stream */

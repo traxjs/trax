@@ -388,7 +388,7 @@ export interface TraxLogProcDirty {
 
 export interface TraxLogMsg {
     type: "!LOG" | "!WRN" | "!ERR";
-    data: JSONValue
+    data?: JSONValue;
 }
 
 export interface TraxLogCycle {

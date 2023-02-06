@@ -142,11 +142,11 @@ describe('Trax Objects', () => {
 
             expect(printLogs()).toMatchObject([
                 "1:1 !NEW - O: SimpleFamilyStore/foo",
-                "1:2 !DEL - O: SimpleFamilyStore/foo",
+                "1:2 !DEL - SimpleFamilyStore/foo",
                 "1:3 !NEW - O: SimpleFamilyStore/foo:bar",
-                "1:4 !DEL - O: SimpleFamilyStore/foo:bar",
+                "1:4 !DEL - SimpleFamilyStore/foo:bar",
                 "1:5 !NEW - O: SimpleFamilyStore/x",
-                "1:6 !DEL - O: SimpleFamilyStore/x",
+                "1:6 !DEL - SimpleFamilyStore/x",
                 "1:7 !NEW - O: SimpleFamilyStore/x",
             ]);
         });
@@ -173,7 +173,7 @@ describe('Trax Objects', () => {
                 '1:2 !GET - SimpleFamilyStore/HS.firstName -> \'Homer\'',
                 '1:3 !GET - SimpleFamilyStore/HS.lastName -> \'Simpson\'',
                 '1:4 !SET - SimpleFamilyStore/HS.lastName = \'SIMPSON\' (prev: \'Simpson\')',
-                '1:5 !DEL - O: SimpleFamilyStore/HS',
+                '1:5 !DEL - SimpleFamilyStore/HS',
                 '1:6 !LOG - END'
             ]);
         });

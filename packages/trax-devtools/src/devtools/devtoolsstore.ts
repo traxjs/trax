@@ -96,9 +96,6 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
     if (tp === traxEvents.Get) {
         // TraxLogPropGet
         parent.push({ id, type: tp, objectId: d.objectId, propName: d.propName, propValue: d.propValue });
-    } else if (tp === traxEvents.Info || tp === traxEvents.Error || tp === traxEvents.Warning) {
-        // TraxLogMsg
-        parent.push({ id, type: tp, data: d });
     } else if (tp === traxEvents.New || tp === traxEvents.Dispose) {
         // TraxLogObjectLifeCycle
         parent.push({ id, type: tp, objectId: d.objectId, objectType: d.objectType });
@@ -107,18 +104,47 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
         idx += 1;
         const name = d.name;
         let childEvent = groupEvents[idx];
+        let resume = (tp === traxEvents.ProcessingResume);
+        let async = resume;
 
         const pcgEvents: DtLogEvent[] = [];
         while (childEvent && childEvent.type !== traxEvents.ProcessingEnd && childEvent.type !== traxEvents.ProcessingPause) {
             idx = ingestEvent(idx, groupEvents, pcgEvents);
             childEvent = groupEvents[idx];
         }
-        parent.push({ id, type: "!PCG", name, async: false, $$events: pcgEvents });
+        if (!async && childEvent && childEvent.type === traxEvents.ProcessingPause) {
+            async = true;
+        }
+        const type = "!PCG";
+        if (name === "!StoreInit") {
+            // DtTraxPgStoreInit
+            parent.push({ id, type, storeId: d.storeId, name, async, resume, $$events: pcgEvents });
+        } else if (name === "!Compute") {
+            parent.push({
+                id, type, storeId: d.storeId, name, async, resume, $$events: pcgEvents,
+                processorId: d.processorId,
+                computeCount: d.computeCount,
+                processorPriority: d.processorPriority,
+                trigger: d.trigger,
+                isRenderer: d.isRenderer === true
+            });
+        } else if (name === "!ArrayUpdate" || name === "!DictionaryUpdate") {
+            parent.push({ id, type, name, async, resume, objectId: d.objectId, $$events: pcgEvents });
+        } else {
+            // DtProcessingGroup
+            parent.push({ id, type, name, async, resume, $$events: pcgEvents });
+        }
     } else if (tp === traxEvents.Set) {
         // TraxLogPropSet
         parent.push({ id, type: tp, objectId: d.objectId, propName: d.propName, fromValue: d.fromValue, toValue: d.toValue });
+    } else if (tp === traxEvents.ProcessorDirty) {
+        parent.push({ id, type: tp, processorId: d.processorId, objectId: d.objectId, propName: d.propName });
+    } else if (tp === traxEvents.Info || tp === traxEvents.Error || tp === traxEvents.Warning) {
+        // TraxLogMsg
+        parent.push({ id, type: tp, data: d });
     } else {
-        console.log("[DevTools.ingestEvent] Unsupported type", tp);
+        // Custom event
+        parent.push({ id, type: "!EVT", eventType: tp, data: d });
     }
 
     return idx + 1;

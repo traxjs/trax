@@ -199,7 +199,7 @@ export function createTraxProcessor(
                     md.propListeners.delete(pr);
                 }
             }
-            logTraxEvent({ type: "!DEL", objectId: processorId, objectType: TraxObjectType.Processor });
+            logTraxEvent({ type: "!DEL", objectId: processorId });
             return true;
         }
     }

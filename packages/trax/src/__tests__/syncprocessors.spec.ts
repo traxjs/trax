@@ -908,7 +908,7 @@ describe('Sync Processors', () => {
                 "1:8 !PCE - 1:3",
                 "2:1 !SET - PStore/root.firstName = 'Maggie' (prev: 'Bart')",
                 "2:2 !DRT - PStore%Render <- PStore/root.firstName",
-                "2:3 !DEL - P: PStore%Render",
+                "2:3 !DEL - PStore%Render",
                 "2:4 !LOG - Delete complete",
                 "2:5 !LOG - Before Change",
                 "2:6 !SET - PStore/root.firstName = 'Lisa' (prev: 'Maggie')",

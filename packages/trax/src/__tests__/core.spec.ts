@@ -687,6 +687,8 @@ describe('Trax Core', () => {
                     "0:5 !PCS - MyStore.dispose()",
                     "0:6 !ERR - [TRAX] (MyStore.dispose) error: Error: Unexpected dispose error",
                     "0:7 !PCE - 0:5",
+                    "0:8 !DEL - MyStore/root",
+                    "0:9 !DEL - MyStore",
                 ]);
             });
 
@@ -777,7 +779,9 @@ describe('Trax Core', () => {
                 const o = ps.add("Foo", { bar: 123 });
 
                 expect(printLogs(1)).toMatchObject([
-                    "1:1 !ERR - [TRAX] (PStore) Stores cannot be used after being disposed",
+                    "1:1 !DEL - PStore/root",
+                    "1:2 !DEL - PStore",
+                    "1:3 !ERR - [TRAX] (PStore) Stores cannot be used after being disposed",
                 ]);
             });
 

@@ -312,7 +312,7 @@ describe('Async processors', () => {
                 "0:7 !PCP - 0:5",
                 "0:8 !PCE - 0:1",
                 "0:9 !GET - PStore/root.avatar -> undefined",
-                "0:10 !DEL - P: PStore%PrettyName",
+                "0:10 !DEL - PStore%PrettyName",
                 "1:1 GetFriendlyName - NO-DATA",
             ]);
         });

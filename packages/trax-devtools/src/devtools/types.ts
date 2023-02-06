@@ -1,4 +1,5 @@
 import { StreamEvent, TraxComputeTrigger, TraxLogMsg, TraxLogObjectLifeCycle, TraxLogProcDirty, TraxLogPropGet, TraxLogPropSet, TraxObjectType } from "@traxjs/trax";
+import { JSONValue } from "@traxjs/trax/lib/types";
 
 /** Root data structure holding all dev tools data */
 export interface DtDevToolsData {
@@ -110,26 +111,34 @@ export interface DtLogCycle {
     $$events: DtLogEvent[];
 }
 
-export type DtLogEvent = { id: string; } & (TraxLogMsg
+export type DtLogEvent = { id: string; } & (DtEvent
+    | TraxLogMsg
     | TraxLogObjectLifeCycle
     | TraxLogPropSet
     | TraxLogPropGet
     | TraxLogProcDirty
     | DtProcessingGroup | DtTraxPgStoreInit | DtTraxPgCompute | DtTraxPgCollectionUpdate | DtTraxPgReconciliation);
 
+export interface DtEvent {
+    type: "!EVT",
+    eventType: string;
+    data?: JSONValue
+}
+
 interface DtProcessingGroup {
     type: "!PCG";
     name: string;
     async: boolean;
+    resume: boolean;
     $$events: DtLogEvent[];
 }
 
-interface DtTraxPgStoreInit extends DtProcessingGroup {
+export interface DtTraxPgStoreInit extends DtProcessingGroup {
     name: "!StoreInit";
     storeId: string;
 }
 
-interface DtTraxPgCompute extends DtProcessingGroup {
+export interface DtTraxPgCompute extends DtProcessingGroup {
     name: "!Compute";
     processorId: string;
     processorPriority: number;
@@ -138,12 +147,12 @@ interface DtTraxPgCompute extends DtProcessingGroup {
     computeCount: number;
 }
 
-interface DtTraxPgCollectionUpdate extends DtProcessingGroup {
+export interface DtTraxPgCollectionUpdate extends DtProcessingGroup {
     name: "!ArrayUpdate" | "!DictionaryUpdate";
     objectId: string;
 }
 
-interface DtTraxPgReconciliation extends DtProcessingGroup {
+export interface DtTraxPgReconciliation extends DtProcessingGroup {
     name: "!Reconciliation";
     objectId: string;
     /** Counter incremented everytime a reconciliation runs */

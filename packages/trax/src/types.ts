@@ -345,8 +345,6 @@ export type TraxEvent = TraxLogMsg | TraxLogObjectLifeCycle | TraxLogPropGet | T
 /** Reason that triggered a call to a processor's compute function */
 export type TraxComputeTrigger = "Init" | "Reconciliation" | "DirectCall";
 
-export type TraxLogSingleData = TraxLogObjectLifeCycle
-
 export type TraxLogEvent =
     TraxLogMsg
     | TraxLogCycle
@@ -357,10 +355,16 @@ export type TraxLogEvent =
     | TraxLogTraxProcessingCtxt
     | TraxLogProcessingCtxtEvent;
 
-export interface TraxLogObjectLifeCycle {
-    type: "!NEW" | "!DEL";
+export type TraxLogObjectLifeCycle = TraxLogObjectCreate | TraxLogObjectDispose;
+export interface TraxLogObjectCreate {
+    type: "!NEW";
     objectId: string;
-    objectType: TraxObjectType
+    objectType?: TraxObjectType
+}
+
+export interface TraxLogObjectDispose {
+    type: "!DEL";
+    objectId: string;
 }
 
 export interface TraxLogPropGet {

@@ -1,6 +1,6 @@
 import { traxMD } from "./core";
 import { LinkedList } from "./linkedlist";
-import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, JSONValue, TraxLogTraxProcessingCtxt, TraxLogObjectLifeCycle, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet } from "./types";
+import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, TraxLogTraxProcessingCtxt, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet, TraxLogObjectCreate, TraxLogObjectDispose } from "./types";
 
 /**
  * Resolve function used in the await map
@@ -440,13 +440,13 @@ export function formatEventData(eventType: string, data?: any) {
                 return `${(d as any).name}`;
             }
         } else if (eventType === traxEvents.New) {
-            const d = sd as TraxLogObjectLifeCycle;
+            const d = sd as TraxLogObjectCreate;
             if (d.objectId === undefined) return data;
             return `${d.objectType}: ${d.objectId}`;
         } else if (eventType === traxEvents.Dispose) {
-            const d = sd as TraxLogObjectLifeCycle;
+            const d = sd as TraxLogObjectDispose;
             if (d.objectId === undefined) return data;
-            return `${d.objectType ? d.objectType + ": " : ""}${d.objectId}`;
+            return `${d.objectId}`;
         } else if (eventType === traxEvents.Get) {
             const d = sd as TraxLogPropGet;
             return `${d.objectId}.${d.propName} -> ${stringify(d.propValue)}`;

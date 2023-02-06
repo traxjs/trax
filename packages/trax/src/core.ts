@@ -651,15 +651,10 @@ export function createTraxEnv(): Trax {
         const ref = dataRefs.get(id);
         if (ref) {
             const o = ref.deref() || null;
-            let objectType = TraxObjectType.NotATraxObject;
             if (o) {
-                const md = tmd(o);
-                if (md) {
-                    o[traxMD] = undefined;
-                    objectType = md.type;
-                }
+                o[traxMD] = undefined;
             }
-            logTraxEvent({ type: "!DEL", objectId: id, objectType });
+            logTraxEvent({ type: "!DEL", objectId: id });
             return dataRefs.delete(id);
         }
         return false;
@@ -839,10 +834,12 @@ export function createTraxEnv(): Trax {
                         o = processors.get(id);
                         o && o.dispose();
                     } else {
+                        logTraxEvent({ type: "!DEL", objectId: id });
                         dataRefs.delete(id);
                     }
                 }
             }
+            logTraxEvent({ type: "!DEL", objectId: storeId });
             return true;
         }
 

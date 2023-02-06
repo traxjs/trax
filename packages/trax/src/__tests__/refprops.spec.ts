@@ -87,9 +87,9 @@ describe('Ref Props', () => {
         expect(printLogs(1)).toMatchObject([
             "1:1 !LOG - A",
             "1:2 !SET - PStore/root.name = 'BART' (prev: 'Bart')",
-            "1:3 !DRT - PStore/%Render <- PStore/root.name",
+            "1:3 !DRT - PStore%Render <- PStore/root.name",
             "1:4 !PCS - !Reconciliation #1 - 1 processor",
-            "1:5 !PCS - !Compute #2 (PStore/%Render) P1 Reconciliation - parentId=1:4",
+            "1:5 !PCS - !Compute #2 (PStore%Render) P1 Reconciliation - parentId=1:4",
             "1:6 !GET - PStore/root.$parents -> {\"father\":\"Homer\",\"mother\":\"Marge\"}",
             "1:7 !GET - PStore/root.name -> 'BART'",
             "1:8 !PCE - 1:5",
@@ -98,9 +98,9 @@ describe('Ref Props', () => {
             "2:2 !GET - PStore/root.$parents -> {\"father\":\"Homer\",\"mother\":\"Marge\"}",
             "3:1 !LOG - C", // no re-processing
             "3:2 !SET - PStore/root.name = 'Bart' (prev: 'BART')",
-            "3:3 !DRT - PStore/%Render <- PStore/root.name",
+            "3:3 !DRT - PStore%Render <- PStore/root.name",
             "3:4 !PCS - !Reconciliation #2 - 1 processor",
-            "3:5 !PCS - !Compute #3 (PStore/%Render) P1 Reconciliation - parentId=3:4",
+            "3:5 !PCS - !Compute #3 (PStore%Render) P1 Reconciliation - parentId=3:4",
             "3:6 !GET - PStore/root.$parents -> {\"father\":\"HOMER\",\"mother\":\"Marge\"}",
             "3:7 !GET - PStore/root.name -> 'Bart'",
             "3:8 !PCE - 3:5",
@@ -148,9 +148,9 @@ describe('Ref Props', () => {
         expect(printLogs(1)).toMatchObject([
             "1:1 !LOG - A",
             "1:2 !SET - PStore/root.name = 'BART' (prev: 'Bart')",
-            "1:3 !DRT - PStore/%Render <- PStore/root.name",
+            "1:3 !DRT - PStore%Render <- PStore/root.name",
             "1:4 !PCS - !Reconciliation #1 - 1 processor",
-            "1:5 !PCS - !Compute #2 (PStore/%Render) P1 Reconciliation - parentId=1:4",
+            "1:5 !PCS - !Compute #2 (PStore%Render) P1 Reconciliation - parentId=1:4",
             "1:6 !GET - PStore/root.$family -> [{\"name\":\"Homer\"},{\"name\":\"Marge\"}]",
             "1:7 !GET - PStore/root.name -> 'BART'",
             "1:8 !PCE - 1:5",
@@ -159,9 +159,9 @@ describe('Ref Props', () => {
             "2:2 !GET - PStore/root.$family -> [{\"name\":\"Homer\"},{\"name\":\"Marge\"}]",
             "3:1 !LOG - C", // no changes
             "3:2 !SET - PStore/root.name = 'Bart' (prev: 'BART')",
-            "3:3 !DRT - PStore/%Render <- PStore/root.name", // change
+            "3:3 !DRT - PStore%Render <- PStore/root.name", // change
             "3:4 !PCS - !Reconciliation #2 - 1 processor",
-            "3:5 !PCS - !Compute #3 (PStore/%Render) P1 Reconciliation - parentId=3:4",
+            "3:5 !PCS - !Compute #3 (PStore%Render) P1 Reconciliation - parentId=3:4",
             "3:6 !GET - PStore/root.$family -> [{\"name\":\"Homer\"},{\"name\":\"Marge\"},{\"name\":\"Lisa\"}]",
             "3:7 !GET - PStore/root.name -> 'Bart'",
             "3:8 !PCE - 3:5",

@@ -2,6 +2,8 @@ import { Store, StreamEvent, trax, traxEvents } from "@traxjs/trax"
 import { JSONValue, TraxLogCycle, TraxLogMsg } from "@traxjs/trax/lib/types";
 import { DtClientAPI, DtDevToolsData, DtEventGroup, DtLogCycle, DtLogEvent } from "./types";
 
+export type DevToolsStore = ReturnType<typeof createDevToolsStore>;
+
 export function createDevToolsStore(client: DtClientAPI) {
     return trax.createStore("DevToolsStore", (store: Store<DtDevToolsData>) => {
         const data = store.init({
@@ -15,8 +17,8 @@ export function createDevToolsStore(client: DtClientAPI) {
             client.onChange(processEvents);
         }
 
-        function processEvents(events: DtEventGroup) {
-            ingestNewEvents(events, store);
+        function processEvents(eventGroup: DtEventGroup) {
+            ingestNewEvents(eventGroup, store);
         }
 
         reset();
@@ -111,7 +113,7 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
             idx = ingestEvent(idx, groupEvents, pcgEvents);
             childEvent = groupEvents[idx];
         }
-        parent.push({ id, type: "!PCG", name, async: false, $$events: pcgEvents })
+        parent.push({ id, type: "!PCG", name, async: false, $$events: pcgEvents });
     } else if (tp === traxEvents.Set) {
         // TraxLogPropSet
         parent.push({ id, type: tp, objectId: d.objectId, propName: d.propName, fromValue: d.fromValue, toValue: d.toValue });

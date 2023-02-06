@@ -21,7 +21,11 @@ const ID_SEPARATOR4 = "$";
 /** Property prefix for reference properties */
 const REF_PROP_PREFIX = "$";
 /** Separator for sub-store ids */
+const ID_PROCESSOR_SEPARATOR = "%";
+/** Separator for sub-store ids */
 const ID_SUB_STORE_SEPARATOR = ">";
+/** Separator for data objects */
+const ID_DATA_SEPARATOR = "/";
 /** Pseudo property name to track dict size */
 const DICT_SIZE_PROP = '☆trax.dictionary.size☆';
 
@@ -99,6 +103,8 @@ export function createTraxEnv(): Trax {
     const dataRefs = new Map<string, WeakRef<any>>();
     /** Global processor map */
     const processors = new Map<string, TraxInternalProcessor>();
+    /** Global map containing trax object ids per store */
+    const storeItems = new Map<string, Set<string>>();
     const isArray = Array.isArray;
     /** Count of processors that have been created - used to set processor priorities */
     let processorPriorityCounter = 0;
@@ -509,7 +515,7 @@ export function createTraxEnv(): Trax {
         }
         logTraxEvent({ type: "!NEW", objectId: id, objectType: md.type });
         const prx = new Proxy(obj, proxyHandler);
-        storeDataObject(id, prx);
+        storeDataObject(id, prx, storeId);
         return prx;
     }
 
@@ -566,8 +572,8 @@ export function createTraxEnv(): Trax {
 
     function buildId(id: TraxIdDef, storeId: string, isProcessor: boolean) {
         let suffix = buildIdSuffix(id, storeId);
-        if (isProcessor) return storeId + "/%" + suffix;
-        return storeId + "/" + suffix;;
+        if (isProcessor) return storeId + ID_PROCESSOR_SEPARATOR + suffix;
+        return storeId + ID_DATA_SEPARATOR + suffix;;
     }
 
     /**
@@ -636,8 +642,9 @@ export function createTraxEnv(): Trax {
         return null;
     }
 
-    function storeDataObject(id: string, data: Object) {
+    function storeDataObject(id: string, data: Object, storeId: string) {
         dataRefs.set(id, new WeakRef(data));
+        addStoreItem(id, storeId);
     }
 
     function removeDataObject(id: string): boolean {
@@ -648,7 +655,6 @@ export function createTraxEnv(): Trax {
             if (o) {
                 const md = tmd(o);
                 if (md) {
-                    // TODO: dirty all processor dependencies
                     o[traxMD] = undefined;
                     objectType = md.type;
                 }
@@ -657,6 +663,22 @@ export function createTraxEnv(): Trax {
             return dataRefs.delete(id);
         }
         return false;
+    }
+
+    function addStoreItem(id: string, storeId: string) {
+        let storeSet = storeItems.get(storeId);
+        if (!storeSet) {
+            storeSet = new Set<string>();
+            storeItems.set(storeId, storeSet);
+        }
+        storeSet.add(id);
+    }
+
+    function removeStoreItem(id: string, storeId: string) {
+        let storeSet = storeItems.get(storeId);
+        if (storeSet) {
+            storeSet.delete(id);
+        }
     }
 
     function createStore<R, T extends Object>(
@@ -673,10 +695,6 @@ export function createTraxEnv(): Trax {
         const initFunction = typeof initFunctionOrRoot === "function" ? initFunctionOrRoot : (store: Store<T>) => {
             store.init(initFunctionOrRoot as any);
         }
-        /** Set of processor ids associated to this store */
-        const storeProcessors = new Set<string>();
-        /** Set of sub-store ids associated to this store */
-        const storeSubStores = new Set<string>();
 
         const store: Store<T> = {
             get id() {
@@ -694,7 +712,7 @@ export function createTraxEnv(): Trax {
                 initFunctionOrRoot: Object | ((store: Store<T>) => R)
             ): R extends void ? Store<T> : R & StoreWrapper {
                 const st = createStore(id, storeId, initFunctionOrRoot, detachChildStore);
-                storeSubStores.add(st.id);
+                addStoreItem(st.id, storeId);
                 return st;
             },
             init(r: T) {
@@ -749,7 +767,7 @@ export function createTraxEnv(): Trax {
                 );
                 attachMetaData(pr, pid, TraxObjectType.Processor, storeId);
                 processors.set(pid, pr);
-                storeProcessors.add(pid);
+                addStoreItem(pid, storeId);
                 return pr;
             },
             getProcessor(id: TraxIdDef): TraxProcessor | undefined {
@@ -805,38 +823,38 @@ export function createTraxEnv(): Trax {
                 onDispose(storeId);
             }
 
-            // dispose root
-            dataRefs.delete(trx.getTraxId(root));
-
-            // dispose all sub-stores
-            storeSubStores.forEach((stId) => {
-                const st = stores.get(stId);
-                if (st && !st.disposed) {
-                    st.dispose();
+            const storeSet = storeItems.get(storeId);
+            if (storeSet) {
+                storeItems.delete(storeId);
+                const len = storeId.length;
+                let separator: string;
+                let o: Store<any> | TraxInternalProcessor | undefined = undefined;
+                for (const id of storeSet) {
+                    o = undefined;
+                    separator = id.charAt(len);
+                    if (separator === ID_SUB_STORE_SEPARATOR) {
+                        o = stores.get(id);
+                        o && o.dispose();
+                    } else if (separator === ID_PROCESSOR_SEPARATOR) {
+                        o = processors.get(id);
+                        o && o.dispose();
+                    } else {
+                        dataRefs.delete(id);
+                    }
                 }
-            });
-            storeSubStores.clear();
-
-            // dispose all sub-processors
-            storeProcessors.forEach((processorId) => {
-                const pr = processors.get(processorId);
-                if (pr && !pr.disposed) {
-                    pr.dispose();
-                }
-            });
-            storeProcessors.clear();
+            }
             return true;
         }
 
         function detachChildStore(id: string) {
-            storeSubStores.delete(id);
+            removeStoreItem(id, storeId);
         }
 
         function detachChildProcessor(id: string) {
             const ok = processors.delete(id);
             if (ok) {
                 processorCount--;
-                storeProcessors.delete(id);
+                removeStoreItem(id, storeId);
             }
         }
 

@@ -12,6 +12,7 @@ export function createClientEnv() {
     let bufferListener: (events: DtEventGroup) => void;
 
     const logSubscription = log.subscribe("*", (e) => {
+        // console.log(`logSubscription: ${active} ${e.id} ${e.type}`);
         if (active) {
             const m = e.id.match(/^(\d+)\:/);
             if (!m) {
@@ -30,6 +31,7 @@ export function createClientEnv() {
                     }
                     // push last events
                     if (buffer.length) {
+                        // console.log(`logSubscription: PUSH ${buffer.map(e => `${e.id} ${e.type}`).join(";")}`);
                         bufferListener && bufferListener({ cycleId: bufferCycle, events: buffer });
                         buffer = [];
                     }

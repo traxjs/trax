@@ -5,11 +5,26 @@ import { DtClientAPI, DtDevToolsData, DtEventGroup, DtLogCycle, DtLogEvent } fro
 export type DevToolsStore = ReturnType<typeof createDevToolsStore>;
 
 export function createDevToolsStore(client: DtClientAPI) {
+
     return trax.createStore("DevToolsStore", (store: Store<DtDevToolsData>) => {
         const data = store.init({
             rootStores: [],
             rendererStores: [],
-            $$logs: []
+            $$logs: [],
+            logFilters: {
+                key: "", // computed
+                includePropertyGet: false,
+                includeNew: false,
+                includeDispose: false,
+                includeEmptyProcessingGroups: true
+            }
+        });
+        const filters = data.logFilters;
+
+        store.compute("FilterKey", () => {
+            // create a unique key that represents the filter signature in order to cache the filter results
+            const boolProps = ["includeEmptyProcessingGroups", "includePropertyGet", "includeNew", "includeDispose"];
+            filters.key = boolProps.map((propName) => (filters as any)[propName] ? "Y" : "N").join("");
         });
 
         function reset() {
@@ -19,6 +34,14 @@ export function createDevToolsStore(client: DtClientAPI) {
 
         function processEvents(eventGroup: DtEventGroup) {
             ingestNewEvents(eventGroup, store);
+        }
+
+        function resetFilters() {
+            const filters = data.logFilters;
+            filters.includePropertyGet = false;
+            filters.includeNew = false;
+            filters.includeDispose = false;
+            filters.includeEmptyProcessingGroups = true;
         }
 
         reset();
@@ -31,6 +54,15 @@ export function createDevToolsStore(client: DtClientAPI) {
             /** Dispose the devtools and stop log push */
             dispose() {
                 client.deactivateLogs();
+            },
+            /** Reset filters to their default value */
+            resetFilters,
+            /** Update filters to show all logs */
+            showAllLogs() {
+                const filters = data.logFilters;
+                filters.includeDispose = true;
+                filters.includeNew = true;
+                filters.includeDispose = true;
             }
         }
 
@@ -65,14 +97,58 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
         i = ingestEvent(i, groupEvents, evts);
     }
 
-    // Add log data to $$logs
-    const logCycle = store.add<DtLogCycle>(["LogCycle", cycleId], {
-        cycleId,
-        elapsedMs,
-        computeMs,
-        $$events: evts
-    });
-    store.root.$$logs.push(logCycle);
+    const logs = store.root.$$logs;
+    const len = logs.length;
+    if (len > 0) {
+        const lastCycleId = logs[len - 1].cycleId;
+        if (cycleId > lastCycleId + 1) {
+            // Some cycles were missed? -> raise a warning
+            const errEvts: DtLogEvent[] = [];
+            const msg = `"Missing log cycles detected: expected cycle #${lastCycleId + 1} instead of #${cycleId}"`; // JSON stringified -> keep the outer quotes
+            ingestEvent(0, [{ id: `${lastCycleId + 1}:1`, type: traxEvents.Error, data: msg }], errEvts);
+            addLogCycle(lastCycleId + 1, errEvts);
+        }
+    }
+    addLogCycle(cycleId, evts, elapsedMs, computeMs);
+
+    function addLogCycle(cycleId: number, events: DtLogEvent[], elapsedMs = 0, computeMs = 0) {
+        const logCycle = store.add<DtLogCycle>(["LogCycle", cycleId], {
+            cycleId,
+            elapsedMs,
+            computeMs,
+            $$events: events,
+            $filteredEvents: undefined, // avoid class polymorphism,
+            filterKey: ""
+        });
+
+        logs.push(logCycle);
+
+        // create a processor to process the filtered value
+        store.compute(["LogView", cycleId], () => {
+            const filter = store.root.logFilters;
+            const fkey = filter.key;
+            if (logCycle.filterKey !== fkey) {
+                logCycle.filterKey = fkey;
+
+                // TODO trax.buildIdSuffix() to avoid calculating the id twice
+                const listId = `LogView:${cycleId}:${fkey}`;
+                // use trax cache to avoid re-processing if filter key didn't change
+                let lc = store.get<DtLogEvent[]>(listId);
+                if (lc) {
+                    logCycle.$filteredEvents = lc;
+                } else {
+                    // process the filter for this filter key
+                    const r = filterEvents(events, filter);
+                    if (r !== undefined) {
+                        logCycle.$filteredEvents = store.add<DtLogEvent[]>(listId, r);
+                    } else {
+                        // Nothing to show for this cycle with the current filter
+                        logCycle.$filteredEvents = undefined;
+                    }
+                }
+            }
+        });
+    }
 }
 
 function parseData<T = any>(data?: string) {
@@ -148,4 +224,39 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
     }
 
     return idx + 1;
+}
+
+function filterEvents(events: (DtLogEvent[]) | undefined, filter: DtDevToolsData["logFilters"]): DtLogEvent[] | undefined {
+    const r: DtLogEvent[] = [];
+    if (!events) return undefined;
+
+    // TODO: shortcut for All and Nothing
+    for (const e of events) {
+        const tp = e.type; // "!ERR" | "!EVT" | "!LOG" | "!WRN" | "!NEW" | "!DEL" | "!SET" | "!GET" | "!DRT" | "!PCG"
+        if (tp === traxEvents.Get) {
+            add(filter.includePropertyGet, e);
+        } else if (tp === traxEvents.New) {
+            add(filter.includeNew, e);
+        } else if (tp === traxEvents.Dispose) {
+            add(filter.includeDispose, e);
+        } else if (tp === "!PCG") {
+            const evts = filterEvents(e.$$events, filter);
+            if (evts || filter.includeEmptyProcessingGroups) {
+                r.push({
+                    ...e,
+                    $$events: evts
+                });
+            }
+        } else {
+            r.push(e);
+        }
+    }
+
+    function add(condition: boolean, e: DtLogEvent) {
+        if (condition) {
+            r.push(e);
+        }
+    }
+
+    return r.length ? r : undefined;
 }

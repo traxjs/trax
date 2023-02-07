@@ -9,20 +9,26 @@ export interface DtDevToolsData {
     rendererStores: DtStore[];
     /** Logs received from the application */
     $$logs: DtLogCycle[];
-    // /** Logs filtered according to the log filters */
-    // $$filteredLogs: DtLogCycle[];
     // /** Log filters */
-    // logFilters: {
-    //     /** Show the property get logs (by far the largets number of log entries)  */
-    //     showPropertyGet: boolean;
-    //     /** Show renderer logs only */
-    //     renderOnly: boolean;
-    //     /** Show only logs that set a processor dirty */
-    //     dirtyOnly: boolean;
-    //     /** Show logs that match certain object ids (store/data/processor) */
-    //     objectIds: string[];
-    //     // showLongProcessing?
-    // },
+    logFilters: {
+        /** Key signature to identify a certain filter type and allow result cachine */
+        key: string;
+        /** Show the property get logs (by far the largets number of log entries)  */
+        includePropertyGet: boolean;
+        /** Include object creation */
+        includeNew: boolean;
+        /** Include object disposal */
+        includeDispose: boolean;
+        /** Include processing groups event if all their events are filtered-out */
+        includeEmptyProcessingGroups: boolean;
+        // /** Show renderer logs only */
+        // renderOnly: boolean;
+        // /** Show only logs that set a processor dirty */
+        // dirtyOnly: boolean;
+        // /** Show logs that match certain object ids (store/data/processor) */
+        // objectIds: string[];
+        // showLongProcessing?
+    },
     // TODO: logSelection to keep the selection cursor on a given log entry
 }
 
@@ -107,8 +113,12 @@ export interface DtLogCycle {
     readonly elapsedMs: number;
     /** Cycle compute time */
     readonly computeMs: number;
-    /** Logs (filtered for ) */
+    /** Logs */
     $$events: DtLogEvent[];
+    /** Filtered events */
+    $filteredEvents?: DtLogEvent[];
+    /** Filter key used to process the $filteredEvents */
+    filterKey: string;
 }
 
 export type DtLogEvent = { id: string; } & (DtEvent
@@ -130,7 +140,7 @@ interface DtProcessingGroup {
     name: string;
     async: boolean;
     resume: boolean;
-    $$events: DtLogEvent[];
+    $$events?: DtLogEvent[];
 }
 
 export interface DtTraxPgStoreInit extends DtProcessingGroup {

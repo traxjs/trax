@@ -108,7 +108,7 @@ describe('Sync Processors', () => {
             await trax.reconciliation();
             expect(pr.dirty).toBe(false);
             trax.log.info("A");
-            pr.compute(); // not exected
+            pr.compute(); // not executed
             trax.log.info("B");
             pr.compute(true);
             trax.log.info("C");
@@ -141,10 +141,14 @@ describe('Sync Processors', () => {
         it('should return processors that have already been created', async () => {
             const ps = createPStore();
             const pr = ps.compute("PrettyName", () => {
-                // do something here - not called as the previous processor will be used for this id
+                const p = ps.root;
+                const nm = p.firstName + " " + p.lastName;
+                p.prettyName = nm;
+                p.prettyNameLength = nm.length;
             });
 
             expect(typeof pr.compute).toBe("function");
+            expect(ps.getProcessor("PrettyName")).toBe(pr);
 
             ps.root.firstName = "Bart";
             await trax.reconciliation();
@@ -168,12 +172,11 @@ describe('Sync Processors', () => {
                 "0:15 !PCS - !Reconciliation #1 - 1 processor",
                 "0:16 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=0:15",
                 "0:17 !GET - PStore/root.firstName -> 'Bart'",
-                "0:18 !GET - PStore/root.firstName -> 'Bart'",
-                "0:19 !GET - PStore/root.lastName -> 'Simpson'",
-                "0:20 !SET - PStore/root.prettyName = 'Bart Simpson' (prev: 'Homer Simpson')",
-                "0:21 !SET - PStore/root.prettyNameLength = 12 (prev: 13)",
-                "0:22 !PCE - 0:16",
-                "0:23 !PCE - 0:15",
+                "0:18 !GET - PStore/root.lastName -> 'Simpson'",
+                "0:19 !SET - PStore/root.prettyName = 'Bart Simpson' (prev: 'Homer Simpson')",
+                "0:20 !SET - PStore/root.prettyNameLength = 12 (prev: 13)",
+                "0:21 !PCE - 0:16",
+                "0:22 !PCE - 0:15",
                 "1:1 !GET - PStore/root.prettyName -> 'Bart Simpson'",
             ]);
         });
@@ -839,6 +842,45 @@ describe('Sync Processors', () => {
             const pr = ps.getProcessor("PrettyName");
             expect(lastActiveProcessor).toBe(pr);
             expect(trax.getActiveProcessor()).toBe(undefined);
+        });
+
+        it('should update compute function when a processor is retrieved', async () => {
+            const ps = createPStore(false);
+            const p = ps.root;
+
+            let output = "";
+            const pr = ps.compute("Render", () => {
+                output = "A " + p.firstName + " " + p.lastName;
+            });
+
+            expect(output).toBe("A Homer Simpson");
+            await trax.reconciliation();
+            expect(pr.dirty).toBe(false);
+            trax.log.info("A");
+            const pr2 = ps.compute("Render", () => {
+                output = "B " + p.firstName + " " + p.lastName;
+            });
+            expect(pr2).toBe(pr);
+            trax.log.info("B");
+            p.firstName = "H";
+            trax.log.info("C");
+
+            await trax.reconciliation();
+            expect(output).toBe("B H Simpson");
+
+            expect(printLogs(1)).toMatchObject([
+                "1:1 !LOG - A",
+                "1:2 !LOG - B",
+                "1:3 !SET - PStore/root.firstName = 'H' (prev: 'Homer')",
+                "1:4 !DRT - PStore%Render <- PStore/root.firstName",
+                "1:5 !LOG - C",
+                "1:6 !PCS - !Reconciliation #1 - 1 processor",
+                "1:7 !PCS - !Compute #2 (PStore%Render) P1 Reconciliation - parentId=1:6",
+                "1:8 !GET - PStore/root.firstName -> 'H'",
+                "1:9 !GET - PStore/root.lastName -> 'Simpson'",
+                "1:10 !PCE - 1:7",
+                "1:11 !PCE - 1:6",
+            ]);
         });
     });
 

@@ -744,6 +744,7 @@ export function createTraxEnv(): Trax {
                 let pid = buildId(id, storeId, true);
                 let pr = processors.get(pid);
                 if (pr) {
+                    pr.updateComputeFn(compute);
                     return pr;
                 }
                 processorPriorityCounter++; // used for priorities

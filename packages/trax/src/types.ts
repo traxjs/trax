@@ -180,8 +180,11 @@ export interface Store<T> {
      */
     add<T extends Object | Object[]>(id: TraxIdDef, initValue: T): T;
     /**
-     * Create a compute processor
+     * Create or retrieve a compute processor
      * Processor may be synchronous or asynchronous (cf. $TraxComputeFn)
+     * If a processor with the same id is found, it will be returned instead of creating a new one 
+     * but its compute function will be updated in order to benefit from new closure values that may not exist
+     * in the previous function
      * @param id the processor id - must be unique with the store scope
      * @param compute the compute function
      * @param autoCompute if true (default) the processor will be automatically called after getting dirty. 

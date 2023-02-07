@@ -36,6 +36,11 @@ export interface TraxInternalProcessor extends TraxProcessor {
      * - DirectCall = explicit call (usually made by processors that are not auto-computed)
      */
     compute(forceExecution?: boolean, trigger?: "Init" | "Reconciliation" | "DirectCall", reconciliationIdx?: number): void;
+    /**
+     * Update the compute function associated to a processor (allows to get access to different closure variables)
+     * @param fn 
+     */
+    updateComputeFn(fn: TraxComputeFn): void;
 }
 
 export function createTraxProcessor(
@@ -75,31 +80,10 @@ export function createTraxProcessor(
         logTraxEvent({ type: "!ERR", data: msg });
     }
 
-    const wrappedCompute = wrapFunction(
-        compute,
-        () => startProcessingContext({
-            type: "!PCS",
-            name: "!Compute",
-            processorId,
-            processorPriority: priority,
-            trigger: lastTrigger,
-            isRenderer,
-            computeCount
-        }),
-        (ex) => { error(`(${processorId}) Compute error: ${ex}`); },
-        () => {
-            // onProcessStart
-            computing = true;
-            processorStack.add(pr);
-            return disposed ? false : undefined;
-        },
-        () => {
-            // onProcessEnd
-            computing = false;
-            processorStack.shift();
-            updateDependencies();
-        }
-    );
+    let wrappedCompute: TraxComputeFn;
+    let newComputeFn: TraxComputeFn | undefined;
+
+    wrapComputeFn(compute);
 
     const pr: TraxInternalProcessor = {
         get id() {
@@ -171,6 +155,11 @@ export function createTraxProcessor(
                 reconciliationId = reconciliationIdx;
                 lastTrigger = trigger;
 
+                if (newComputeFn) {
+                    wrapComputeFn(newComputeFn);
+                    newComputeFn = undefined;
+                }
+
                 const r = wrappedCompute();
                 if (r && typeof r === "object" && typeof (r as any).catch === "function") {
                     // r is a promise
@@ -182,6 +171,9 @@ export function createTraxProcessor(
                     error(`(${processorId}) No dependencies found: processor will never be re-executed`);
                 }
             }
+        },
+        updateComputeFn(fn: TraxComputeFn): void {
+            newComputeFn = fn;
         },
         dispose(): boolean {
             if (disposed) return false;
@@ -212,6 +204,34 @@ export function createTraxProcessor(
 
     function propKey(objectId: string, propName: string) {
         return objectId + "." + propName;
+    }
+
+    function wrapComputeFn(fn: TraxComputeFn) {
+        wrappedCompute = wrapFunction(
+            fn,
+            () => startProcessingContext({
+                type: "!PCS",
+                name: "!Compute",
+                processorId,
+                processorPriority: priority,
+                trigger: lastTrigger,
+                isRenderer,
+                computeCount
+            }),
+            (ex) => { error(`(${processorId}) Compute error: ${ex}`); },
+            () => {
+                // onProcessStart
+                computing = true;
+                processorStack.add(pr);
+                return disposed ? false : undefined;
+            },
+            () => {
+                // onProcessEnd
+                computing = false;
+                processorStack.shift();
+                updateDependencies();
+            }
+        );
     }
 
     function updateDependencies() {

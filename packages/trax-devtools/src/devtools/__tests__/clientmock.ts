@@ -10,6 +10,7 @@ export function createClientEnv() {
     let bufferCycle = -1;
     let buffer: StreamEvent[] = [];
     let bufferListener: (events: DtEventGroup) => void;
+    let cycleToSkip = -1; // for test only
 
     const logSubscription = log.subscribe("*", (e) => {
         // console.log(`logSubscription: ${active} ${e.id} ${e.type}`);
@@ -52,7 +53,11 @@ export function createClientEnv() {
             active = false;
         },
         onChange(listener: (events: DtEventGroup) => void) {
-            bufferListener = listener;
+            bufferListener = (events: DtEventGroup) => {
+                if (events.cycleId !== cycleToSkip) {
+                    listener(events);
+                }
+            }
         }
     }
 
@@ -67,6 +72,9 @@ export function createClientEnv() {
         trx,
         log(msg: string) {
             log.info(msg);
+        },
+        skipCycle(idx: number) {
+            cycleToSkip = idx;
         }
     }
 }

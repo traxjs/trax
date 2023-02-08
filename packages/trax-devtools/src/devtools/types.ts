@@ -9,7 +9,7 @@ export interface DtDevToolsData {
     rendererStores: DtStore[];
     /** Logs received from the application */
     $$logs: DtLogCycle[];
-    // /** Log filters */
+    /** Log filters */
     logFilters: {
         /** Key signature to identify a certain filter type and allow result cachine */
         key: string;
@@ -114,14 +114,18 @@ export interface DtLogCycle {
     /** Cycle compute time */
     readonly computeMs: number;
     /** Logs */
-    $$events: DtLogEvent[];
-    /** Filtered events */
-    $filteredEvents?: DtLogEvent[];
-    /** Filter key used to process the $filteredEvents */
+    events: DtLogEvent[];
+    /** Tell if the cycle is expanded in the log view */
+    expanded: boolean;
+    /** Tell if this item matches the current filter */
+    matchFilter: boolean;
+    /** Size of the content if expanded */
+    contentSize: number;
+    /** Last filter key used to process contentSize */
     filterKey: string;
 }
 
-export type DtLogEvent = { id: string; } & (DtEvent
+export type DtLogEvent = { id: string; matchFilter: boolean; } & (DtEvent
     | TraxLogMsg
     | TraxLogObjectLifeCycle
     | TraxLogPropSet
@@ -137,10 +141,18 @@ export interface DtEvent {
 
 interface DtProcessingGroup {
     type: "!PCG";
+    /** Processing group name - trax names are reserved and start with ! */
     name: string;
+    /** Tell is this processing was async */
     async: boolean;
+    /** Tell is this event is the follow-up of a computation that started earlier */
     resume: boolean;
-    $$events?: DtLogEvent[];
+    /** Processing events */
+    events?: DtLogEvent[];
+    /** Tell if the cycle is expanded in the log view */
+    expanded: boolean;
+    /** Size of the content if expanded */
+    contentSize: number;
 }
 
 export interface DtTraxPgStoreInit extends DtProcessingGroup {

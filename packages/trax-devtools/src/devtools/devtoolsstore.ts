@@ -1,5 +1,4 @@
 import { Store, StreamEvent, trax, traxEvents } from "@traxjs/trax"
-import { JSONValue, TraxLogCycle, TraxLogMsg } from "@traxjs/trax/lib/types";
 import { DtClientAPI, DtDevToolsData, DtEventGroup, DtLogCycle, DtLogEvent } from "./types";
 
 export type DevToolsStore = ReturnType<typeof createDevToolsStore>;
@@ -116,9 +115,11 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
             cycleId,
             elapsedMs,
             computeMs,
-            $$events: events,
-            $filteredEvents: undefined, // avoid class polymorphism,
-            filterKey: ""
+            events: events,
+            filterKey: "",
+            expanded: true,
+            matchFilter: true, // computed
+            contentSize: 1     // computed
         });
 
         logs.push(logCycle);
@@ -127,26 +128,12 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
         store.compute(["LogView", cycleId], () => {
             const filter = store.root.logFilters;
             const fkey = filter.key;
-            if (logCycle.filterKey !== fkey) {
-                logCycle.filterKey = fkey;
+            logCycle.filterKey = fkey;
 
-                // TODO trax.buildIdSuffix() to avoid calculating the id twice
-                const listId = `LogView:${cycleId}:${fkey}`;
-                // use trax cache to avoid re-processing if filter key didn't change
-                let lc = store.get<DtLogEvent[]>(listId);
-                if (lc) {
-                    logCycle.$filteredEvents = lc;
-                } else {
-                    // process the filter for this filter key
-                    const r = filterEvents(events, filter);
-                    if (r !== undefined) {
-                        logCycle.$filteredEvents = store.add<DtLogEvent[]>(listId, r);
-                    } else {
-                        // Nothing to show for this cycle with the current filter
-                        logCycle.$filteredEvents = undefined;
-                    }
-                }
-            }
+            // process the filter for this filter key
+            const sz = filterEvents(logCycle.events, filter);
+            logCycle.contentSize = sz;
+            logCycle.matchFilter = sz > 0;
         });
     }
 }
@@ -171,10 +158,10 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
     let d = parseData(event.data);
     if (tp === traxEvents.Get) {
         // TraxLogPropGet
-        parent.push({ id, type: tp, objectId: d.objectId, propName: d.propName, propValue: d.propValue });
+        parent.push({ id, type: tp, objectId: d.objectId, propName: d.propName, propValue: d.propValue, matchFilter: true });
     } else if (tp === traxEvents.New || tp === traxEvents.Dispose) {
         // TraxLogObjectLifeCycle
-        parent.push({ id, type: tp, objectId: d.objectId, objectType: d.objectType });
+        parent.push({ id, type: tp, objectId: d.objectId, objectType: d.objectType, matchFilter: true });
     } else if (tp === traxEvents.ProcessingStart || tp === traxEvents.ProcessingResume) {
         // DtProcessingGroup | DtTraxPgStoreInit | DtTraxPgCompute | DtTraxPgCollectionUpdate | DtTraxPgReconciliation
         idx += 1;
@@ -194,69 +181,82 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
         const type = "!PCG";
         if (name === "!StoreInit") {
             // DtTraxPgStoreInit
-            parent.push({ id, type, storeId: d.storeId, name, async, resume, $$events: pcgEvents });
+            parent.push({ id, type, storeId: d.storeId, name, async, resume, events: pcgEvents, contentSize: 1, matchFilter: true, expanded: false });
         } else if (name === "!Compute") {
             parent.push({
-                id, type, storeId: d.storeId, name, async, resume, $$events: pcgEvents,
+                id, type, storeId: d.storeId, name, async, resume, events: pcgEvents,
                 processorId: d.processorId,
                 computeCount: d.computeCount,
                 processorPriority: d.processorPriority,
                 trigger: d.trigger,
-                isRenderer: d.isRenderer === true
+                isRenderer: d.isRenderer === true,
+                contentSize: 1,
+                expanded: false,
+                matchFilter: true
             });
         } else if (name === "!ArrayUpdate" || name === "!DictionaryUpdate") {
-            parent.push({ id, type, name, async, resume, objectId: d.objectId, $$events: pcgEvents });
+            parent.push({ id, type, name, async, resume, objectId: d.objectId, events: pcgEvents, contentSize: 1, matchFilter: true, expanded: false });
         } else {
             // DtProcessingGroup
-            parent.push({ id, type, name, async, resume, $$events: pcgEvents });
+            parent.push({ id, type, name, async, resume, events: pcgEvents, contentSize: 1, matchFilter: true, expanded: false });
         }
     } else if (tp === traxEvents.Set) {
         // TraxLogPropSet
-        parent.push({ id, type: tp, objectId: d.objectId, propName: d.propName, fromValue: d.fromValue, toValue: d.toValue });
+        parent.push({ id, type: tp, objectId: d.objectId, propName: d.propName, fromValue: d.fromValue, toValue: d.toValue, matchFilter: true });
     } else if (tp === traxEvents.ProcessorDirty) {
-        parent.push({ id, type: tp, processorId: d.processorId, objectId: d.objectId, propName: d.propName });
+        parent.push({ id, type: tp, processorId: d.processorId, objectId: d.objectId, propName: d.propName, matchFilter: true });
     } else if (tp === traxEvents.Info || tp === traxEvents.Error || tp === traxEvents.Warning) {
         // TraxLogMsg
-        parent.push({ id, type: tp, data: d });
+        parent.push({ id, type: tp, data: d, matchFilter: true });
     } else {
         // Custom event
-        parent.push({ id, type: "!EVT", eventType: tp, data: d });
+        parent.push({ id, type: "!EVT", eventType: tp, data: d, matchFilter: true });
     }
 
     return idx + 1;
 }
 
-function filterEvents(events: (DtLogEvent[]) | undefined, filter: DtDevToolsData["logFilters"]): DtLogEvent[] | undefined {
-    const r: DtLogEvent[] = [];
-    if (!events) return undefined;
+/** 
+ * Update the contentSize attribute of a list of events according to the given filter and their expanded status
+ */
+function filterEvents(events: (DtLogEvent[]) | undefined, filter: DtDevToolsData["logFilters"]): number {
+    if (!events) return 0;
 
-    // TODO: shortcut for All and Nothing
+    let count = 0;
     for (const e of events) {
         const tp = e.type; // "!ERR" | "!EVT" | "!LOG" | "!WRN" | "!NEW" | "!DEL" | "!SET" | "!GET" | "!DRT" | "!PCG"
         if (tp === traxEvents.Get) {
-            add(filter.includePropertyGet, e);
+            update(filter.includePropertyGet, e);
         } else if (tp === traxEvents.New) {
-            add(filter.includeNew, e);
+            update(filter.includeNew, e);
         } else if (tp === traxEvents.Dispose) {
-            add(filter.includeDispose, e);
+            update(filter.includeDispose, e);
         } else if (tp === "!PCG") {
-            const evts = filterEvents(e.$$events, filter);
-            if (evts || filter.includeEmptyProcessingGroups) {
-                r.push({
-                    ...e,
-                    $$events: evts
-                });
+            let sz = filterEvents(e.events, filter);
+
+            if (sz || filter.includeEmptyProcessingGroups) {
+                e.matchFilter = true;
+                e.contentSize = sz;
+                count += 1;
+                if (e.expanded) {
+                    count += sz;
+                }
+            } else {
+                e.matchFilter = false;
+                e.contentSize = sz;
             }
         } else {
-            r.push(e);
+            update(true, e);
         }
     }
 
-    function add(condition: boolean, e: DtLogEvent) {
+    function update(condition: boolean, e: DtLogEvent) {
         if (condition) {
-            r.push(e);
+            e.matchFilter = true;
+            count++;
+        } else {
+            e.matchFilter = false;
         }
     }
-
-    return r.length ? r : undefined;
+    return count;
 }

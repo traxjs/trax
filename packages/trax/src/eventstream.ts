@@ -18,7 +18,7 @@ type awaitResolve = (e: StreamEvent) => boolean;
  */
 export function createEventStream(internalSrcKey: any, dataStringifier?: (data: any) => string, onCycleComplete?: () => void): EventStream {
     let size = 0;
-    let maxSize = 500;
+    let maxSize = 1000;
     let head: StreamListEvent | undefined;
     let tail: StreamListEvent | undefined;
     const awaitMap = new Map<string, awaitResolve[]>();

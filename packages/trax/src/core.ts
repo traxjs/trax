@@ -87,6 +87,7 @@ function attachMetaData(o: Object, id: string, type: TraxObjectType, storeId: st
     return md;
 }
 
+
 /**
  * Create a trax environment. This function must only be used in test environments:
  * applications must use the global trax object instead
@@ -129,8 +130,11 @@ export function createTraxEnv(): Trax {
         });
     }
     const log = createEventStream(privateEventKey, jsonReplacer, () => {
+        connectToDevTools();
         trx.processChanges();
     });
+    /** Tell if devtools have been detected and trax was registered on client proxy */
+    let devToolsDetected = false;
 
     const trx = {
         log,
@@ -628,6 +632,18 @@ export function createTraxEnv(): Trax {
                     registerProcessorForReconciliation(pr);
                 }
             }
+        }
+    }
+
+    /**
+     * DevTools connection - called at each reconcialiation as devtools proxy may not be present 
+     * when trax starts
+     */
+    function connectToDevTools() {
+        if (!devToolsDetected && (globalThis as any)["__TRAX_DEVTOOLS__"]) {
+            devToolsDetected = true;
+            console.log("[Trax] DevTools detected");
+            (globalThis as any)["__TRAX_DEVTOOLS__"].connectTrax(trx);
         }
     }
 

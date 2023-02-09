@@ -46,10 +46,10 @@ export function createClientEnv() {
     });
 
     const clientAPI: DtClientAPI = {
-        activateLogs() {
+        startMonitoring() {
             active = true;
         },
-        deactivateLogs() {
+        stopMonitoring() {
             active = false;
         },
         onChange(listener: (events: DtEventGroup) => void) {

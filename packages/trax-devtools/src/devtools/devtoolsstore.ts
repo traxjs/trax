@@ -9,7 +9,7 @@ export function createDevToolsStore(client: DtClientAPI) {
         const data = store.init({
             rootStores: [],
             rendererStores: [],
-            $$logs: [],
+            logs: [],
             logFilters: {
                 key: "", // computed
                 includePropertyGet: false,
@@ -27,7 +27,7 @@ export function createDevToolsStore(client: DtClientAPI) {
         });
 
         function reset() {
-            client.activateLogs();
+            client.startMonitoring();
             client.onChange(processEvents);
         }
 
@@ -52,7 +52,7 @@ export function createDevToolsStore(client: DtClientAPI) {
             reset,
             /** Dispose the devtools and stop log push */
             dispose() {
-                client.deactivateLogs();
+                client.stopMonitoring();
             },
             /** Reset filters to their default value */
             resetFilters,
@@ -82,21 +82,21 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
         elapsedMs = parseData(groupEvents[0].data).elapsedTime;
     } else {
         // TODO
-        console.error("[DevTools.ingestNewEvents] Invalid Event Group: CycleStart not found");
+        console.error(`[DevToolsStore] Invalid Event Group #${cycleId}: CycleStart not found`);
         i = 0;
     }
     if (groupEvents[last].type === traxEvents.CycleComplete) {
         computeMs = parseData(groupEvents[last].data).elapsedTime;
     } else {
         // TODO
-        console.error("[DevTools.ingestNewEvents] Invalid Event Group: CycleComplete not found");
+        console.error(`[DevToolsStore] Invalid Event Group #${cycleId}: CycleComplete not found`);
         last++;
     }
     while (i < last) {
         i = ingestEvent(i, groupEvents, evts);
     }
 
-    const logs = store.root.$$logs;
+    const logs = store.root.logs;
     const len = logs.length;
     if (len > 0) {
         const lastCycleId = logs[len - 1].cycleId;

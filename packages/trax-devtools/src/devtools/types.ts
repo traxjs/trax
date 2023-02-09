@@ -8,7 +8,7 @@ export interface DtDevToolsData {
     /** List of root stores with direct renderer processors - computed from rootStores */
     rendererStores: DtStore[];
     /** Logs received from the application */
-    $$logs: DtLogCycle[];
+    logs: DtLogCycle[];
     /** Log filters */
     logFilters: {
         /** Key signature to identify a certain filter type and allow result cachine */
@@ -41,9 +41,9 @@ export interface DtDevToolsData {
  */
 export interface DtClientAPI {
     /** Activate client log push */
-    activateLogs(): void;
+    startMonitoring(): void;
     /** Deactivate client log push */
-    deactivateLogs(): void;
+    stopMonitoring(): void;
     /** Register a listener to get cycle events (the listener will be called for each cycle with all event cycles) */
     onChange(listener: (events: DtEventGroup) => void): void;
 }

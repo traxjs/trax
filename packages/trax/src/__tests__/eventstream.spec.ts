@@ -169,8 +169,8 @@ describe('Event Stream', () => {
     });
 
     describe('Stream Maxsize', () => {
-        it('should have a default maxSize of 500', async () => {
-            expect(log.maxSize).toBe(500);
+        it('should have a default maxSize of 1000', async () => {
+            expect(log.maxSize).toBe(1000);
         });
 
         it('should consider negative values as no limits', async () => {

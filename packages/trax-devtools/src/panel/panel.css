@@ -2,13 +2,40 @@
     font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui,
         helvetica neue, helvetica, Ubuntu, roboto, noto, arial, sans-serif;
     font-size: 12px;
+    --font-monospace: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
 }
 
-body.dark {
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+}
+
+#root {
+    height: 100vh;
+}
+
+#fallback {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    color: var(--color-text);
+}
+
+html.dark {
     /* 1 = strongest */
     --color-text1: #f0f0f0;
     --color-text2: #e0e0e0;
-    --color-text3: #b0b0b0;
+    --color-text3: #b9b9b9;
     --color-text4: #808080;
 
     --color-bkg1: #252525;
@@ -17,7 +44,7 @@ body.dark {
     --color-bkg4: #808080;
 }
 
-body.light {
+html.light {
     /* 1 = strongest */
     --color-text1: #333333;
     --color-text2: #404040;

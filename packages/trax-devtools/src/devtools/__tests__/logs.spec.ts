@@ -111,7 +111,7 @@ describe('Logs', () => {
     }
 
     function expandCycle(idx: number, expanded: boolean) {
-        const logs = dts.data.$$logs, len = logs.length;
+        const logs = dts.data.logs, len = logs.length;
         if (idx < len) {
             logs[idx].expanded = expanded;
         }
@@ -121,7 +121,7 @@ describe('Logs', () => {
         const m = id.match(/^(\d+)\:/);
         if (m) {
             const cycleId = parseInt(m[1], 10);
-            const logs = dts.data.$$logs, len = logs.length;
+            const logs = dts.data.logs, len = logs.length;
             for (let i = 0; len > i; i++) {
                 if (logs[i].cycleId === cycleId) {
                     const e = findEvent(id, logs[i].events)
@@ -209,7 +209,7 @@ describe('Logs', () => {
             ce.log("B");
 
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs)).toMatchObject([
+            expect(printLogs(dts.data.logs)).toMatchObject([
                 "Cycle #0 0/0",
                 "  - 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
@@ -220,7 +220,7 @@ describe('Logs', () => {
             ce.log("C");
 
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 1)).toMatchObject([
+            expect(printLogs(dts.data.logs, 1)).toMatchObject([
                 "Cycle #1 0/0",
                 "  - 1:1 !LOG C",
             ]);
@@ -232,7 +232,7 @@ describe('Logs', () => {
             ce.log("D");
 
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 2)).toMatchObject([]);
+            expect(printLogs(dts.data.logs, 2)).toMatchObject([]);
             client.increment();
         });
 
@@ -245,7 +245,7 @@ describe('Logs', () => {
             ce.trx.log.error("Error Msg");
 
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 1)).toMatchObject([
+            expect(printLogs(dts.data.logs, 1)).toMatchObject([
                 "Cycle #1 0/0",
                 "  - 1:1 !LOG Info Msg",
                 "  - 1:2 !WRN Warning Msg",
@@ -262,7 +262,7 @@ describe('Logs', () => {
             ce.log("B");
 
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 1)).toMatchObject([
+            expect(printLogs(dts.data.logs, 1)).toMatchObject([
                 "Cycle #1 0/0",
                 "  - 1:1 !LOG A",
                 "  - 1:2 !EVT CUSTOM EVENT data:{'v1':'value1','v2':123,'v3':true}",
@@ -282,7 +282,7 @@ describe('Logs', () => {
             expect(client.data.count).toBe(1);
 
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs)).toMatchObject([
+            expect(printLogs(dts.data.logs)).toMatchObject([
                 "Cycle #0 0/0",
                 "  - 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
@@ -302,7 +302,7 @@ describe('Logs', () => {
             expect(client.data.count).toBe(3);
 
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 1)).toMatchObject([
+            expect(printLogs(dts.data.logs, 1)).toMatchObject([
                 "Cycle #1 0/0",
                 "  - 1:1 !LOG C",
                 "  - 1:2 !PCG TestStore.increment()",
@@ -318,7 +318,7 @@ describe('Logs', () => {
 
             ce.log("A");
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs)).toMatchObject([
+            expect(printLogs(dts.data.logs)).toMatchObject([
                 "Cycle #0 0/0",
                 "  - 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
@@ -336,7 +336,7 @@ describe('Logs', () => {
 
             client.increment(3);
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 1)).toMatchObject([
+            expect(printLogs(dts.data.logs, 1)).toMatchObject([
                 "Cycle #1 0/0",
                 "  - 1:1 !PCG TestStore.increment()",
                 "    - 1:2 !GET TestStore/root.count --> 0",
@@ -356,7 +356,7 @@ describe('Logs', () => {
 
             client.dispose();
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 2)).toMatchObject([
+            expect(printLogs(dts.data.logs, 2)).toMatchObject([
                 "Cycle #2 0/0",
                 "  - 2:1 !DEL TestStore/root",
                 "  - 2:2 !DEL TestStore%MinMax",
@@ -371,7 +371,7 @@ describe('Logs', () => {
 
             await ce.trx.log.awaitEvent(EVENT_GET_AVATAR_COMPLETE);
             await ce.trx.reconciliation();
-            expect(printLogs(dts.data.$$logs)).toMatchObject([
+            expect(printLogs(dts.data.logs)).toMatchObject([
                 "Cycle #0 0/0",
                 "  - 0:1 !PCG !StoreInit PStore",
                 "    - 0:2 !NEW PStore(S)",
@@ -400,7 +400,7 @@ describe('Logs', () => {
             }));
 
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs)).toMatchObject([
+            expect(printLogs(dts.data.logs)).toMatchObject([
                 "Cycle #0 0/0",
                 "  - 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
@@ -424,7 +424,7 @@ describe('Logs', () => {
             }));
 
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs)).toMatchObject([
+            expect(printLogs(dts.data.logs)).toMatchObject([
                 "Cycle #0 0/0",
                 "  - 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
@@ -452,7 +452,7 @@ describe('Logs', () => {
             ce.trx.log.info("Info Msg in Cycle 2");
 
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs)).toMatchObject([
+            expect(printLogs(dts.data.logs)).toMatchObject([
                 "Cycle #0 0/0",
                 "  - 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
@@ -473,7 +473,7 @@ describe('Logs', () => {
 
             expect(dts.data.logFilters.key).toBe("YNNN");
 
-            expect(printLogs(dts.data.$$logs)).toMatchObject([
+            expect(printLogs(dts.data.logs)).toMatchObject([
                 "Cycle #0 0/0",
                 "  - 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
@@ -489,7 +489,7 @@ describe('Logs', () => {
             ]);
 
             // No new / no get
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [1] Cycle #0 0/0",
                 "  ▶ 0:1 !PCG !StoreInit TestStore",
             ]);
@@ -498,7 +498,7 @@ describe('Logs', () => {
 
             logFilters.includeNew = true;
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [1] Cycle #0 0/0",
                 "  ▶ 0:1 !PCG !StoreInit TestStore",
             ]);
@@ -508,14 +508,14 @@ describe('Logs', () => {
             logFilters.includeEmptyProcessingGroups = false;
             await trax.reconciliation();
             expect(dts.data.logFilters.key).toBe("NYNN");
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [1] Cycle #0 0/0",
                 "  ▶ 0:1 !PCG !StoreInit TestStore",
             ]);
 
             client.increment(1);
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [1] Cycle #0 0/0",
                 "  ▶ 0:1 !PCG !StoreInit TestStore",
                 "▼ [2] Cycle #1 0/0",
@@ -525,7 +525,7 @@ describe('Logs', () => {
 
             logFilters.includePropertyGet = false;
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [2] Cycle #1 0/0",
                 "  ▶ 1:1 !PCG TestStore.increment()",
                 "  ▶ 1:7 !PCG !Reconciliation",
@@ -539,14 +539,14 @@ describe('Logs', () => {
             expect(dts.data.logFilters.key).toBe("YNNN");
 
             // No new / no get
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [1] Cycle #0 0/0",
                 "  ▶ 0:1 !PCG !StoreInit TestStore",
             ]);
 
             expandPCG("0:1", true);
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [3] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
@@ -555,7 +555,7 @@ describe('Logs', () => {
 
             logFilters.includeNew = true;
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
@@ -571,7 +571,7 @@ describe('Logs', () => {
             logFilters.includeEmptyProcessingGroups = false;
             await trax.reconciliation();
             expect(dts.data.logFilters.key).toBe("NYNN");
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [3] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    ▶ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
@@ -580,7 +580,7 @@ describe('Logs', () => {
             expandPCG("0:9", true);
             expandPCG("0:5", true);
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
@@ -593,7 +593,7 @@ describe('Logs', () => {
 
             client.increment(1);
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
@@ -610,7 +610,7 @@ describe('Logs', () => {
             expandPCG("1:13", true);
             await trax.reconciliation();
 
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
@@ -633,7 +633,7 @@ describe('Logs', () => {
             expandPCG("1:7", false);
             await trax.reconciliation();
 
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [1] Cycle #0 0/0",
                 "  ▶ 0:1 !PCG !StoreInit TestStore",
                 "▼ [2] Cycle #1 0/0",
@@ -644,7 +644,7 @@ describe('Logs', () => {
             expandPCG("1:7", true);
             await trax.reconciliation();
 
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [1] Cycle #0 0/0",
                 "  ▶ 0:1 !PCG !StoreInit TestStore",
                 "▼ [7] Cycle #1 0/0",
@@ -659,7 +659,7 @@ describe('Logs', () => {
 
             logFilters.includePropertyGet = false;
             await trax.reconciliation();
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [3] Cycle #1 0/0",
                 "  ▶ 1:1 !PCG TestStore.increment()",
                 "  ▼ 1:7 !PCG !Reconciliation",
@@ -683,7 +683,7 @@ describe('Logs', () => {
             expect(logComputeCount(1)).toBe(1);
 
 
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [1] Cycle #0 0/0",
                 "  ▶ 0:1 !PCG !StoreInit TestStore",
                 "▼ [2] Cycle #1 0/0",
@@ -706,7 +706,7 @@ describe('Logs', () => {
                 "    ▶ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
                 "    - 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
             ];
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject(startLogs);
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject(startLogs);
 
             logFilters.includeEmptyProcessingGroups = false;
             logFilters.includeDispose = true;
@@ -719,7 +719,7 @@ describe('Logs', () => {
             expect(logComputeCount(1)).toBe(3);
 
             expect(logFilters.key).toBe("NYYY");
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject([
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
@@ -741,7 +741,7 @@ describe('Logs', () => {
             expect(logComputeCount(1)).toBe(4);
             expect(logComputeCount(2)).toBe(0);
             expect(logFilters.key).toBe(startKey);
-            expect(printLogs(dts.data.$$logs, 0, true)).toMatchObject(startLogs);
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject(startLogs);
 
             client.increment(12);
             await trax.reconciliation();

@@ -22,11 +22,3 @@ export {
     TraxObjectType,
     traxEvents
 } from "./types";
-
-/**
- * DevTools connection
- */
-if ((globalThis as any)["__TRAX_DEVTOOLS__"]) {
-    console.log("[Trax] DevTools detected");
-    (globalThis as any)["__TRAX_DEVTOOLS__"].connectTrax(trax);
-}

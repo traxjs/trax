@@ -4,38 +4,28 @@
 <head>
 	<meta charset="utf-8" />
 	<title>Trax Devtools Extension</title>
-	<style>
-		* {
-			box-sizing: border-box;
-		}
-
-		html,
-		body {
-			margin: 0;
-		}
-
-		#root {
-			height: 100vh;
-		}
-
-		#fallback {
-			position: fixed;
-			top: 0;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			display: flex;
-			flex: 1;
-			justify-content: center;
-			align-items: center;
-			color: var(--color-text);
-		}
-	</style>
+	<script>
+		// load theme ASAP
+		(function setTheme() {
+			// extract theme from url - e.g. chrome-extension://lmpancgapnccmjmicgmjhjendcaogjii/panel/panel.html?theme=dark
+			let theme = "light";
+			const m = window.location.href.match(/theme=([a-zA-Z]+)/);
+			if (m && m[1] === "dark") {
+				theme = "dark";
+			}
+			const body = document.querySelector("html");
+			if (body) {
+				body.classList.add(theme);
+			}
+		})();
+	</script>
 </head>
 
 <body>
 	<div>
-		<div id="main">Unable to find Trax on the page...</div>
+		<div id="main">
+			<div id="fallback">Unable to find Trax on the page...</div>
+		</div>
 	</div>
 	<script type="module" src="/src/panel/panel.tsx"></script>
 </body>

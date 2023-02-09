@@ -8,19 +8,6 @@ body {
     overflow: hidden;
 }
 
-#fallback {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    flex: 1;
-    justify-content: center;
-    align-items: center;
-    color: var(--color-text1);
-}
-
 hr {
     margin: 2rem 0;
     border: 1px solid #dddddd;

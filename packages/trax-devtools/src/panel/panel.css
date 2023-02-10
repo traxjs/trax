@@ -37,11 +37,13 @@ html.dark {
     --color-text2: #e0e0e0;
     --color-text3: #b9b9b9;
     --color-text4: #808080;
+    --color-text5: #000000;
 
     --color-bkg1: #252525;
     --color-bkg2: #373737;
     --color-bkg3: #444444;
-    --color-bkg4: #808080;
+    --color-bkg4: #707070;
+    --color-bkg5: #808080;
 }
 
 html.light {

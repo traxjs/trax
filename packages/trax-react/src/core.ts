@@ -8,9 +8,7 @@ interface TraxReactCptCtxt {
     jsx: JSX.Element;
 }
 
-interface ReactData {
-    creationCounts: { [cptName: string]: number }
-}
+const creationCounts: Map<NamedCurve, number> = new Map();
 
 /** Global counter used to trigger dirty state in react components */
 let CHANGE_COUNT = 0;
@@ -20,23 +18,22 @@ function buildProcessorId(name: string, instanceCount: number) {
 }
 
 function createReactStore() {
-    return trax.createStore<ReactData>("React", {
-        creationCounts: {}
-    });
+    return trax.createStore<{}>("React", {});
 }
 
 /** React store: gathers all react processors in the same store */
 let reactStore = createReactStore();
 
 function addProcessor(name: string, reactFunctionCpt: (prop?: any) => JSX.Element, cc: TraxReactCptCtxt, setRefreshCount: (c: number) => void) {
-    const creationCounts = reactStore.root.creationCounts;
     cc.jsx = "" as any;
-    let instanceCount = 1;
-    if (!creationCounts[name]) {
-        creationCounts[name] = 1;
+    let instanceCount = creationCounts.get(name);
+    if (instanceCount === undefined) {
+        instanceCount = 1;
     } else {
-        instanceCount = ++creationCounts[name];
+        instanceCount++;
     }
+    creationCounts.set(name, instanceCount);
+
     const id = buildProcessorId(name, instanceCount);
     cc.id = id;
 
@@ -121,6 +118,7 @@ export function componentId(): string {
  * (Test environment only)
  */
 export function resetReactEnv() {
+    creationCounts.clear();
     reactStore.dispose()
     reactStore = createReactStore();
 }
@@ -157,7 +155,7 @@ export function useStore<T = any>(factory: () => T): T {
  */
 export function useTraxState<T extends Object>(state: T): T {
     const store = useStore(() => {
-        const name = "State[" + componentId().replace(/(^[^\/]+\/)|(%)/g, "") + "]";
+        const name = "State[" + componentId().replace(/(^[^\/\%]+(\/|\%))|(%)/g, "") + "]";
         return trax.createStore(name, state);
     });
     return store.root as T;

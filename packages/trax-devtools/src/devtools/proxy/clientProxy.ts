@@ -18,7 +18,6 @@ import { DtMessageStub, DtMsgType } from "./types";
 export function createClientProxy(stub: DtMessageStub) {
     let trx: Trax;
     let logSubscription: any;
-    let lastBufferCycle = -1;
     let bufferCycle = -1;
     let buffer: StreamEvent[] = [];
 
@@ -57,29 +56,26 @@ export function createClientProxy(stub: DtMessageStub) {
 
     function ingestEvent(e: StreamEvent) {
         const cid = cycleId(e.id);
-        if (cid > lastBufferCycle) {
-            if (bufferCycle < 0) {
-                // new cycle
-                bufferCycle = cid;
-            }
-            if (e.type === traxEvents.CycleComplete || cid !== bufferCycle) {
-                if (e.type === traxEvents.CycleComplete) {
-                    buffer.push(e);
-                } else {
-                    // we shouldn't get here
-                    stub.error(`Invalid Cycle Ids: expected ${bufferCycle} / received ${cid}`);
-                }
-                // push last events
-                if (buffer.length) {
-                    lastBufferCycle = bufferCycle;
-                    stub.sendMessage({ to: "TraxClientAPI", type: DtMsgType.LOGS, cycleId: bufferCycle, events: buffer });
-                    buffer = [];
-                }
-                // reset 
-                bufferCycle = -1;
-            } else {
+        if (bufferCycle < 0) {
+            // new cycle
+            bufferCycle = cid;
+        }
+        if (e.type === traxEvents.CycleComplete || cid !== bufferCycle) {
+            if (e.type === traxEvents.CycleComplete) {
                 buffer.push(e);
+            } else {
+                // we shouldn't get here
+                stub.error(`Invalid Cycle Ids: expected ${bufferCycle} / received ${cid}`);
             }
+            // push last events
+            if (buffer.length) {
+                stub.sendMessage({ to: "TraxClientAPI", type: DtMsgType.LOGS, cycleId: bufferCycle, events: buffer });
+                buffer = [];
+            }
+            // reset 
+            bufferCycle = -1;
+        } else {
+            buffer.push(e);
         }
     }
 

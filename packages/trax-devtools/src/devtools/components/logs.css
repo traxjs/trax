@@ -1,0 +1,170 @@
+.logs-pane {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    padding: 1px 0;
+    overflow: scroll;
+    --color-highlight: #ff8c00;
+    --color-highlight2: #06ff1b;
+    --color-highlight3: #79baff;
+    --color-bkg-compute1: #1385ff;
+    --color-bkg-reconciliation: #06ff1b;
+    --color-bkg-render: #989898;
+
+    --color-text-objectId: #79baff;
+    --color-text-storeId: #3a99fe;
+    --color-text-propertyName: #ebc87d;
+    --color-text-propertyValue: #d68c70;
+    /* --color-bkg-dirty: #ff8c00;/ #ffdd00;  */
+}
+
+.logs {
+    flex: 1;
+    height: 100%;
+    overflow: scroll;
+}
+
+.logs-filter {
+    padding: 1rem;
+    width: 30rem;
+    background-color: var(--color-bkg2);
+}
+
+.logs-cycle {
+    position: relative;
+    display: flex;
+    margin: .5rem 0;
+    font-family: var(--font-monospace);
+    line-height: 1.5rem;
+    color: var(--color-text3);
+    background-color: var(--color-bkg1);
+}
+
+.logs-cycle.long {
+    padding-top: 2rem;
+}
+
+.logs-cycle .header {
+    cursor: pointer;
+    flex: 0;
+    width: 5px;
+    background-color: var(--color-bkg3);
+    margin: 0 .8rem 0 .4rem;
+}
+
+.logs-idle-separator {
+    display: block;
+    position: absolute;
+    width: 100%;
+}
+
+.logs-idle-separator hr {
+    position: relative;
+    top: -1.8rem;
+    width: calc(100% - 2rem);
+    border: .5px solid var(--color-bkg3);
+}
+
+.logs-idle-separator .info {
+    position: absolute;
+    top: -2rem;
+    left: 5rem;
+    padding: 0 .5rem;
+    background-color: var(--color-bkg1);
+}
+
+.logs-eid {
+    position: relative;
+    display: inline-block;
+    min-width: 4rem;
+    cursor: default;
+}
+
+.logs-eid.btn {
+    cursor: pointer;
+}
+
+.logs-cycle .eid-btn {
+    cursor: pointer;
+    position: absolute;
+    left: -2rem;
+    top: .2rem;
+    font-size: .8rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--color-text4);
+    z-index: 100;
+}
+
+.logs-cycle .content {
+    flex: 1;
+}
+
+.logs-line {
+    position: relative;
+    padding-left: 3rem;
+}
+
+.logs-pill {
+    border: 0;
+    border-radius: 4px;
+    margin: 0 0 0 .3rem;
+    padding: 1px 0;
+}
+
+.logs-compute {
+    color: var(--color-bkg1);
+    background-color: var(--color-bkg-compute1);
+}
+
+.logs-defaut-type {
+    color: var(--color-highlight3);
+    background-color: var(--color-bkg3);
+}
+
+.logs-render {
+    color: var(--color-highlight2);
+    background-color: var(--color-bkg3);
+}
+
+.logs-write {
+    color: var(--color-highlight);
+    background-color: var(--color-bkg3);
+}
+
+.logs-reconciliation {
+    color: var(--color-highlight);
+    background-color: var(--color-bkg3);
+}
+
+.logs-dirty {
+    color: var(--color-bkg1);
+    background-color: var(--color-highlight);
+}
+
+.logs-objectId {
+    color: var(--color-text-objectId);
+}
+
+.logs-objectId .storeId {
+    color: var(--color-text-storeId);
+}
+
+.logs-objectId .separator {
+    color: var(--color-text4);
+}
+
+.logs-propName {
+    color: var(--color-text-propertyName);
+}
+
+.logs-value {
+    color: var(--color-text-propertyValue);
+}
+
+.logs-misc-name {
+    color: var(--color-text2);
+}

@@ -93,7 +93,7 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
         last++;
     }
     while (i < last) {
-        i = ingestEvent(i, groupEvents, evts);
+        i = ingestEvent(i, groupEvents, evts, 0);
     }
 
     const logs = store.root.logs;
@@ -104,7 +104,7 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
             // Some cycles were missed? -> raise a warning
             const errEvts: DtLogEvent[] = [];
             const msg = `"Missing log cycles detected: expected cycle #${lastCycleId + 1} instead of #${cycleId}"`; // JSON stringified -> keep the outer quotes
-            ingestEvent(0, [{ id: `${lastCycleId + 1}:1`, type: traxEvents.Error, data: msg }], errEvts);
+            ingestEvent(0, [{ id: `${lastCycleId + 1}:1`, type: traxEvents.Error, data: msg }], errEvts, 0);
             addLogCycle(lastCycleId + 1, errEvts);
         }
     }
@@ -150,7 +150,7 @@ function parseData<T = any>(data?: string) {
     return d as T;
 }
 
-function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent[]) {
+function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent[], level: number) {
     const event = groupEvents[idx];
     const id = event.id;
     const tp = event.type;
@@ -172,16 +172,17 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
 
         const pcgEvents: DtLogEvent[] = [];
         while (childEvent && childEvent.type !== traxEvents.ProcessingEnd && childEvent.type !== traxEvents.ProcessingPause) {
-            idx = ingestEvent(idx, groupEvents, pcgEvents);
+            idx = ingestEvent(idx, groupEvents, pcgEvents, level + 1);
             childEvent = groupEvents[idx];
         }
         if (!async && childEvent && childEvent.type === traxEvents.ProcessingPause) {
             async = true;
         }
         const type = "!PCG";
+        const expanded = level < 2;
         if (name === "!StoreInit") {
             // DtTraxPgStoreInit
-            parent.push({ id, type, storeId: d.storeId, name, async, resume, events: pcgEvents, contentSize: 1, matchFilter: true, expanded: false });
+            parent.push({ id, type, storeId: d.storeId, name, async, resume, events: pcgEvents, contentSize: 1, matchFilter: true, expanded });
         } else if (name === "!Compute") {
             parent.push({
                 id, type, storeId: d.storeId, name, async, resume, events: pcgEvents,
@@ -191,14 +192,14 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
                 trigger: d.trigger,
                 isRenderer: d.isRenderer === true,
                 contentSize: 1,
-                expanded: false,
+                expanded,
                 matchFilter: true
             });
         } else if (name === "!ArrayUpdate" || name === "!DictionaryUpdate") {
-            parent.push({ id, type, name, async, resume, objectId: d.objectId, events: pcgEvents, contentSize: 1, matchFilter: true, expanded: false });
+            parent.push({ id, type, name, async, resume, objectId: d.objectId, events: pcgEvents, contentSize: 1, matchFilter: true, expanded });
         } else {
             // DtProcessingGroup
-            parent.push({ id, type, name, async, resume, events: pcgEvents, contentSize: 1, matchFilter: true, expanded: false });
+            parent.push({ id, type, name, async, resume, events: pcgEvents, contentSize: 1, matchFilter: true, expanded });
         }
     } else if (tp === traxEvents.Set) {
         // TraxLogPropSet

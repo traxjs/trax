@@ -490,8 +490,10 @@ describe('Logs', () => {
 
             // No new / no get
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [1] Cycle #0 0/0",
-                "  ▶ 0:1 !PCG !StoreInit TestStore",
+                "▼ [3] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
             ]);
 
 
@@ -499,8 +501,14 @@ describe('Logs', () => {
             logFilters.includeNew = true;
             await trax.reconciliation();
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [1] Cycle #0 0/0",
-                "  ▶ 0:1 !PCG !StoreInit TestStore",
+                "▼ [7] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    - 0:2 !NEW TestStore(S)",
+                "    - 0:3 !NEW TestStore/root(O)",
+                "    - 0:4 !NEW TestStore%MinMax(P)",
+                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    - 0:8 !NEW TestStore%Render(P)",
+                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
             ]);
 
             logFilters.includeNew = false;
@@ -509,26 +517,48 @@ describe('Logs', () => {
             await trax.reconciliation();
             expect(dts.data.logFilters.key).toBe("NYNN");
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [1] Cycle #0 0/0",
-                "  ▶ 0:1 !PCG !StoreInit TestStore",
+                "▼ [7] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "      - 0:6 !GET TestStore/root.count --> 0",
+                "    ▼ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "      - 0:10 !GET TestStore/root.min --> 0",
+                "      - 0:11 !GET TestStore/root.count --> 0",
+                "      - 0:12 !GET TestStore/root.max --> 0",
             ]);
 
             client.increment(1);
             await trax.reconciliation();
-            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [1] Cycle #0 0/0",
-                "  ▶ 0:1 !PCG !StoreInit TestStore",
-                "▼ [2] Cycle #1 0/0",
-                "  ▶ 1:1 !PCG TestStore.increment()",
-                "  ▶ 1:7 !PCG !Reconciliation",
+            expect(printLogs(dts.data.logs, 1, true)).toMatchObject([
+                "▼ [14] Cycle #1 0/0",
+                "  ▼ 1:1 !PCG TestStore.increment()",
+                "    - 1:2 !GET TestStore/root.count --> 0",
+                "    - 1:3 !SET TestStore/root.count = 1 (previous: 0)",
+                "    - 1:4 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 1:5 !DRT TestStore/root.count => TestStore%Render",
+                "  ▼ 1:7 !PCG !Reconciliation",
+                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 1:9 !GET TestStore/root.count --> 1",
+                "      - 1:10 !SET TestStore/root.min = 1 (previous: 0)",
+                "      - 1:11 !SET TestStore/root.max = 1 (previous: 0)",
+                "    ▼ 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "      - 1:14 !GET TestStore/root.min --> 1",
+                "      - 1:15 !GET TestStore/root.count --> 1",
+                "      - 1:16 !GET TestStore/root.max --> 1",
             ]);
 
             logFilters.includePropertyGet = false;
             await trax.reconciliation();
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [2] Cycle #1 0/0",
-                "  ▶ 1:1 !PCG TestStore.increment()",
-                "  ▶ 1:7 !PCG !Reconciliation",
+                "▼ [8] Cycle #1 0/0",
+                "  ▼ 1:1 !PCG TestStore.increment()",
+                "    - 1:3 !SET TestStore/root.count = 1 (previous: 0)",
+                "    - 1:4 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 1:5 !DRT TestStore/root.count => TestStore%Render",
+                "  ▼ 1:7 !PCG !Reconciliation",
+                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 1:10 !SET TestStore/root.min = 1 (previous: 0)",
+                "      - 1:11 !SET TestStore/root.max = 1 (previous: 0)",
             ]);
         });
 
@@ -539,6 +569,8 @@ describe('Logs', () => {
             expect(dts.data.logFilters.key).toBe("YNNN");
 
             // No new / no get
+            expandPCG("0:1", false);
+            await trax.reconciliation();
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [1] Cycle #0 0/0",
                 "  ▶ 0:1 !PCG !StoreInit TestStore",
@@ -572,15 +604,6 @@ describe('Logs', () => {
             await trax.reconciliation();
             expect(dts.data.logFilters.key).toBe("NYNN");
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [3] Cycle #0 0/0",
-                "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    ▶ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    ▶ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
-            ]);
-            expandPCG("0:9", true);
-            expandPCG("0:5", true);
-            await trax.reconciliation();
-            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
@@ -589,48 +612,63 @@ describe('Logs', () => {
                 "      - 0:10 !GET TestStore/root.min --> 0",
                 "      - 0:11 !GET TestStore/root.count --> 0",
                 "      - 0:12 !GET TestStore/root.max --> 0",
+            ]);
+            expandPCG("0:9", false);
+            expandPCG("0:5", true);
+            await trax.reconciliation();
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
+                "▼ [4] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "      - 0:6 !GET TestStore/root.count --> 0",
+                "    ▶ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
             ]);
 
             client.increment(1);
             await trax.reconciliation();
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [7] Cycle #0 0/0",
+                "▼ [4] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
                 "      - 0:6 !GET TestStore/root.count --> 0",
-                "    ▼ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
-                "      - 0:10 !GET TestStore/root.min --> 0",
-                "      - 0:11 !GET TestStore/root.count --> 0",
-                "      - 0:12 !GET TestStore/root.max --> 0",
-                "▼ [2] Cycle #1 0/0",
-                "  ▶ 1:1 !PCG TestStore.increment()",
-                "  ▶ 1:7 !PCG !Reconciliation",
-            ]);
-            expandPCG("1:7", true);
-            expandPCG("1:13", true);
-            await trax.reconciliation();
-
-            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [7] Cycle #0 0/0",
-                "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "      - 0:6 !GET TestStore/root.count --> 0",
-                "    ▼ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
-                "      - 0:10 !GET TestStore/root.min --> 0",
-                "      - 0:11 !GET TestStore/root.count --> 0",
-                "      - 0:12 !GET TestStore/root.max --> 0",
-                "▼ [7] Cycle #1 0/0",
-                "  ▶ 1:1 !PCG TestStore.increment()",
+                "    ▶ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "▼ [14] Cycle #1 0/0",
+                "  ▼ 1:1 !PCG TestStore.increment()",
+                "    - 1:2 !GET TestStore/root.count --> 0",
+                "    - 1:3 !SET TestStore/root.count = 1 (previous: 0)",
+                "    - 1:4 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 1:5 !DRT TestStore/root.count => TestStore%Render",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▶ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 1:9 !GET TestStore/root.count --> 1",
+                "      - 1:10 !SET TestStore/root.min = 1 (previous: 0)",
+                "      - 1:11 !SET TestStore/root.max = 1 (previous: 0)",
                 "    ▼ 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
                 "      - 1:14 !GET TestStore/root.min --> 1",
                 "      - 1:15 !GET TestStore/root.count --> 1",
                 "      - 1:16 !GET TestStore/root.max --> 1",
             ]);
+            expandPCG("1:7", false);
+            expandPCG("1:13", false);
+            await trax.reconciliation();
+
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
+                "▼ [4] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "      - 0:6 !GET TestStore/root.count --> 0",
+                "    ▶ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "▼ [6] Cycle #1 0/0",
+                "  ▼ 1:1 !PCG TestStore.increment()",
+                "    - 1:2 !GET TestStore/root.count --> 0",
+                "    - 1:3 !SET TestStore/root.count = 1 (previous: 0)",
+                "    - 1:4 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 1:5 !DRT TestStore/root.count => TestStore%Render",
+                "  ▶ 1:7 !PCG !Reconciliation",
+            ]);
 
             expandPCG("0:1", false);
-            expandPCG("1:7", false);
+            expandPCG("1:1", false);
             await trax.reconciliation();
 
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
@@ -650,20 +688,22 @@ describe('Logs', () => {
                 "▼ [7] Cycle #1 0/0",
                 "  ▶ 1:1 !PCG TestStore.increment()",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▶ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
-                "    ▼ 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER", // still open
-                "      - 1:14 !GET TestStore/root.min --> 1",
-                "      - 1:15 !GET TestStore/root.count --> 1",
-                "      - 1:16 !GET TestStore/root.max --> 1",
+                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 1:9 !GET TestStore/root.count --> 1",
+                "      - 1:10 !SET TestStore/root.min = 1 (previous: 0)",
+                "      - 1:11 !SET TestStore/root.max = 1 (previous: 0)",
+                "    ▶ 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
             ]);
 
             logFilters.includePropertyGet = false;
             await trax.reconciliation();
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [3] Cycle #1 0/0",
+                "▼ [5] Cycle #1 0/0",
                 "  ▶ 1:1 !PCG TestStore.increment()",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▶ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 1:10 !SET TestStore/root.min = 1 (previous: 0)",
+                "      - 1:11 !SET TestStore/root.max = 1 (previous: 0)",
             ]);
         });
 
@@ -684,26 +724,35 @@ describe('Logs', () => {
 
 
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [1] Cycle #0 0/0",
-                "  ▶ 0:1 !PCG !StoreInit TestStore",
-                "▼ [2] Cycle #1 0/0",
-                "  ▶ 1:1 !PCG TestStore.increment()",
-                "  ▶ 1:7 !PCG !Reconciliation",
-            ]);
-
-            expandPCG("0:1", true);
-            expandPCG("1:7", true);
-            await trax.reconciliation();
-
-            const startLogs = [
                 "▼ [3] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
                 "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
-                "▼ [4] Cycle #1 0/0",
+                "▼ [9] Cycle #1 0/0",
+                "  ▼ 1:1 !PCG TestStore.increment()",
+                "    - 1:3 !SET TestStore/root.count = 42 (previous: 0)",
+                "    - 1:4 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 1:5 !DRT TestStore/root.count => TestStore%Render",
+                "  ▼ 1:7 !PCG !Reconciliation",
+                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 1:10 !SET TestStore/root.min = 42 (previous: 0)",
+                "      - 1:11 !SET TestStore/root.max = 42 (previous: 0)",
+                "    - 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+            ]);
+
+            expandPCG("0:1", false);
+            expandPCG("1:1", false);
+            await trax.reconciliation();
+
+            const startLogs = [
+                "▼ [1] Cycle #0 0/0",
+                "  ▶ 0:1 !PCG !StoreInit TestStore",
+                "▼ [6] Cycle #1 0/0",
                 "  ▶ 1:1 !PCG TestStore.increment()",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▶ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 1:10 !SET TestStore/root.min = 42 (previous: 0)",
+                "      - 1:11 !SET TestStore/root.max = 42 (previous: 0)",
                 "    - 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
             ];
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject(startLogs);
@@ -712,6 +761,9 @@ describe('Logs', () => {
             logFilters.includeDispose = true;
             logFilters.includeNew = true;
             logFilters.includePropertyGet = true;
+            expandPCG("0:1", true);
+            expandPCG("1:8", false);
+            expandPCG("1:13", false);
 
             await trax.reconciliation();
 
@@ -720,22 +772,28 @@ describe('Logs', () => {
 
             expect(logFilters.key).toBe("NYYY");
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [7] Cycle #0 0/0",
+                "▼ [11] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
                 "    - 0:3 !NEW TestStore/root(O)",
                 "    - 0:4 !NEW TestStore%MinMax(P)",
-                "    ▶ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "      - 0:6 !GET TestStore/root.count --> 0",
                 "    - 0:8 !NEW TestStore%Render(P)",
-                "    ▶ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    ▼ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "      - 0:10 !GET TestStore/root.min --> 0",
+                "      - 0:11 !GET TestStore/root.count --> 0",
+                "      - 0:12 !GET TestStore/root.max --> 0",
                 "▼ [4] Cycle #1 0/0",
                 "  ▶ 1:1 !PCG TestStore.increment()",
                 "  ▼ 1:7 !PCG !Reconciliation",
                 "    ▶ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
-                "    ▶ 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER", 
+                "    ▶ 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
             ]);
 
             dts.resetFilters();
+            expandPCG("0:1", false);
+            expandPCG("1:8", true);
             await trax.reconciliation();
             expect(logComputeCount(0)).toBe(4);
             expect(logComputeCount(1)).toBe(4);

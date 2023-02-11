@@ -115,7 +115,7 @@ function printEvents(events: DtLogEvent[], indent: number, output: JSX.Element[]
         } else if (tp === "!EVT") {
             let d = e.data !== '' ? JSON.stringify(e.data) : '';
             if (d) {
-                d = " data:" + d.replace(/\"/g, "'");
+                d = " data:" + d;
             }
             addLine(eid, pill("EVT"), " ", miscName(e.eventType), ` ${d}`);
         } else {
@@ -173,7 +173,15 @@ function propValue(value: any) {
     } else if (value === null) {
         value = "null";
     } else if (typeof value === "string") {
-        value = '"' + value + '"';
+        // Check if this is the reference to another object
+        const m = value.match(/^\[TRAX ([^\]]+)\]$/);
+        if (m) {
+            value = objectRef(m[1]);
+        } else {
+            value = '"' + value + '"';
+        }
+    } else {
+        value = "" + value;
     }
     return <span className="logs-value">{value}</span>
 }

@@ -22,7 +22,7 @@ export function createMessageStore() {
             const msgs = yield serverAPI.getLastMessages();
             trax.updateArray(messages, messages.concat(msgs));
             data.initialized = true;
-            trax.log.event(LOG_MESSAGE_STORE_INITIALIZED, {src: store.id});
+            trax.log.event(LOG_MESSAGE_STORE_INITIALIZED, { src: store.id });
         })();
 
         return {

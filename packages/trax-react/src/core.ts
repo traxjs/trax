@@ -8,6 +8,8 @@ interface TraxReactCptCtxt {
     jsx: JSX.Element;
 }
 
+const REACT_STORE_ID = "React";
+
 const creationCounts: Map<NamedCurve, number> = new Map();
 
 /** Global counter used to trigger dirty state in react components */
@@ -18,7 +20,8 @@ function buildProcessorId(name: string, instanceCount: number) {
 }
 
 function createReactStore() {
-    return trax.createStore<{}>("React", {});
+    const rs = trax.getStore(REACT_STORE_ID);
+    return rs || trax.createStore<{}>(REACT_STORE_ID, {});
 }
 
 /** React store: gathers all react processors in the same store */
@@ -119,7 +122,7 @@ export function componentId(): string {
  */
 export function resetReactEnv() {
     creationCounts.clear();
-    reactStore.dispose()
+    reactStore.dispose();
     reactStore = createReactStore();
 }
 

@@ -1,5 +1,5 @@
 import { Store, StreamEvent, trax, traxEvents } from "@traxjs/trax"
-import { DtClientAPI, DtDevToolsData, DtEventGroup, DtLogCycle, DtLogEvent } from "./types";
+import { APP_EVENT_TYPE, DtClientAPI, DtDevToolsData, DtEventGroup, DtLogCycle, DtLogEvent } from "./types";
 
 export type DevToolsStore = ReturnType<typeof createDevToolsStore>;
 
@@ -15,7 +15,13 @@ export function createDevToolsStore(client: DtClientAPI) {
                 includePropertyGet: false,
                 includeNew: false,
                 includeDispose: false,
-                includeEmptyProcessingGroups: true
+                includeEmptyProcessingGroups: true,
+                includePropertySet: true,
+                includeInfoMessages: true,
+                includeWarningMessages: true,
+                includeErrorMessages: true,
+                includeProcessorDirty: true,
+                includeAppEvents: true
             }
         });
         const filters = data.logFilters;
@@ -41,6 +47,12 @@ export function createDevToolsStore(client: DtClientAPI) {
             filters.includeNew = false;
             filters.includeDispose = false;
             filters.includeEmptyProcessingGroups = true;
+            filters.includePropertySet = true;
+            filters.includeInfoMessages = true;
+            filters.includeWarningMessages = true;
+            filters.includeErrorMessages = true;
+            filters.includeProcessorDirty = true;
+            filters.includeAppEvents = true;
         }
 
         reset();
@@ -196,7 +208,8 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
                 matchFilter: true
             });
         } else if (name === "!ArrayUpdate" || name === "!DictionaryUpdate") {
-            parent.push({ id, type, name, async, resume, objectId: d.objectId, events: pcgEvents, contentSize: 1, matchFilter: true, expanded });
+            // Not expanded by default (little added value)
+            parent.push({ id, type, name, async, resume, objectId: d.objectId, events: pcgEvents, contentSize: 1, matchFilter: true, expanded: false });
         } else {
             // DtProcessingGroup
             parent.push({ id, type, name, async, resume, events: pcgEvents, contentSize: 1, matchFilter: true, expanded });
@@ -211,7 +224,7 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
         parent.push({ id, type: tp, data: d, matchFilter: true });
     } else {
         // Custom event
-        parent.push({ id, type: "!EVT", eventType: tp, data: d, matchFilter: true });
+        parent.push({ id, type: APP_EVENT_TYPE, eventType: tp, data: d, matchFilter: true });
     }
 
     return idx + 1;
@@ -226,7 +239,9 @@ function filterEvents(events: (DtLogEvent[]) | undefined, filter: DtDevToolsData
     let count = 0;
     for (const e of events) {
         const tp = e.type; // "!ERR" | "!EVT" | "!LOG" | "!WRN" | "!NEW" | "!DEL" | "!SET" | "!GET" | "!DRT" | "!PCG"
-        if (tp === traxEvents.Get) {
+        if (tp === traxEvents.Set) {
+            update(filter.includePropertySet, e);
+        } else if (tp === traxEvents.Get) {
             update(filter.includePropertyGet, e);
         } else if (tp === traxEvents.New) {
             update(filter.includeNew, e);
@@ -246,6 +261,16 @@ function filterEvents(events: (DtLogEvent[]) | undefined, filter: DtDevToolsData
                 e.matchFilter = false;
                 e.contentSize = sz;
             }
+        } else if (tp === APP_EVENT_TYPE) {
+            update(filter.includeAppEvents, e);
+        } else if (tp === traxEvents.Info) {
+            update(filter.includeInfoMessages, e);
+        } else if (tp === traxEvents.Warning) {
+            update(filter.includeWarningMessages, e);
+        } else if (tp === traxEvents.Error) {
+            update(filter.includeErrorMessages, e);
+        } else if (tp === traxEvents.ProcessorDirty) {
+            update(filter.includeProcessorDirty, e);
         } else {
             update(true, e);
         }

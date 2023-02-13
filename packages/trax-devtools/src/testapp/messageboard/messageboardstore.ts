@@ -33,6 +33,10 @@ export function createMessageBoardStore(msgStore?: MessageStore, usrStore?: User
             data.loading = !messageStore.data.initialized;
         });
 
+        trax.log.info("Sample info message...");
+        trax.log.warn("Sample warning message...");
+        trax.log.error("Sample error message...");
+
         store.compute("MessageGroups", () => {
             // we need to clone messages as sort mutates the array 
             // and we don't want to sort the messageStore collection

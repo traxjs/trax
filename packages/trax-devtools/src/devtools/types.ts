@@ -21,10 +21,20 @@ export interface DtDevToolsData {
         includeDispose: boolean;
         /** Include processing groups event if all their events are filtered-out */
         includeEmptyProcessingGroups: boolean;
+        /** Show the property set logs */
+        includePropertySet: boolean;
+        /** Show Info Messages */
+        includeInfoMessages: boolean;
+        /** Show Warning Message */
+        includeWarningMessages: boolean;
+        /** Show Error messages */
+        includeErrorMessages: boolean;
+        /** Show logs triggered when processors get dirty */
+        includeProcessorDirty: boolean;
+        /** Show Application events */
+        includeAppEvents: boolean;
         // /** Show renderer logs only */
         // renderOnly: boolean;
-        // /** Show only logs that set a processor dirty */
-        // dirtyOnly: boolean;
         // /** Show logs that match certain object ids (store/data/processor) */
         // objectIds: string[];
         // showLongProcessing?
@@ -133,6 +143,7 @@ export type DtLogEvent = { id: string; matchFilter: boolean; } & (DtEvent
     | TraxLogProcDirty
     | DtProcessingGroup | DtTraxPgStoreInit | DtTraxPgCompute | DtTraxPgCollectionUpdate | DtTraxPgReconciliation);
 
+export const APP_EVENT_TYPE = "!EVT";
 export interface DtEvent {
     type: "!EVT",
     eventType: string;

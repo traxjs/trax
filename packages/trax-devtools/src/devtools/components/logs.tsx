@@ -1,7 +1,8 @@
 import { traxEvents } from "@traxjs/trax";
 import { component } from "@traxjs/trax-react";
 import { DevToolsStore } from "../devtoolsstore";
-import { DtLogCycle, DtLogEvent, DtTraxPgCollectionUpdate, DtTraxPgCompute, DtTraxPgStoreInit } from "../types";
+import { APP_EVENT_TYPE, DtLogCycle, DtLogEvent, DtTraxPgCollectionUpdate, DtTraxPgCompute, DtTraxPgStoreInit } from "../types";
+import { Filters } from "./filters";
 import { formatDuration } from "./format";
 import './logs.css';
 
@@ -14,7 +15,7 @@ export const DtLogPane = component("DtLogs", (props: { store: DevToolsStore }) =
             {logs.map((c) => <DtLogCycleBlock key={"cycle:" + c.cycleId} logCycle={c} />)}
         </div>
         <div className="logs-filter">
-            Filters
+            <Filters store={store} />
         </div>
     </div>
 });
@@ -43,6 +44,15 @@ const DtLogCycleBlock = component("DtLogCycle", (props: { logCycle: DtLogCycle }
     </div>
 });
 
+
+const objectTypes = {
+    "": "(Unknown Type)",
+    "O": "Data Object",
+    "A": "Data Array",
+    "S": "Store",
+    "P": "Processor"
+};
+
 function printEvents(events: DtLogEvent[], indent: number, output: JSX.Element[]) {
     for (const e of events) {
         if (!e.matchFilter) continue; // not in view
@@ -56,16 +66,19 @@ function printEvents(events: DtLogEvent[], indent: number, output: JSX.Element[]
         }
 
         if (tp === traxEvents.Get) {
-            addLine(eid, pill("GET"), ` ${e.objectId}.${e.propName} --> ${e.propValue}`);
-            // addLine([pill(evtName, evtClassName), objectId(e.objectId), ".", propName(e.propName), "--> xxx"]);
+            addLine(eid, pill("GET"), " ", objectRef(e.objectId, e.propName), ' ⮕ ', propValue(e.propValue));
         } else if (tp === traxEvents.Set) {
             addLine(eid, pill("SET", "logs-write"), " ", objectRef(e.objectId, e.propName), " = ", propValue(e.toValue), " (previous: ", propValue(e.fromValue), ")");
-        } else if (tp === traxEvents.Error || tp === traxEvents.Info || tp === traxEvents.Warning) {
+        } else if (tp === traxEvents.Error) {
+            addLine(eid, pill("ERR", "logs-error-type"), " ", <span className="logs-error-msg">{"" + e.data}</span>);
+        } else if (tp === traxEvents.Warning) {
+            addLine(eid, pill("WRN", "logs-warning-type"), " ", <span className="logs-warning-msg">{"" + e.data}</span>);
+        } else if (tp === traxEvents.Info) {
             addLine(eid, pill(tp.slice(1)), ` ${e.data}`);
         } else if (tp === traxEvents.New) {
-            addLine(eid, pill("NEW"), objectRef(e.objectId), ` (${e.objectType})`);
+            addLine(eid, pill("NEW"), ` ${(objectTypes as any)[e.objectType || ""]}: `, objectRef(e.objectId));
         } else if (tp === traxEvents.Dispose) {
-            addLine(eid, pill("DEL"), objectRef(e.objectId));
+            addLine(eid, pill("DEL"), " ", objectRef(e.objectId));
         } else if (tp === traxEvents.ProcessorDirty) {
             addLine(eid, dirtyPill(), " ", objectRef(e.processorId), " (triggered by ", objectRef(e.objectId, e.propName), ")");
         } else if (tp === "!PCG") {
@@ -95,7 +108,7 @@ function printEvents(events: DtLogEvent[], indent: number, output: JSX.Element[]
             } else if (e.name === "!ArrayUpdate" || e.name === "!DictionaryUpdate") {
                 const evt = e as DtTraxPgCollectionUpdate;
                 const nm = e.name === "!ArrayUpdate" ? "UPDATE ARRAY" : "UPDATE DICT";
-                addLine(btn, eid, pill(nm, "logs-write"), objectRef(evt.objectId));
+                addLine(btn, eid, pill(nm, "logs-write"), " ", objectRef(evt.objectId));
             } else if (e.name === "!Reconciliation") {
                 addLine(btn, eid, computeRec("RECONCILE"));
             } else {
@@ -112,7 +125,7 @@ function printEvents(events: DtLogEvent[], indent: number, output: JSX.Element[]
                 printEvents(e.events, indent + 1, output);
             }
 
-        } else if (tp === "!EVT") {
+        } else if (tp === APP_EVENT_TYPE) {
             let d = e.data !== '' ? JSON.stringify(e.data) : '';
             if (d) {
                 d = " data:" + d;
@@ -173,12 +186,14 @@ function propValue(value: any) {
     } else if (value === null) {
         value = "null";
     } else if (typeof value === "string") {
-        // Check if this is the reference to another object
-        const m = value.match(/^\[TRAX ([^\]]+)\]$/);
-        if (m) {
-            value = objectRef(m[1]);
-        } else {
-            value = '"' + value + '"';
+        if (value !== "[Function]") {
+            // Check if this is the reference to another object
+            const m = value.match(/^\[TRAX ([^\]]+)\]$/);
+            if (m) {
+                value = objectRef(m[1]);
+            } else {
+                value = '"' + value + '"';
+            }
         }
     } else {
         value = "" + value;

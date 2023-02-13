@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Store, Trax, trax, traxEvents } from '@traxjs/trax';
 import { createClientEnv } from './clientmock';
 import { createDevToolsStore, DevToolsStore } from '../devtoolsstore';
-import { APP_EVENT_TYPE, DtDevToolsData, DtLogCycle, DtLogEvent, DtTraxPgCollectionUpdate, DtTraxPgCompute, DtTraxPgStoreInit } from '../types';
+import { APP_EVENT_TYPE, DtDevToolsData, DtLogCycle, DtLogEvent, DtTraxPgCollectionUpdate, DtTraxPgCompute, DtTraxPgStoreInit, PROCESSING_GROUP_END, PROCESSING_GROUP_TYPE } from '../types';
 import { createPStore, EVENT_GET_AVATAR_COMPLETE } from './utils';
 import { JSONValue } from '@traxjs/trax/lib/types';
 
@@ -61,7 +61,7 @@ describe('Logs', () => {
                 r.push(`${prefix}- ${e.id} ${tp} ${e.objectId}`);
             } else if (tp === traxEvents.ProcessorDirty) {
                 r.push(`${prefix}- ${e.id} ${tp} ${e.objectId}.${e.propName} => ${e.processorId}`);
-            } else if (tp === "!PCG") {
+            } else if (tp === PROCESSING_GROUP_TYPE) {
                 const as = e.async ? " ASYNC" : "";
                 const rs = e.resume ? ":RESUME" : "";
                 let exp = "-";
@@ -100,6 +100,11 @@ describe('Logs', () => {
                     d = " data:" + d.replace(/\"/g, "'");
                 }
                 r.push(`${prefix}- ${e.id} ${tp} ${e.eventType}${d}`);
+            } else if (tp === PROCESSING_GROUP_END) {
+                if (e.matchFilter) {
+                    // do not display in !viewMode
+                    r.push(`${prefix}- ${e.id} ${e.isPause ? "PAUSE" : "END"}`);
+                }
             } else {
                 r.push(`Unknown type: ${tp}`);
             }
@@ -126,7 +131,7 @@ describe('Logs', () => {
             for (let i = 0; len > i; i++) {
                 if (logs[i].cycleId === cycleId) {
                     const e = findEvent(id, logs[i].events)
-                    if (e && e.type === "!PCG") {
+                    if (e && e.type === PROCESSING_GROUP_TYPE) {
                         e.expanded = expanded;
                     }
                     return;
@@ -139,7 +144,7 @@ describe('Logs', () => {
             const len = events.length;
             for (const e of events) {
                 if (e.id === id) return e;
-                if (e.type === "!PCG") {
+                if (e.type === PROCESSING_GROUP_TYPE) {
                     const e2 = findEvent(id, e.events);
                     if (e2) return e2;
                 }
@@ -558,8 +563,8 @@ describe('Logs', () => {
 
             logFilters.includePropertyGet = false;
             await trax.reconciliation();
-            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [8] Cycle #1 0/0",
+            expect(printLogs(dts.data.logs, 1, true)).toMatchObject([
+                "▼ [9] Cycle #1 0/0",
                 "  ▼ 1:1 !PCG TestStore.increment()",
                 "    - 1:3 !SET TestStore/root.count = 1 (previous: 0)",
                 "    - 1:4 !DRT TestStore/root.count => TestStore%MinMax",
@@ -568,6 +573,7 @@ describe('Logs', () => {
                 "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
                 "      - 1:10 !SET TestStore/root.min = 1 (previous: 0)",
                 "      - 1:11 !SET TestStore/root.max = 1 (previous: 0)",
+                "    - 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
             ]);
         });
 
@@ -707,12 +713,15 @@ describe('Logs', () => {
             logFilters.includePropertyGet = false;
             await trax.reconciliation();
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
-                "▼ [5] Cycle #1 0/0",
+                "▼ [1] Cycle #0 0/0",
+                "  ▶ 0:1 !PCG !StoreInit TestStore",
+                "▼ [6] Cycle #1 0/0",
                 "  ▶ 1:1 !PCG TestStore.increment()",
                 "  ▼ 1:7 !PCG !Reconciliation",
                 "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
                 "      - 1:10 !SET TestStore/root.min = 1 (previous: 0)",
                 "      - 1:11 !SET TestStore/root.max = 1 (previous: 0)",
+                "    - 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
             ]);
         });
 
@@ -1001,6 +1010,195 @@ describe('Logs', () => {
             ]);
 
             filters.includeProcessorDirty = true;
+            await trax.reconciliation();
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
+        });
+
+        it('should support includeCompute', async () => {
+            const client = ce.init(testStore2);
+            const filters = dts.data.logFilters;
+            client.increment(9);
+            await trax.reconciliation();
+
+            const initLogs = [
+                "▼ [12] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "  ▼ 0:15 !PCG TestStore.increment()",
+                "    - 0:17 !SET TestStore/root.count = 9 (previous: 0)",
+                "    - 0:18 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 0:19 !DRT TestStore/root.count => TestStore%Render",
+                "  ▼ 0:21 !PCG !Reconciliation",
+                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 0:24 !SET TestStore/root.min = 9 (previous: 0)",
+                "      - 0:25 !SET TestStore/root.max = 9 (previous: 0)",
+                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+            ];
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
+
+            filters.includeCompute = false;
+            filters.includePropertySet = false;
+            await trax.reconciliation();
+
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
+                "▼ [7] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "  ▼ 0:15 !PCG TestStore.increment()",
+                "    - 0:18 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 0:19 !DRT TestStore/root.count => TestStore%Render",
+                "  ▼ 0:21 !PCG !Reconciliation",
+                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+            ]);
+
+            filters.includePropertySet = true;
+            filters.includeCompute = true;
+            await trax.reconciliation();
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
+        });
+
+        it('should support includeRender', async () => {
+            const client = ce.init(testStore2);
+            const filters = dts.data.logFilters;
+            client.increment(9);
+            await trax.reconciliation();
+
+            const initLogs = [
+                "▼ [12] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "  ▼ 0:15 !PCG TestStore.increment()",
+                "    - 0:17 !SET TestStore/root.count = 9 (previous: 0)",
+                "    - 0:18 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 0:19 !DRT TestStore/root.count => TestStore%Render",
+                "  ▼ 0:21 !PCG !Reconciliation",
+                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 0:24 !SET TestStore/root.min = 9 (previous: 0)",
+                "      - 0:25 !SET TestStore/root.max = 9 (previous: 0)",
+                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+            ];
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
+
+            filters.includeRender = false;
+            await trax.reconciliation();
+
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
+                "▼ [10] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "  ▼ 0:15 !PCG TestStore.increment()",
+                "    - 0:17 !SET TestStore/root.count = 9 (previous: 0)",
+                "    - 0:18 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 0:19 !DRT TestStore/root.count => TestStore%Render",
+                "  ▼ 0:21 !PCG !Reconciliation",
+                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 0:24 !SET TestStore/root.min = 9 (previous: 0)",
+                "      - 0:25 !SET TestStore/root.max = 9 (previous: 0)",
+            ]);
+
+            filters.includeRender = true;
+            await trax.reconciliation();
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
+        });
+
+        it('should support includeReconciliation', async () => {
+            const client = ce.init(testStore2);
+            const filters = dts.data.logFilters;
+            client.increment(9);
+            await trax.reconciliation();
+
+            const initLogs = [
+                "▼ [12] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "  ▼ 0:15 !PCG TestStore.increment()",
+                "    - 0:17 !SET TestStore/root.count = 9 (previous: 0)",
+                "    - 0:18 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 0:19 !DRT TestStore/root.count => TestStore%Render",
+                "  ▼ 0:21 !PCG !Reconciliation",
+                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 0:24 !SET TestStore/root.min = 9 (previous: 0)",
+                "      - 0:25 !SET TestStore/root.max = 9 (previous: 0)",
+                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+            ];
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
+
+
+            filters.includeReconciliation = false;
+            filters.includePropertySet = false;
+            filters.includeCompute = false;
+            filters.includeRender = false;
+            await trax.reconciliation();
+
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
+                "▼ [4] Cycle #0 0/0",
+                "  - 0:1 !PCG !StoreInit TestStore",
+                "  ▼ 0:15 !PCG TestStore.increment()",
+                "    - 0:18 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 0:19 !DRT TestStore/root.count => TestStore%Render",
+            ]);
+
+            filters.includeReconciliation = true;
+            filters.includePropertySet = true;
+            filters.includeCompute = true;
+            filters.includeRender = true;
+            await trax.reconciliation();
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
+        });
+
+        it('should support includeProcessingEnd', async () => {
+            const client = ce.init(testStore2);
+            const filters = dts.data.logFilters;
+            client.increment(9);
+            await trax.reconciliation();
+
+            const initLogs = [
+                "▼ [12] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "  ▼ 0:15 !PCG TestStore.increment()",
+                "    - 0:17 !SET TestStore/root.count = 9 (previous: 0)",
+                "    - 0:18 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 0:19 !DRT TestStore/root.count => TestStore%Render",
+                "  ▼ 0:21 !PCG !Reconciliation",
+                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 0:24 !SET TestStore/root.min = 9 (previous: 0)",
+                "      - 0:25 !SET TestStore/root.max = 9 (previous: 0)",
+                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+            ];
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
+
+            filters.includeProcessingEnd = true;
+            await trax.reconciliation();
+
+            expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
+                "▼ [19] Cycle #0 0/0",
+                "  ▼ 0:1 !PCG !StoreInit TestStore",
+                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "      - 0:7 END",
+                "    ▼ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "      - 0:13 END",
+                "    - 0:14 END",
+                "  ▼ 0:15 !PCG TestStore.increment()",
+                "    - 0:17 !SET TestStore/root.count = 9 (previous: 0)",
+                "    - 0:18 !DRT TestStore/root.count => TestStore%MinMax",
+                "    - 0:19 !DRT TestStore/root.count => TestStore%Render",
+                "    - 0:20 END",
+                "  ▼ 0:21 !PCG !Reconciliation",
+                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "      - 0:24 !SET TestStore/root.min = 9 (previous: 0)",
+                "      - 0:25 !SET TestStore/root.max = 9 (previous: 0)",
+                "      - 0:26 END",
+                "    ▼ 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "      - 0:31 END",
+                "    - 0:32 END",
+            ]);
+
+            filters.includeProcessingEnd = false;
             await trax.reconciliation();
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
         });

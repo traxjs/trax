@@ -22,7 +22,7 @@
     margin: 0 .5rem .5rem 0;
     padding: .2rem .8rem;
     background-color: var(--color-bkg2);
-    color: var(--color-text3);
+    color: var(--color-text2);
 }
 
 .fiters-log-type-btn.selected {
@@ -32,4 +32,32 @@
 
 .fiters-log-type-btn:hover {
     border: 1px solid var(--color-bkg5);
+}
+
+.fiters-log-type-btn.long {
+    width: 6.5rem;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.fiters-log-type-btn.reconcile {
+    width: 10.8rem;
+    margin-left: 4.3rem;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.filters-actions {
+    margin-top: 1rem;
+    color: var(--color-text4);
+}
+
+a.filters-action {
+    font-size: 1.2rem;
+    color: var(--color-text2);
+    text-decoration: none;
+}
+
+a.filters-action:hover {
+    color: var(--color-text-highlight1-bkg123);
 }

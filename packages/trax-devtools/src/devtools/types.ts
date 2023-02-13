@@ -33,8 +33,14 @@ export interface DtDevToolsData {
         includeProcessorDirty: boolean;
         /** Show Application events */
         includeAppEvents: boolean;
-        // /** Show renderer logs only */
-        // renderOnly: boolean;
+        /** Show Render calls even if all internal events are filtered-out */
+        includeRender: boolean;
+        /** Show Reconciliation calls even if all internal events are filtered-ou */
+        includeReconciliation: boolean;
+        /** Show Compute calls even if all internal events are filtered-ou */
+        includeCompute: boolean;
+        /** Show End of Processing logs */
+        includeProcessingEnd: boolean;
         // /** Show logs that match certain object ids (store/data/processor) */
         // objectIds: string[];
         // showLongProcessing?
@@ -141,9 +147,11 @@ export type DtLogEvent = { id: string; matchFilter: boolean; } & (DtEvent
     | TraxLogPropSet
     | TraxLogPropGet
     | TraxLogProcDirty
-    | DtProcessingGroup | DtTraxPgStoreInit | DtTraxPgCompute | DtTraxPgCollectionUpdate | DtTraxPgReconciliation);
+    | DtProcessingGroup | DtTraxPgStoreInit | DtTraxPgCompute | DtTraxPgCollectionUpdate | DtTraxPgReconciliation | DtTraxPgEnd);
 
 export const APP_EVENT_TYPE = "!EVT";
+export const PROCESSING_GROUP_TYPE = "!PCG";
+export const PROCESSING_GROUP_END = "!END";
 export interface DtEvent {
     type: "!EVT",
     eventType: string;
@@ -165,6 +173,14 @@ interface DtProcessingGroup {
     /** Size of the content if expanded */
     contentSize: number;
 }
+
+interface DtTraxPgEnd {
+    type: "!END",
+    isPause?: boolean;
+}
+
+export const PCG_NAME_COMPUTE = "!Compute";
+export const PCG_NAME_RECONCILIATION = "!Reconciliation";
 
 export interface DtTraxPgStoreInit extends DtProcessingGroup {
     name: "!StoreInit";

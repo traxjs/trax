@@ -6,17 +6,23 @@ import './filters.css';
 
 const logTypes = [
     [
-        { label: "SET", type: traxEvents.Set, desc: "Include Property Set Logs", filterProp: "includePropertySet" },
-        { label: "DRT", type: traxEvents.ProcessorDirty, desc: "Include Logs triggered when Processors get Dirty", filterProp: "includeProcessorDirty" },
-        { label: "EVT", type: "EVT", desc: "Include Application events", filterProp: "includeAppEvents" },
+        { label: "SET", desc: "Include Property Set Logs", filterProp: "includePropertySet" },
+        { label: "DRT", desc: "Include Logs triggered when Processors get Dirty", filterProp: "includeProcessorDirty" },
+        { label: "EVT", desc: "Include Application events", filterProp: "includeAppEvents" },
+        { label: "COMPUTE", desc: "Include Compute Calls with no matching logs", filterProp: "includeCompute", type: "long" },
     ], [
-        { label: "LOG", type: traxEvents.Info, desc: "Include Info Messages", filterProp: "includeInfoMessages" },
-        { label: "WRN", type: traxEvents.Warning, desc: "Include Warning Messages", filterProp: "includeWarningMessages" },
-        { label: "ERR", type: traxEvents.Error, desc: "Include Error Messages", filterProp: "includeErrorMessages" },
+        { label: "LOG", desc: "Include Info Messages", filterProp: "includeInfoMessages" },
+        { label: "WRN", desc: "Include Warning Messages", filterProp: "includeWarningMessages" },
+        { label: "ERR", desc: "Include Error Messages", filterProp: "includeErrorMessages" },
+        { label: "RENDER", desc: "Include Renderer Calls with no matching logs", filterProp: "includeRender", type: "long" },
     ], [
-        { label: "GET", type: traxEvents.Get, desc: "Include Property Get Logs", filterProp: "includePropertyGet" },
-        { label: "NEW", type: traxEvents.New, desc: "Include Object Creation Logs", filterProp: "includeNew" },
-        { label: "DEL", type: traxEvents.Dispose, desc: "Include Object Disposal Logs", filterProp: "includeDispose" },
+        { label: "GET", desc: "Include Property Get Logs", filterProp: "includePropertyGet" },
+        { label: "NEW", desc: "Include Object Creation Logs", filterProp: "includeNew" },
+        { label: "DEL", desc: "Include Object Disposal Logs", filterProp: "includeDispose" },
+        { label: "ACTIONS", desc: "Include Action Calls with no matching logs", filterProp: "includeEmptyProcessingGroups", type: "long" },
+    ], [
+        { label: "END", desc: "Include Processing End & Pause Logs", filterProp: "includeProcessingEnd" },
+        { label: "RECONCILE", desc: "Include Reconciliation Calls with no matching logs", filterProp: "includeReconciliation", type: "reconcile" },
     ]
 ]
 
@@ -28,14 +34,27 @@ export const Filters = component("Filters", (props: { store: DevToolsStore }) =>
         <h1> Log Filters </h1>
         <div className="fiters-log-types">
             {logTypes.map((line) => <div className="filters-line">
-                {line.map((tp) => <button className={"fiters-log-type-btn" + ((filters as any)[tp.filterProp] ? " selected" : "")}
+                {line.map((tp) => <button className={"fiters-log-type-btn" + clsNameSuffix(tp)}
                     title={tp.desc} onClick={() => toggle(tp.filterProp)}> {tp.label} </button>)}
             </div>)}
+        </div>
+        <div className="filters-actions">
+            <a className="filters-action" href="#" onClick={() => store.resetFilters()}>Reset filters</a>&nbsp;-&nbsp;
+            <a className="filters-action" href="#" onClick={() => store.updateAllFilters(true)}>View all</a>&nbsp;-&nbsp;
+            <a className="filters-action" href="#" onClick={() => store.updateAllFilters(false)}>Hide all</a>
         </div>
 
     </div>
 
     function toggle(filterProp: string) {
         (filters as any)[filterProp] = !(filters as any)[filterProp];
+    }
+
+    function clsNameSuffix(tp: { filterProp: string, type?: string }) {
+        let sf = (filters as any)[tp.filterProp] ? " selected" : "";
+        if (tp.type) {
+            sf += " " + tp.type;
+        }
+        return sf;
     }
 });

@@ -1,7 +1,7 @@
 import { traxEvents } from "@traxjs/trax";
 import { component } from "@traxjs/trax-react";
 import { DevToolsStore } from "../devtoolsstore";
-import { APP_EVENT_TYPE, DtLogCycle, DtLogEvent, DtTraxPgCollectionUpdate, DtTraxPgCompute, DtTraxPgStoreInit } from "../types";
+import { APP_EVENT_TYPE, DtLogCycle, DtLogEvent, DtTraxPgCollectionUpdate, DtTraxPgCompute, DtTraxPgStoreInit, PCG_NAME_COMPUTE, PCG_NAME_RECONCILIATION, PROCESSING_GROUP_END, PROCESSING_GROUP_TYPE } from "../types";
 import { Filters } from "./filters";
 import { formatDuration } from "./format";
 import './logs.css';
@@ -27,6 +27,8 @@ const DtLogCycleBlock = component("DtLogCycle", (props: { logCycle: DtLogCycle }
 
     printEvents(logCycle.events, 0, content);
 
+    if (!logCycle.matchFilter) return <div></div>
+
     let clsName = "logs-cycle";
     let separator: string | JSX.Element = "";
     if (logCycle.elapsedMs > 50) {
@@ -39,7 +41,7 @@ const DtLogCycleBlock = component("DtLogCycle", (props: { logCycle: DtLogCycle }
 
     return <div className={clsName}>
         {separator}
-        <div className="header">&nbsp;</div>
+        <div className="header" title={`Cycle #${logCycle.cycleId} (computed in ${logCycle.computeMs}ms)`}>&nbsp;</div>
         <div className="content">{content}</div>
     </div>
 });
@@ -81,7 +83,7 @@ function printEvents(events: DtLogEvent[], indent: number, output: JSX.Element[]
             addLine(eid, pill("DEL"), " ", objectRef(e.objectId));
         } else if (tp === traxEvents.ProcessorDirty) {
             addLine(eid, dirtyPill(), " ", objectRef(e.processorId), " (triggered by ", objectRef(e.objectId, e.propName), ")");
-        } else if (tp === "!PCG") {
+        } else if (tp === PROCESSING_GROUP_TYPE) {
             const as = e.async ? " ASYNC" : "";
             let btn: string | JSX.Element = "";
             if (e.contentSize > 0) {
@@ -93,7 +95,7 @@ function printEvents(events: DtLogEvent[], indent: number, output: JSX.Element[]
             if (e.name === "!StoreInit") {
                 const evt = e as DtTraxPgStoreInit;
                 addLine(btn, eid, pill("INIT STORE"), " ", objectRef(evt.storeId));
-            } else if (e.name === "!Compute") {
+            } else if (e.name === PCG_NAME_COMPUTE) {
                 const evt = e as DtTraxPgCompute;
 
                 if (evt.isRenderer) {
@@ -109,7 +111,7 @@ function printEvents(events: DtLogEvent[], indent: number, output: JSX.Element[]
                 const evt = e as DtTraxPgCollectionUpdate;
                 const nm = e.name === "!ArrayUpdate" ? "UPDATE ARRAY" : "UPDATE DICT";
                 addLine(btn, eid, pill(nm, "logs-write"), " ", objectRef(evt.objectId));
-            } else if (e.name === "!Reconciliation") {
+            } else if (e.name === PCG_NAME_RECONCILIATION) {
                 addLine(btn, eid, computeRec("RECONCILE"));
             } else {
                 // TODO RESUME
@@ -131,6 +133,8 @@ function printEvents(events: DtLogEvent[], indent: number, output: JSX.Element[]
                 d = " data:" + d;
             }
             addLine(eid, pill("EVT"), " ", miscName(e.eventType), ` ${d}`);
+        } else if (tp === PROCESSING_GROUP_END) {
+            addLine(eid, pill(e.isPause ? "PAUSE" : "END", "logs-pcg-end"));
         } else {
             addLine(`Unknown event type: ${tp}`);
         }

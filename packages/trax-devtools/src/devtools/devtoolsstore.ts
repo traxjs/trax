@@ -1,5 +1,6 @@
 import { Store, StreamEvent, trax, traxEvents } from "@traxjs/trax"
-import { APP_EVENT_TYPE, DtClientAPI, DtDevToolsData, DtEventGroup, DtLogCycle, DtLogEvent } from "./types";
+import { TraxLogProcessCompute } from "@traxjs/trax/lib/types";
+import { APP_EVENT_TYPE, DtClientAPI, DtDevToolsData, DtEventGroup, DtLogCycle, DtLogEvent, PCG_NAME_COMPUTE, PCG_NAME_RECONCILIATION, PROCESSING_GROUP_END, PROCESSING_GROUP_TYPE } from "./types";
 
 export type DevToolsStore = ReturnType<typeof createDevToolsStore>;
 
@@ -15,13 +16,17 @@ export function createDevToolsStore(client: DtClientAPI) {
                 includePropertyGet: false,
                 includeNew: false,
                 includeDispose: false,
+                includeProcessingEnd: false,
                 includeEmptyProcessingGroups: true,
                 includePropertySet: true,
                 includeInfoMessages: true,
                 includeWarningMessages: true,
                 includeErrorMessages: true,
                 includeProcessorDirty: true,
-                includeAppEvents: true
+                includeAppEvents: true,
+                includeRender: true,
+                includeReconciliation: true,
+                includeCompute: true,
             }
         });
         const filters = data.logFilters;
@@ -34,6 +39,7 @@ export function createDevToolsStore(client: DtClientAPI) {
 
         function reset() {
             client.startMonitoring();
+            updateFilters();
             client.onChange(processEvents);
         }
 
@@ -41,18 +47,22 @@ export function createDevToolsStore(client: DtClientAPI) {
             ingestNewEvents(eventGroup, store);
         }
 
-        function resetFilters() {
+        function updateFilters(yesGroupActive: boolean = true, noGroupActive: boolean = false) {
             const filters = data.logFilters;
-            filters.includePropertyGet = false;
-            filters.includeNew = false;
-            filters.includeDispose = false;
-            filters.includeEmptyProcessingGroups = true;
-            filters.includePropertySet = true;
-            filters.includeInfoMessages = true;
-            filters.includeWarningMessages = true;
-            filters.includeErrorMessages = true;
-            filters.includeProcessorDirty = true;
-            filters.includeAppEvents = true;
+            filters.includePropertyGet = noGroupActive;
+            filters.includeNew = noGroupActive;
+            filters.includeDispose = noGroupActive;
+            filters.includeProcessingEnd = noGroupActive;
+            filters.includeEmptyProcessingGroups = yesGroupActive;
+            filters.includePropertySet = yesGroupActive;
+            filters.includeInfoMessages = yesGroupActive;
+            filters.includeWarningMessages = yesGroupActive;
+            filters.includeErrorMessages = yesGroupActive;
+            filters.includeProcessorDirty = yesGroupActive;
+            filters.includeAppEvents = yesGroupActive;
+            filters.includeRender = yesGroupActive;
+            filters.includeReconciliation = yesGroupActive;
+            filters.includeCompute = yesGroupActive;
         }
 
         reset();
@@ -67,13 +77,12 @@ export function createDevToolsStore(client: DtClientAPI) {
                 client.stopMonitoring();
             },
             /** Reset filters to their default value */
-            resetFilters,
-            /** Update filters to show all logs */
-            showAllLogs() {
-                const filters = data.logFilters;
-                filters.includeDispose = true;
-                filters.includeNew = true;
-                filters.includeDispose = true;
+            resetFilters() {
+                updateFilters();
+            },
+            /** Update filters to show or hide all logs */
+            updateAllFilters(value: boolean) {
+                updateFilters(value, value);
             }
         }
 
@@ -175,7 +184,7 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
         // TraxLogObjectLifeCycle
         parent.push({ id, type: tp, objectId: d.objectId, objectType: d.objectType, matchFilter: true });
     } else if (tp === traxEvents.ProcessingStart || tp === traxEvents.ProcessingResume) {
-        // DtProcessingGroup | DtTraxPgStoreInit | DtTraxPgCompute | DtTraxPgCollectionUpdate | DtTraxPgReconciliation
+        // DtProcessingGroup | DtTraxPgStoreInit | DtTraxPgCompute | DtTraxPgCollectionUpdate | DtTraxPgReconciliation | DtTraxPgEnd
         idx += 1;
         const name = d.name;
         let childEvent = groupEvents[idx];
@@ -183,19 +192,25 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
         let async = resume;
 
         const pcgEvents: DtLogEvent[] = [];
-        while (childEvent && childEvent.type !== traxEvents.ProcessingEnd && childEvent.type !== traxEvents.ProcessingPause) {
+        let endReached = false;
+        while (childEvent && !endReached) {
+            if (childEvent.type === traxEvents.ProcessingPause) {
+                if (!async) {
+                    async=true;
+                }
+                endReached = true;
+            } else {
+                endReached = childEvent.type === traxEvents.ProcessingEnd;
+            }
             idx = ingestEvent(idx, groupEvents, pcgEvents, level + 1);
             childEvent = groupEvents[idx];
         }
-        if (!async && childEvent && childEvent.type === traxEvents.ProcessingPause) {
-            async = true;
-        }
-        const type = "!PCG";
+        const type = PROCESSING_GROUP_TYPE;
         const expanded = level < 2;
         if (name === "!StoreInit") {
             // DtTraxPgStoreInit
             parent.push({ id, type, storeId: d.storeId, name, async, resume, events: pcgEvents, contentSize: 1, matchFilter: true, expanded });
-        } else if (name === "!Compute") {
+        } else if (name === PCG_NAME_COMPUTE) {
             parent.push({
                 id, type, storeId: d.storeId, name, async, resume, events: pcgEvents,
                 processorId: d.processorId,
@@ -214,6 +229,9 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
             // DtProcessingGroup
             parent.push({ id, type, name, async, resume, events: pcgEvents, contentSize: 1, matchFilter: true, expanded });
         }
+        return idx;
+    } else if (tp === traxEvents.ProcessingEnd || tp === traxEvents.ProcessingPause) {
+        parent.push({ id, type: PROCESSING_GROUP_END, isPause: (tp === traxEvents.ProcessingPause), matchFilter: true })
     } else if (tp === traxEvents.Set) {
         // TraxLogPropSet
         parent.push({ id, type: tp, objectId: d.objectId, propName: d.propName, fromValue: d.fromValue, toValue: d.toValue, matchFilter: true });
@@ -247,10 +265,23 @@ function filterEvents(events: (DtLogEvent[]) | undefined, filter: DtDevToolsData
             update(filter.includeNew, e);
         } else if (tp === traxEvents.Dispose) {
             update(filter.includeDispose, e);
-        } else if (tp === "!PCG") {
+        } else if (tp === PROCESSING_GROUP_TYPE) {
             let sz = filterEvents(e.events, filter);
-
-            if (sz || filter.includeEmptyProcessingGroups) {
+            let match = false;
+            if (e.name === PCG_NAME_COMPUTE) {
+                const lpc = (e as any as TraxLogProcessCompute);
+                if (lpc.isRenderer) {
+                    match = filter.includeRender || sz > 0;
+                } else {
+                    // standard compute
+                    match = filter.includeCompute || sz > 0;
+                }
+            } else if (e.name === PCG_NAME_RECONCILIATION) {
+                match = filter.includeReconciliation || sz > 0;
+            } else if (sz || filter.includeEmptyProcessingGroups) {
+                match = true;
+            }
+            if (match) {
                 e.matchFilter = true;
                 e.contentSize = sz;
                 count += 1;
@@ -261,6 +292,8 @@ function filterEvents(events: (DtLogEvent[]) | undefined, filter: DtDevToolsData
                 e.matchFilter = false;
                 e.contentSize = sz;
             }
+        } else if (tp === PROCESSING_GROUP_END) {
+            update(filter.includeProcessingEnd, e);
         } else if (tp === APP_EVENT_TYPE) {
             update(filter.includeAppEvents, e);
         } else if (tp === traxEvents.Info) {

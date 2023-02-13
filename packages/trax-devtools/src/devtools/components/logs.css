@@ -108,6 +108,11 @@
     background-color: var(--color-bkg-compute);
 }
 
+.logs-pcg-end {
+    color: var(--color-text4);
+    background-color: var(--color-bkg3);
+}
+
 .logs-defaut-type {
     color: var(--color-text-highlight4-bkg123);
     background-color: var(--color-bkg3);

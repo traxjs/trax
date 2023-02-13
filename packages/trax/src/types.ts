@@ -415,7 +415,6 @@ export interface TraxLogProcessStoreInit {
     name: "!StoreInit";
     storeId: string;
 }
-
 export interface TraxLogProcessCompute {
     type: "!PCS" | "!PCP" | "!PCR" | "!PCE";
     name: "!Compute";

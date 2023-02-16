@@ -596,6 +596,147 @@ describe('Async processors', () => {
         });
     });
 
+    describe('Dispose', () => {
+        it('should be called when maxComputeCount is reached', async () => {
+            let lastId: string[] = [], lastCount: number[] = [];
+
+            const pstore = trax.createStore("PStore", (store: Store<Person>,) => {
+                const p = store.init({ firstName: "Homer", lastName: "Simpson" });
+
+                store.compute("PrettyName", function* (cc) {
+                    cc.maxComputeCount = 2;
+                    lastId.push(cc.processorId);
+                    lastCount.push(cc.computeCount);
+                    const ffn: string = yield getFriendlyName(p.firstName);
+                    let nm = ffn + " " + p.lastName;
+                    lastId.push(cc.processorId);
+                    lastCount.push(cc.computeCount);
+                    p.prettyName = nm;
+                    p.prettyNameLength = nm.length;
+                });
+            });
+
+            const processorId = "PStore%PrettyName";
+            const p = pstore.root;
+            const pr = pstore.getProcessor("PrettyName")!;
+            expect(lastId).toMatchObject([processorId]);
+            expect(pr.id).toBe(processorId);
+            expect(pr.computeCount).toBe(1);
+            expect(pr.disposed).toBe(false);
+            expect(p.prettyName).toBe(undefined);
+            expect(pstore.getProcessor("PrettyName")).toBe(pr);
+            expect(trax.getProcessor(processorId)).toBe(pr);
+            expect(lastCount).toMatchObject([1]);
+
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME)
+            await trax.reconciliation();
+            expect(pr.computeCount).toBe(1);
+            expect(pr.disposed).toBe(false);
+            expect(p.prettyName).toBe("Friendly(Homer) Simpson");
+            expect(pstore.getProcessor("PrettyName")).toBe(pr);
+            expect(trax.getProcessor(processorId)).toBe(pr);
+            expect(lastId).toMatchObject([processorId, processorId]);
+            expect(lastCount).toMatchObject([1, 1]);
+
+
+            pstore.root.firstName = "HOMER";
+
+            await trax.reconciliation();
+            expect(lastId).toMatchObject([processorId, processorId, processorId]);
+            expect(lastCount).toMatchObject([1, 1, 2]);
+            expect(pr.disposed).toBe(false);
+
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME)
+            await trax.reconciliation();
+            expect(pr.computeCount).toBe(2);
+            expect(lastId).toMatchObject([processorId, processorId, processorId, processorId]);
+            expect(lastCount).toMatchObject([1, 1, 2, 2]);
+            expect(pr.disposed).toBe(true);
+            expect(p.prettyName).toBe("Friendly(HOMER) Simpson");
+            expect(trax.getProcessor(processorId)).toBe(undefined);
+
+
+            pstore.root.firstName = "MARGE";
+
+            await trax.reconciliation();
+            expect(pr.disposed).toBe(true);
+            expect(pr.computeCount).toBe(2);
+            expect(lastId).toMatchObject([processorId, processorId, processorId, processorId]);
+            expect(lastCount).toMatchObject([1, 1, 2, 2]);
+            expect(pr.disposed).toBe(true);
+            expect(p.prettyName).toBe("Friendly(HOMER) Simpson");
+            expect(trax.getProcessor(processorId)).toBe(undefined);
+        });
+
+        it('should be called when maxComputeCount is reached - store.init/store.add', async () => {
+            let lastIds: string[] = [], lastCounts: number[] = [];
+
+            const pstore = trax.createStore("PStore", (store: Store<Person>,) => {
+                store.init({ firstName: "Homer", lastName: "Simpson" }, function* (p, cc) {
+                    cc.maxComputeCount = 2;
+                    lastIds.push(cc.processorId);
+                    lastCounts.push(cc.computeCount);
+                    const ffn: string = yield getFriendlyName(p.firstName);
+                    let nm = ffn + " " + p.lastName;
+                    lastIds.push(cc.processorId);
+                    lastCounts.push(cc.computeCount);
+                    p.prettyName = nm;
+                    p.prettyNameLength = nm.length;
+                });
+            });
+
+            const processorId = "PStore%root[0]";
+            const p = pstore.root;
+            const pr = pstore.getProcessor("root[0]")!;
+            expect(lastIds).toMatchObject([processorId]);
+            expect(pr.id).toBe(processorId);
+            expect(pr.computeCount).toBe(1);
+            expect(pr.disposed).toBe(false);
+            expect(p.prettyName).toBe(undefined);
+            expect(pstore.getProcessor("root[0]")).toBe(pr);
+            expect(trax.getProcessor(processorId)).toBe(pr);
+            expect(lastCounts).toMatchObject([1]);
+
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME)
+            await trax.reconciliation();
+            expect(pr.computeCount).toBe(1);
+            expect(pr.disposed).toBe(false);
+            expect(p.prettyName).toBe("Friendly(Homer) Simpson");
+            expect(trax.getProcessor(processorId)).toBe(pr);
+            expect(lastIds).toMatchObject([processorId, processorId]);
+            expect(lastCounts).toMatchObject([1, 1]);
+
+
+            pstore.root.firstName = "HOMER";
+
+            await trax.reconciliation();
+            expect(lastIds).toMatchObject([processorId, processorId, processorId]);
+            expect(lastCounts).toMatchObject([1, 1, 2]);
+            expect(pr.disposed).toBe(false);
+
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME)
+            await trax.reconciliation();
+            expect(pr.computeCount).toBe(2);
+            expect(lastIds).toMatchObject([processorId, processorId, processorId, processorId]);
+            expect(lastCounts).toMatchObject([1, 1, 2, 2]);
+            expect(pr.disposed).toBe(true);
+            expect(p.prettyName).toBe("Friendly(HOMER) Simpson");
+            expect(trax.getProcessor(processorId)).toBe(undefined);
+
+
+            pstore.root.firstName = "MARGE";
+
+            await trax.reconciliation();
+            expect(pr.disposed).toBe(true);
+            expect(pr.computeCount).toBe(2);
+            expect(lastIds).toMatchObject([processorId, processorId, processorId, processorId]);
+            expect(lastCounts).toMatchObject([1, 1, 2, 2]);
+            expect(pr.disposed).toBe(true);
+            expect(p.prettyName).toBe("Friendly(HOMER) Simpson");
+            expect(trax.getProcessor(processorId)).toBe(undefined);
+        });
+    });
+
     describe('Errors', () => {
         it('should raise an error in case of compute error before yield', async () => {
             const ps = trax.createStore("PStore", (store: Store<Person>) => {

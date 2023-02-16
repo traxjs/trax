@@ -19,7 +19,7 @@ export function wrapFunction<F extends SyncFunction | AsyncGenFunction>(
     startProcessingContext: () => ProcessingContext,
     error: (msg: any) => void,
     onProcessStart: () => false | void = noop,
-    onProcessEnd = noop,
+    onProcessEnd: (done: boolean) => void = noop,
 ): ReturnType<F> extends Generator ? (...args: Parameters<F>) => Promise<any> : (...args: Parameters<F>) => ReturnType<F> {
     /** processing context associated to the wrapped function */
     let processingContext: ProcessingContext | null = null;
@@ -55,7 +55,7 @@ export function wrapFunction<F extends SyncFunction | AsyncGenFunction>(
         } catch (ex) {
             error(ex);
         }
-        onProcessEnd();
+        onProcessEnd(done);
 
         if (done) {
             processingContext.end();
@@ -134,7 +134,7 @@ export function wrapFunction<F extends SyncFunction | AsyncGenFunction>(
             resetGenPromise();
         }
 
-        onProcessEnd();
+        onProcessEnd(done);
         if (done) {
             processingContext.end();
             if (genPromiseResolve) {

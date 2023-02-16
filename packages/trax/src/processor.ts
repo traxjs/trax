@@ -1,7 +1,7 @@
 import { tmd } from "./core";
 import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
-import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogTraxProcessingCtxt, TraxProcessor, TraxObjectType, TraxObjectComputeFn } from "./types";
+import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogTraxProcessingCtxt, TraxProcessor, TraxObjectType, TraxObjectComputeFn, TraxComputeContext } from "./types";
 
 /**
  * Extend the public API with internal APIs
@@ -59,6 +59,8 @@ export function createTraxProcessor<T>(
 ): TraxInternalProcessor {
     /** Number of time compute was called */
     let computeCount = 0;
+    /** Maximum number of compute before the processor is disposed */
+    let maxComputeCount = -1;
     /** Tell if the processor need to re-compute its output */
     let dirty = true;
     /** Tell if the processor is disposed and should be considered as deleted */
@@ -77,6 +79,8 @@ export function createTraxProcessor<T>(
     let reconciliationId = -1;
     /** Last reason that triggered a compute call */
     let lastTrigger: "Init" | "Reconciliation" | "DirectCall" = "DirectCall";
+    /** Current compute context */
+    let cc: TraxComputeContext | undefined;
 
     function error(msg: string) {
         logTraxEvent({ type: "!ERR", data: msg });
@@ -162,11 +166,17 @@ export function createTraxProcessor<T>(
                     newComputeFn = undefined;
                 }
 
+                cc = {
+                    processorId,
+                    computeCount,
+                    maxComputeCount
+                };
+
                 let r;
                 if (target !== null) {
-                    r = (wrappedCompute as TraxObjectComputeFn<T>)(target);
+                    r = (wrappedCompute as TraxObjectComputeFn<T>)(target, cc);
                 } else {
-                    r = (wrappedCompute as TraxComputeFn)();
+                    r = (wrappedCompute as TraxComputeFn)(cc);
                 }
 
                 if (r && typeof r === "object" && typeof (r as any).catch === "function") {
@@ -233,11 +243,16 @@ export function createTraxProcessor<T>(
                 processorStack.add(pr);
                 return disposed ? false : undefined;
             },
-            () => {
+            (done: boolean) => {
                 // onProcessEnd
                 computing = false;
                 processorStack.shift();
-                updateDependencies();
+                maxComputeCount = cc?.maxComputeCount || -1;
+                if (done && maxComputeCount > -1 && computeCount >= maxComputeCount) {
+                    pr.dispose();
+                } else {
+                    updateDependencies();
+                }
             }
         );
     }

@@ -240,12 +240,22 @@ export interface Store<T> {
 }
 
 /**
+ * Context passed to compute functions.
+ * Allows to stop a processor after a certain amount of counts
+ */
+export interface TraxComputeContext {
+    processorId: string;
+    computeCount: number;
+    maxComputeCount: number;
+}
+
+/**
  * Trax compute function
  * Define the processing instructions associated to a processor
  * Asynchronous compute functions must return a Generator, whereas synchronous
  * compute functions shall not return anything
  */
-export type TraxComputeFn = () => (void | Generator<Promise<any>, void, any>);
+export type TraxComputeFn = (cc: TraxComputeContext) => (void | Generator<Promise<any>, void, any>);
 
 /**
  * Trax object compute function
@@ -253,7 +263,7 @@ export type TraxComputeFn = () => (void | Generator<Promise<any>, void, any>);
  * Asynchronous compute functions must return a Generator, whereas synchronous
  * compute functions shall not return anything
  */
-export type TraxObjectComputeFn<T> = (o: T) => (void | Generator<Promise<any>, void, any>);
+export type TraxObjectComputeFn<T> = (o: T, cc: TraxComputeContext) => (void | Generator<Promise<any>, void, any>);
 
 /**
  * Processor id

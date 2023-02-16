@@ -772,11 +772,16 @@ export function createTraxEnv(): Trax {
                 if (md) {
                     id = md.id;
                     if (md.type === TraxObjectType.Processor) {
-                        error(`(${id}) Processors cannot be disposed through store.delete()`);
+                        error(`(${id}) Processors cannot be disposed through store.remove()`);
                     } else if (md.type === TraxObjectType.Store) {
-                        error(`(${id}) Stores cannot be disposed through store.delete()`);
+                        error(`(${id}) Stores cannot be disposed through store.remove()`);
                     } else {
-                        return removeDataObject(id, o, md);
+                        const suffix = id.slice(storeId.length + 1);
+                        if (suffix === ROOT) {
+                            error(`(${id}) Root objects cannot be disposed through store.remove()`);
+                        } else {
+                            return removeDataObject(id, o, md);
+                        }
                     }
                 }
                 return false;

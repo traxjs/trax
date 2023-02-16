@@ -621,6 +621,21 @@ describe('Trax Core', () => {
                 ]);
             });
 
+            it('must be raised if we try to remove the root object', async () => {
+                const st = trax.createStore("MyStore", (store: Store<any>) => {
+                    store.init({ msg: "Hello Ford" });
+                });
+                st.remove(st.root);
+                expect(trax.isTraxObject(st.root)).toBe(true);
+                expect(printLogs()).toMatchObject([
+                    "0:1 !PCS - !StoreInit (MyStore)",
+                    "0:2 !NEW - S: MyStore",
+                    "0:3 !NEW - O: MyStore/root",
+                    "0:4 !PCE - 0:1",
+                    "0:5 !ERR - [TRAX] (MyStore/root) Root objects cannot be disposed through store.remove()",
+                ]);
+            });
+
             it('must be raised when init is called outside the init function', async () => {
                 const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.init({ msg: "Hello" });
@@ -803,7 +818,7 @@ describe('Trax Core', () => {
                 ps.remove(pss);
 
                 expect(printLogs(1)).toMatchObject([
-                    "1:1 !ERR - [TRAX] (PStore>SubStore) Stores cannot be disposed through store.delete()",
+                    "1:1 !ERR - [TRAX] (PStore>SubStore) Stores cannot be disposed through store.remove()",
                 ]);
             });
 
@@ -823,7 +838,7 @@ describe('Trax Core', () => {
                 ps.remove(pr);
 
                 expect(printLogs(1)).toMatchObject([
-                    "1:1 !ERR - [TRAX] (PStore%Misc) Processors cannot be disposed through store.delete()",
+                    "1:1 !ERR - [TRAX] (PStore%Misc) Processors cannot be disposed through store.remove()",
                 ]);
             });
         });

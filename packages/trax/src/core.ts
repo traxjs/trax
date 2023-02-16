@@ -2,10 +2,12 @@ import { createEventStream } from "./eventstream";
 import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
 import { TraxInternalProcessor, createTraxProcessor } from "./processor";
-import { Store, StoreWrapper, Trax, TraxIdDef, TraxProcessor, TraxObjectType, TraxLogTraxProcessingCtxt, traxEvents, TraxComputeFn, TraxEvent, ProcessingContext, TraxProcessorId, TraxObject } from "./types";
+import { Store, StoreWrapper, Trax, TraxIdDef, TraxProcessor, TraxObjectType, TraxLogTraxProcessingCtxt, traxEvents, TraxComputeFn, TraxEvent, ProcessingContext, TraxProcessorId, TraxObject, TraxObjectComputeFn } from "./types";
 
 /** Symbol used to attach meta data to trax objects */
 export const traxMD = Symbol("trax.md");
+/** Symbol used to identify trax proxies */
+const traxProxy = Symbol("trax.proxy");
 /** Symbol used to attach the Object.keys() size to objects used as dictionaries - cf. getObjectKeys() */
 const dictSize = Symbol("trax.dict.size");
 const RX_INVALID_ID = /(\/|\>|\.|\%)/g;
@@ -55,6 +57,12 @@ interface TraxMd {
      */
     computedContent?: TraxProcessorId;
     /**
+     * Processors associated to this object
+     * These processors are created through store.add() or store.init() and should be disposed 
+     * when the object is removed from the store
+     */
+    contentProcessors?: TraxInternalProcessor[];
+    /**
     * Auto-wrap level / Ref props computation
     * Tell how sub-objects properties should be handled and if sub-objects should be automatcially wrapped or if
     * they should be considered as references
@@ -82,9 +90,22 @@ export function tmd(o: any): TraxMd | undefined {
  * Create and attach meta data to a given object
 */
 function attachMetaData(o: Object, id: string, type: TraxObjectType, storeId: string): TraxMd {
-    const md: TraxMd = { id, type, storeId };
+    const md: TraxMd = {
+        id, type, storeId,
+        propListeners: undefined, computedProps: undefined, computedContent: undefined,
+        awLevel: undefined, dictSize: undefined, contentProcessors: undefined
+    };
     (o as any)[traxMD] = md;
     return md;
+}
+
+/**
+ * Detach meta data (called on dispose)
+ */
+function detachMetaData(o: Object) {
+    if ((o as any)[traxMD] !== undefined) {
+        (o as any)[traxMD] = undefined;
+    }
 }
 
 
@@ -286,6 +307,8 @@ export function createTraxEnv(): Trax {
             const md = tmd(target);
             if (prop === traxMD) {
                 return md;
+            } else if (prop === traxProxy) {
+                return true;
             } else if (prop === "toJSON") {
                 // JSON.stringify call on a proxy will get here
                 return undefined;
@@ -335,9 +358,8 @@ export function createTraxEnv(): Trax {
          * @param value the value
          */
         set(target: any, prop: string | number | symbol, value: any) {
-            if (prop === traxMD && value === undefined) {
-                // delete metadata
-                target[traxMD] = undefined;
+            if (prop === traxMD) {
+                target[traxMD] = value;
             } else if (typeof prop !== "symbol") {
                 const v = target[prop];
                 const md = tmd(target);
@@ -449,6 +471,7 @@ export function createTraxEnv(): Trax {
      */
     function wrapPropObject(v: any, propName: string, targetMd: TraxMd) {
         if (v !== null && v !== undefined && typeof v === "object") {
+            if (v[traxProxy]) return v; // already wrapped or deleted
             // automatically wrap sub-objects
             let vmd = tmd(v);
             if (vmd) return v; // already wrapped
@@ -577,7 +600,7 @@ export function createTraxEnv(): Trax {
     function buildId(id: TraxIdDef, storeId: string, isProcessor: boolean) {
         let suffix = buildIdSuffix(id, storeId);
         if (isProcessor) return storeId + ID_PROCESSOR_SEPARATOR + suffix;
-        return storeId + ID_DATA_SEPARATOR + suffix;;
+        return storeId + ID_DATA_SEPARATOR + suffix;
     }
 
     /**
@@ -663,17 +686,19 @@ export function createTraxEnv(): Trax {
         addStoreItem(id, storeId);
     }
 
-    function removeDataObject(id: string): boolean {
-        const ref = dataRefs.get(id);
-        if (ref) {
-            const o = ref.deref() || null;
-            if (o) {
-                o[traxMD] = undefined;
-            }
-            logTraxEvent({ type: "!DEL", objectId: id });
-            return dataRefs.delete(id);
+    function removeDataObject(id: string, o?: TraxObject, md?: TraxMd): boolean {
+        if (o) {
+            detachMetaData(o);
         }
-        return false;
+        if (md && md.contentProcessors) {
+            // dispose associated processors
+            for (const p of md.contentProcessors) {
+                p.dispose();
+            }
+            md.contentProcessors = undefined;
+        }
+        logTraxEvent({ type: "!DEL", objectId: id });
+        return dataRefs.delete(id);
     }
 
     function addStoreItem(id: string, storeId: string) {
@@ -726,22 +751,22 @@ export function createTraxEnv(): Trax {
                 addStoreItem(st.id, storeId);
                 return st;
             },
-            init(r: T) {
+            init(r: T, ...computeFunctions: TraxObjectComputeFn<T>[]) {
                 if (initPhase) {
-                    root = getOrAdd(ROOT, r, true);
+                    root = getOrAdd(ROOT, r, true, computeFunctions);
                 } else {
                     error(`(${storeId}) Store.init can only be called during the store init phase`);
                 }
                 return root;
             },
-            add<T extends Object | Array<any>>(id: TraxIdDef, o: T): T {
-                return getOrAdd(id, o, false);
+            add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, ...computeFunctions: TraxObjectComputeFn<T>[]): T {
+                return getOrAdd(id, initValue, false, computeFunctions);
             },
             get<T extends Object>(id: TraxIdDef): T | void {
                 const sid = buildId(id, storeId, false);
                 return getDataObject(sid) || undefined;
             },
-            delete<T extends Object>(o: T): boolean {
+            remove<T extends Object>(o: T): boolean {
                 const md = tmd(o);
                 let id = "";
                 if (md) {
@@ -751,36 +776,14 @@ export function createTraxEnv(): Trax {
                     } else if (md.type === TraxObjectType.Store) {
                         error(`(${id}) Stores cannot be disposed through store.delete()`);
                     } else {
-                        return removeDataObject(id);
+                        return removeDataObject(id, o, md);
                     }
                 }
                 return false;
             },
             compute(id: TraxIdDef, compute: TraxComputeFn, autoCompute?: boolean, isRenderer?: boolean): TraxProcessor {
                 let pid = buildId(id, storeId, true);
-                let pr = processors.get(pid);
-                if (pr) {
-                    pr.updateComputeFn(compute);
-                    return pr;
-                }
-                processorPriorityCounter++; // used for priorities
-                processorCount++; // used to track potential memory leaks
-                pr = createTraxProcessor(
-                    pid,
-                    processorPriorityCounter,
-                    compute,
-                    processorStack,
-                    getDataObject,
-                    logTraxEvent,
-                    startProcessingContext,
-                    detachChildProcessor,
-                    autoCompute,
-                    isRenderer
-                );
-                attachMetaData(pr, pid, TraxObjectType.Processor, storeId);
-                processors.set(pid, pr);
-                addStoreItem(pid, storeId);
-                return pr;
+                return createProcessor(pid, compute, null, autoCompute, isRenderer);
             },
             getProcessor(id: TraxIdDef): TraxProcessor | undefined {
                 const sid = buildId(id, storeId, true);
@@ -851,8 +854,9 @@ export function createTraxEnv(): Trax {
                         o = processors.get(id);
                         o && o.dispose();
                     } else {
-                        logTraxEvent({ type: "!DEL", objectId: id });
-                        dataRefs.delete(id);
+                        // note: in this case we don't need to dispose processors associated 
+                        // to this object (if any) as all store processsors will be disposed
+                        removeDataObject(id);
                     }
                 }
             }
@@ -970,8 +974,9 @@ export function createTraxEnv(): Trax {
          * @param o 
          * @reeturns 
          */
-        function getOrAdd<T extends Object>(id: TraxIdDef, o: T, acceptRootId: boolean): T {
+        function getOrAdd<T extends Object>(id: TraxIdDef, o: T, acceptRootId: boolean, computeFunctions?: TraxObjectComputeFn<T>[]): T {
             let idSuffix = buildIdSuffix(id, storeId);
+
             if (!acceptRootId) {
                 if (idSuffix === ROOT) {
                     error("Store.add: Invalid id 'root' (reserved)");
@@ -983,11 +988,49 @@ export function createTraxEnv(): Trax {
                     error(`(${storeId}) Store.add(${id}): Invalid init object parameter: [${typeof o}]`);
                     o = {} as T;
                 }
-                return getProxy(buildId(idSuffix, storeId, false), o, storeId);
+                const p = getProxy(buildId(idSuffix, storeId, false), o, storeId);
+                const len = (computeFunctions && computeFunctions.length) || 0;
+                if (len > 0) {
+                    const md = tmd(p)!;
+                    const procs: TraxProcessor[] = [];
+                    for (let i = 0; len > i; i++) {
+                        const pid = `${storeId}${ID_PROCESSOR_SEPARATOR}${idSuffix}[${i}]`;
+                        procs.push(createProcessor(pid, computeFunctions![i], p, true, false));
+                    }
+                    md.contentProcessors = procs as TraxInternalProcessor[];
+                }
+                return p;
             } else {
                 return o as any;
             }
         }
+
+        function createProcessor<T>(pid: string, compute: TraxComputeFn | TraxObjectComputeFn<T>, target: T | null, autoCompute?: boolean, isRenderer?: boolean): TraxProcessor {
+            let pr = processors.get(pid);
+            if (pr) {
+                pr.updateComputeFn(compute);
+                return pr;
+            }
+            processorPriorityCounter++; // used for priorities
+            processorCount++; // used to track potential memory leaks
+            pr = createTraxProcessor(
+                pid,
+                processorPriorityCounter,
+                compute,
+                processorStack,
+                getDataObject,
+                logTraxEvent,
+                startProcessingContext,
+                target,
+                detachChildProcessor,
+                autoCompute,
+                isRenderer
+            );
+            attachMetaData(pr, pid, TraxObjectType.Processor, storeId);
+            processors.set(pid, pr);
+            addStoreItem(pid, storeId);
+            return pr;
+        };
 
     }
 }

@@ -150,9 +150,10 @@ export interface Store<T> {
     readonly root: T,
     /**
      * Initialize the root object - must be only called in the store init function
+     * @param computeFunctions optional compute functions associated to the root object. The processor associated to these functions will follow the object life cycle.
      * @param root 
      */
-    init(root: T): T;
+    init(root: T, ...computeFunctions: TraxObjectComputeFn<T>[]): T;
     /**
      * Tell if the store is disposed and should be ignored
      */
@@ -174,11 +175,30 @@ export interface Store<T> {
      */
     createStore<T extends Object>(id: TraxIdDef, root: T): Store<T>;
     /**
-     * Get or create a data object associated to the given id
-     * @param id the object id - must be unique with the store scope
-     * @param initValue the object init value (empty object if nothing is provided)
+     * Retrieve a sub-store
+     * @param id 
      */
-    add<T extends Object | Object[]>(id: TraxIdDef, initValue: T): T;
+    getStore<T>(id: TraxIdDef): Store<T> | void;
+    /**
+    * Get or create a data object associated to the given id
+    * @param id the object id - must be unique with the store scope
+    * @param initValue the object init value (empty object if nothing is provided)
+    * @param computeFunctions optional compute functions associated to this object. The processor associated to these functions will follow the object life cycle.
+    */
+    add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, ...computeFunctions: TraxObjectComputeFn<T>[]): T;
+    /**
+     * Retrieve a data object/array/dictionary that has been previously created
+     * (Doesn't work for processors or stores)
+     * Note: if this object is not indirectly referenced by the root object, it may habe been garbage collected
+     * @returns the tracked object or undefined if not found
+     */
+    get<T extends Object>(id: TraxIdDef): T | void;
+    /**
+     * Delete a data object from the store
+     * @param idOrObject 
+     * @returns true if an object was successfully deleted
+     */
+    remove<T extends Object>(dataObject: T): boolean;
     /**
      * Create or retrieve a compute processor
      * Processor may be synchronous or asynchronous (cf. $TraxComputeFn)
@@ -193,29 +213,10 @@ export interface Store<T> {
      */
     compute(id: TraxIdDef, compute: TraxComputeFn, autoCompute?: boolean, isRenderer?: boolean): TraxProcessor;
     /**
-     * Delete a data object from the store
-     * @param idOrObject 
-     * @returns true if an object was successfully deleted
-     */
-    delete(p: TraxProcessor): boolean;
-    delete<T extends Object>(dataObject: T): boolean;
-    /**
-     * Retrieve a data object/array/dictionary that has been previously created
-     * (Doesn't work for processors or stores)
-     * Note: if this object is not indirectly referenced by the root object, it may habe been garbage collected
-     * @returns the tracked object or undefined if not found
-     */
-    get<T extends Object>(id: TraxIdDef): T | void;
-    /**
      * Retrieve a processor created on this store
      * @param id 
      */
     getProcessor(id: TraxIdDef): TraxProcessor | void;
-    /**
-     * Retrieve a sub-store
-     * @param id 
-     */
-    getStore<T>(id: TraxIdDef): Store<T> | void;
     /** 
      * Dispose the current store and all its sub-stores and processor 
      * so that they can be garbage collected
@@ -245,6 +246,14 @@ export interface Store<T> {
  * compute functions shall not return anything
  */
 export type TraxComputeFn = () => (void | Generator<Promise<any>, void, any>);
+
+/**
+ * Trax object compute function
+ * Create a processor associated to an object. The processor will be automatically disposed when the object is disposed.
+ * Asynchronous compute functions must return a Generator, whereas synchronous
+ * compute functions shall not return anything
+ */
+export type TraxObjectComputeFn<T> = (o: T) => (void | Generator<Promise<any>, void, any>);
 
 /**
  * Processor id

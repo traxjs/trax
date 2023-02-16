@@ -115,29 +115,29 @@ describe('Trax Objects', () => {
 
             const md1a = o1[traxMD];
             expect(md1a.id).toBe("SimpleFamilyStore/foo");
-            let dr = fst.delete(o1);
+            let dr = fst.remove(o1);
             expect(dr).toBe(true);
             const md1b = o1[traxMD];
             expect(md1b).toBe(undefined);
-            dr = fst.delete(o1);
+            dr = fst.remove(o1);
             expect(dr).toBe(false);
 
             let o2 = fst.add(["foo", "bar"], { foo: "bar" });
             expect(o2 !== o1).toBe(true);
 
-            dr = fst.delete({});
+            dr = fst.remove({});
             expect(dr).toBe(false);
 
-            dr = fst.delete(["foo", "bar"]);
+            dr = fst.remove(["foo", "bar"]);
             expect(dr).toBe(false);
-            dr = fst.delete(o2);
+            dr = fst.remove(o2);
             expect(dr).toBe(true);
 
             let o3 = fst.add("x", { foo: 123 });
-            dr = fst.delete(o3);
+            dr = fst.remove(o3);
             expect(dr).toBe(true);
             fst.add("x", { foo: 123 });
-            dr = fst.delete(o3);
+            dr = fst.remove(o3);
             expect(dr).toBe(false);
 
             expect(printLogs()).toMatchObject([
@@ -151,6 +151,28 @@ describe('Trax Objects', () => {
             ]);
         });
 
+        it('must not re-wrap deleted data objects', async () => {
+            let f = fst.add("ford", { name: { firstName: "Ford", lastName: "Prefect" }, planet: "Betelgeuse V" });
+            expect(f.name.firstName).toBe("Ford");
+            fst.remove(f.name);
+
+            trax.log.info("A");
+            f.name.firstName = "FORD"
+            expect(f.name.firstName).toBe("FORD");
+
+            expect(printLogs()).toMatchObject([
+                "1:1 !NEW - O: SimpleFamilyStore/ford",
+                "1:2 !NEW - O: SimpleFamilyStore/ford*name",
+                "1:3 !GET - SimpleFamilyStore/ford.name -> '[TRAX SimpleFamilyStore/ford*name]'",
+                "1:4 !GET - SimpleFamilyStore/ford*name.firstName -> 'Ford'",
+                "1:5 !GET - SimpleFamilyStore/ford.name -> '[TRAX SimpleFamilyStore/ford*name]'",
+                "1:6 !DEL - SimpleFamilyStore/ford*name",
+                "1:7 !LOG - A",
+                "1:8 !GET - SimpleFamilyStore/ford.name -> {\"firstName\":\"Ford\",\"lastName\":\"Prefect\"}",
+                "1:9 !GET - SimpleFamilyStore/ford.name -> {\"firstName\":\"FORD\",\"lastName\":\"Prefect\"}",
+            ]);
+        });
+
         it('must log GET and SET until object is deleted', async () => {
             let p = fst.add("HS", { firstName: "Homer", lastName: "Simpson" });
 
@@ -158,7 +180,7 @@ describe('Trax Objects', () => {
             expect(name1).toBe("Homer Simpson");
 
             p.lastName = "SIMPSON";
-            fst.delete(p);
+            fst.remove(p);
 
             let name2 = p.firstName + " " + p.lastName;
             expect(name2).toBe("Homer SIMPSON");

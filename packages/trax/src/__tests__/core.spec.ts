@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Store, Trax, TraxObjectType, trax as trx } from '../index';
 import { createTraxEnv } from '../core';
-import { pause, Person, printEvents } from './utils';
+import { pause, Person, printEvents, SimpleFamilyStore } from './utils';
 
 describe('Trax Core', () => {
     let trax: Trax;
@@ -800,7 +800,7 @@ describe('Trax Core', () => {
                 });
 
                 await trax.reconciliation();
-                ps.delete(pss);
+                ps.remove(pss);
 
                 expect(printLogs(1)).toMatchObject([
                     "1:1 !ERR - [TRAX] (PStore>SubStore) Stores cannot be disposed through store.delete()",
@@ -820,7 +820,7 @@ describe('Trax Core', () => {
                 })
 
                 await trax.reconciliation();
-                ps.delete(pr);
+                ps.remove(pr);
 
                 expect(printLogs(1)).toMatchObject([
                     "1:1 !ERR - [TRAX] (PStore%Misc) Processors cannot be disposed through store.delete()",

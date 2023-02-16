@@ -1,7 +1,7 @@
 import { tmd } from "./core";
 import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
-import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogTraxProcessingCtxt, TraxProcessor, TraxObjectType } from "./types";
+import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogTraxProcessingCtxt, TraxProcessor, TraxObjectType, TraxObjectComputeFn } from "./types";
 
 /**
  * Extend the public API with internal APIs
@@ -40,17 +40,19 @@ export interface TraxInternalProcessor extends TraxProcessor {
      * Update the compute function associated to a processor (allows to get access to different closure variables)
      * @param fn 
      */
-    updateComputeFn(fn: TraxComputeFn): void;
+    updateComputeFn(fn: TraxComputeFn | TraxObjectComputeFn<any>): void;
 }
 
-export function createTraxProcessor(
+export function createTraxProcessor<T>(
     processorId: string,
     priority: number,
-    compute: TraxComputeFn,
+    compute: TraxComputeFn | TraxObjectComputeFn<T>,
     processorStack: LinkedList<TraxInternalProcessor>,
     getDataObject: (id: string) => any,
     logTraxEvent: (e: TraxEvent) => void,
     startProcessingContext: (event: TraxLogTraxProcessingCtxt) => ProcessingContext,
+    /** Object associated to this processor */
+    target: T | null,
     onDispose?: (id: string) => void,
     autoCompute = true,
     isRenderer = false
@@ -80,10 +82,10 @@ export function createTraxProcessor(
         logTraxEvent({ type: "!ERR", data: msg });
     }
 
-    let wrappedCompute: TraxComputeFn;
+    let wrappedCompute: TraxComputeFn | TraxObjectComputeFn<T>;
     let newComputeFn: TraxComputeFn | undefined;
 
-    wrapComputeFn(compute);
+    wrapComputeFn(compute as any);
 
     const pr: TraxInternalProcessor = {
         get id() {
@@ -160,7 +162,13 @@ export function createTraxProcessor(
                     newComputeFn = undefined;
                 }
 
-                const r = wrappedCompute();
+                let r;
+                if (target !== null) {
+                    r = (wrappedCompute as TraxObjectComputeFn<T>)(target);
+                } else {
+                    r = (wrappedCompute as TraxComputeFn)();
+                }
+
                 if (r && typeof r === "object" && typeof (r as any).catch === "function") {
                     // r is a promise
                     // no need to log the error as it was already caught up by the wrapped function

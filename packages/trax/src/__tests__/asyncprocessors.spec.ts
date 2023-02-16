@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTraxEnv } from '../core';
 import { Store, Trax } from '../types';
-import { Person, pause, printEvents, mockGlobalConsole, resetGlobalConsole } from './utils';
+import { Person, pause, printEvents, mockGlobalConsole, resetGlobalConsole, SimpleFamilyStore } from './utils';
 
 describe('Async processors', () => {
     let trax: Trax;
+
+    const EVT_GET_FRIENDLY_NAME = "GetFriendlyName";
 
     beforeEach(() => {
         trax = createTraxEnv();
@@ -17,7 +19,7 @@ describe('Async processors', () => {
     async function getFriendlyName(name: string, throwError = false) {
         await pause(1);
         // log an event to ease test synchronisation
-        trax.log.event("GetFriendlyName");
+        trax.log.event(EVT_GET_FRIENDLY_NAME);
         if (throwError) {
             throw Error("Friendly Name Error");
         }
@@ -95,7 +97,7 @@ describe('Async processors', () => {
                 "PStore/root.firstName"
             ]);
 
-            await trax.log.awaitEvent("GetFriendlyName");
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME);
             await trax.reconciliation();
 
             expect(p.prettyName).toBe("Friendly(Homer) Simpson");
@@ -134,7 +136,7 @@ describe('Async processors', () => {
 
             expect(p.prettyName).toBe("Friendly(Homer) Simpson"); // not re-processed yet
 
-            await trax.log.awaitEvent("GetFriendlyName");
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME);
             await trax.reconciliation();
 
             expect(p.prettyName).toBe("Friendly(Bart) Simpson");
@@ -504,6 +506,96 @@ describe('Async processors', () => {
         });
     });
 
+    describe('Store.add', () => {
+        it('should allow to create sync and async root object processors on init', async () => {
+            const pstore = trax.createStore("PStore", (store: Store<Person>) => {
+                const p = store.init({ firstName: "Homer", lastName: "Simpson" }, function* (person) {
+                    person.prettyName = yield getFriendlyName(person.firstName);
+                }, (person) => {
+                    person.prettyNameLength = (person.prettyName || "").length;
+                });
+            });
+            const proot = pstore.root;
+            let output = "";
+            pstore.compute("Render", () => {
+                output = "VIEW: " + (proot.prettyName || "[empty]");
+            }, true, true);
+
+            const rootId = "PStore/root";
+            const processorId = "PStore%root[0]";
+
+            expect(trax.getTraxId(pstore.root)).toBe(rootId);
+            const pr = pstore.getProcessor("root[0]");
+            expect(pr).not.toBe(undefined);
+            expect(pr!.id).toBe(processorId);
+            expect(output).toBe("VIEW: [empty]");
+            expect(proot.prettyNameLength).toBe(0);
+
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME);
+            await trax.reconciliation();
+            expect(output).toBe("VIEW: Friendly(Homer)");
+            expect(proot.prettyNameLength).toBe(15);
+
+            proot.firstName = "HOMER";
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME);
+            await trax.reconciliation();
+            expect(output).toBe("VIEW: Friendly(HOMER)");
+            expect(proot.prettyNameLength).toBe(15);
+
+            expect(pr!.disposed).toBe(false);
+        });
+
+        it('should allow to create and dispose multiple processors on add', async () => {
+            const fstore = trax.createStore("FStore", (store: Store<SimpleFamilyStore>) => {
+                const root = store.init({});
+                const f = store.add<Person>("Father", { firstName: "Homer", lastName: "Simpson" }, function* (o) {
+                    o.prettyName = yield getFriendlyName(o.firstName);
+                }, (o) => {
+                    o.prettyNameLength = (o.prettyName || "").length;
+                });
+                root.father = f;
+            });
+            const proot = fstore.root;
+            let output = "";
+            fstore.compute("Render", () => {
+                output = "VIEW: " + (proot.father!.prettyName || "[empty]");
+            }, true, true);
+
+            expect(output).toBe("VIEW: [empty]");
+            expect(proot.father!.prettyNameLength).toBe(0);
+
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME);
+            await trax.reconciliation();
+
+            expect(output).toBe("VIEW: Friendly(Homer)");
+            expect(proot.father!.prettyNameLength).toBe(15);
+
+            proot.father!.firstName = "H";
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME);
+            await trax.reconciliation();
+            trax.log.info("A");
+            expect(output).toBe("VIEW: Friendly(H)");
+            expect(proot.father!.prettyNameLength).toBe(11);
+
+            fstore.remove(proot.father!);
+            proot.father!.firstName = "HOMER";
+            expect(proot.father!.firstName).toBe("HOMER");
+
+            await trax.reconciliation();
+            expect(printLogs(6)).toMatchObject([
+                "6:1 !LOG - A",
+                "6:2 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "6:3 !GET - FStore/Father.prettyNameLength -> 11",
+                "6:4 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "6:5 !DEL - FStore%Father[0]",
+                "6:6 !DEL - FStore%Father[1]",
+                "6:7 !DEL - FStore/Father",
+                "6:8 !GET - FStore/root.father -> {\"firstName\":\"H\",\"lastName\":\"Simpson\",\"prettyNameLength\":11,\"prettyName\":\"Friendly(H)\"}",
+                "6:9 !GET - FStore/root.father -> {\"firstName\":\"HOMER\",\"lastName\":\"Simpson\",\"prettyNameLength\":11,\"prettyName\":\"Friendly(H)\"}",
+            ]);
+        });
+    });
+
     describe('Errors', () => {
         it('should raise an error in case of compute error before yield', async () => {
             const ps = trax.createStore("PStore", (store: Store<Person>) => {
@@ -545,7 +637,7 @@ describe('Async processors', () => {
             const pr = ps.getProcessor("PrettyName")!;
 
             expect(ps.root.prettyName).toBe(undefined);
-            await trax.log.awaitEvent("GetFriendlyName");
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME);
             await trax.reconciliation();
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
@@ -578,7 +670,7 @@ describe('Async processors', () => {
             const pr = ps.getProcessor("PrettyName")!;
 
             expect(ps.root.prettyName).toBe(undefined);
-            await trax.log.awaitEvent("GetFriendlyName");
+            await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME);
             await trax.reconciliation();
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",

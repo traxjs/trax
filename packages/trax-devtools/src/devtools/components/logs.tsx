@@ -83,6 +83,8 @@ function printEvents(events: DtLogEvent[], indent: number, output: JSX.Element[]
             addLine(eid, pill("DEL"), " ", objectRef(e.objectId));
         } else if (tp === traxEvents.ProcessorDirty) {
             addLine(eid, dirtyPill(), " ", objectRef(e.processorId), " (triggered by ", objectRef(e.objectId, e.propName), ")");
+        } else if (tp === traxEvents.ProcessorSkipped) {
+            addLine(eid, pill("SKP", "logs-warning-type"), " ", objectRef(e.processorId));
         } else if (tp === PROCESSING_GROUP_TYPE) {
             const as = e.async ? " ASYNC" : "";
             let btn: string | JSX.Element = "";

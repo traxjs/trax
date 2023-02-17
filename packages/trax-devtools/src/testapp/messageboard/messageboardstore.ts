@@ -58,11 +58,8 @@ export function createMessageBoardStore(msgStore?: MessageStore, usrStore?: User
                         authorStatus: "Unknown" as User["status"],
                         authorAvatar: "",
                         messages: []
-                    });
-
-                    // get or create a new processor
-                    const g = currentMsgGroup; // we need this intermediate var to capture it in the processor generator closure
-                    store.compute(["AuthorInfo", msg.authorId, msg.id], function* () {
+                    }, function* (g) {
+                        // AuthorInfo
                         const user: User | null = yield userStore.getUser(g!.authorId);
                         if (user) {
                             g!.authorName = user.name;

@@ -351,6 +351,8 @@ export const traxEvents = Object.freeze({
     "Get": "!GET",
     /** When a processor is set dirty */
     "ProcessorDirty": "!DRT",
+    /** When a processor is skipped */
+    "ProcessorSkipped": "!SKP",
 
     /** When a processing context starts */
     "ProcessingStart": "!PCS",
@@ -362,7 +364,7 @@ export const traxEvents = Object.freeze({
     "ProcessingEnd": "!PCE"
 });
 
-export type TraxEvent = TraxLogMsg | TraxLogObjectLifeCycle | TraxLogPropGet | TraxLogPropSet | TraxLogProcDirty;
+export type TraxEvent = TraxLogMsg | TraxLogObjectLifeCycle | TraxLogPropGet | TraxLogPropSet | TraxLogProcDirty | TraxLogProcSkipped;
 
 /** Reason that triggered a call to a processor's compute function */
 export type TraxComputeTrigger = "Init" | "Reconciliation" | "DirectCall" | "TargetRead";
@@ -410,6 +412,11 @@ export interface TraxLogProcDirty {
     /** Object holding the value that triggered the dirty event */
     objectId: string;
     propName: string;
+}
+
+export interface TraxLogProcSkipped {
+    type: "!SKP";
+    processorId: string;
 }
 
 export interface TraxLogMsg {

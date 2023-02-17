@@ -1,6 +1,6 @@
 import { traxMD } from "./core";
 import { LinkedList } from "./linkedlist";
-import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, TraxLogTraxProcessingCtxt, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet, TraxLogObjectCreate, TraxLogObjectDispose } from "./types";
+import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, TraxLogTraxProcessingCtxt, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet, TraxLogObjectCreate, TraxLogObjectDispose, TraxLogProcSkipped } from "./types";
 
 /**
  * Resolve function used in the await map
@@ -456,6 +456,9 @@ export function formatEventData(eventType: string, data?: any) {
         } else if (eventType === traxEvents.ProcessorDirty) {
             const d = sd as TraxLogProcDirty;
             return `${d.processorId} <- ${d.objectId}.${d.propName}`;
+        } else if (eventType === traxEvents.ProcessorSkipped) {
+            const d = sd as TraxLogProcSkipped;
+            return `${d.processorId}`;
         }
     } catch (ex) { }
     return data;

@@ -204,8 +204,7 @@ export function createTraxProcessor<T>(
                     error(`(${processorId}) No dependencies found: processor will never be re-executed`);
                 }
             } else if (!process) {
-                // TODO: SKP event
-                logTraxEvent({ type: traxEvents.Info, data: 'Skip compute (No external prop listeners)' });
+                logTraxEvent({ type: traxEvents.ProcessorSkipped, processorId });
             }
         },
         updateComputeFn(fn: TraxComputeFn): void {

@@ -1,5 +1,5 @@
 import { StreamEvent, TraxComputeTrigger, TraxLogMsg, TraxLogObjectLifeCycle, TraxLogProcDirty, TraxLogPropGet, TraxLogPropSet, TraxObjectType } from "@traxjs/trax";
-import { JSONValue } from "@traxjs/trax/lib/types";
+import { JSONValue, TraxLogProcSkipped } from "@traxjs/trax/lib/types";
 
 /** Root data structure holding all dev tools data */
 export interface DtDevToolsData {
@@ -9,10 +9,10 @@ export interface DtDevToolsData {
     rendererStores: DtStore[];
     /** Logs received from the application */
     logs: DtLogCycle[];
+    /** Id of the last cycle in the logs (stored here to avoid reading the object and trigger a full compute) */
+    lastCycleId: number;
     /** Log filters */
     logFilters: {
-        /** Key signature to identify a certain filter type and allow result cachine */
-        key: string;
         /** Show the property get logs (by far the largets number of log entries)  */
         includePropertyGet: boolean;
         /** Include object creation */
@@ -31,6 +31,8 @@ export interface DtDevToolsData {
         includeErrorMessages: boolean;
         /** Show logs triggered when processors get dirty */
         includeProcessorDirty: boolean;
+        /** Show logs triggered when processors are skipped */
+        includeProcessorSkip: boolean;
         /** Show Application events */
         includeAppEvents: boolean;
         /** Show Render calls even if all internal events are filtered-out */
@@ -137,8 +139,6 @@ export interface DtLogCycle {
     matchFilter: boolean;
     /** Size of the content if expanded */
     contentSize: number;
-    /** Last filter key used to process contentSize */
-    filterKey: string;
 }
 
 export type DtLogEvent = { id: string; matchFilter: boolean; } & (DtEvent
@@ -146,7 +146,7 @@ export type DtLogEvent = { id: string; matchFilter: boolean; } & (DtEvent
     | TraxLogObjectLifeCycle
     | TraxLogPropSet
     | TraxLogPropGet
-    | TraxLogProcDirty
+    | TraxLogProcDirty | TraxLogProcSkipped
     | DtProcessingGroup | DtTraxPgStoreInit | DtTraxPgCompute | DtTraxPgCollectionUpdate | DtTraxPgReconciliation | DtTraxPgEnd);
 
 export const APP_EVENT_TYPE = "!EVT";

@@ -11,12 +11,13 @@ export function createDevToolsStore(client: DtClientAPI) {
             rootStores: [],
             rendererStores: [],
             logs: [],
+            lastCycleId: -1,
             logFilters: {
-                key: "", // computed
                 includePropertyGet: false,
                 includeNew: false,
                 includeDispose: false,
                 includeProcessingEnd: false,
+                includeProcessorSkip: false,
                 includeEmptyProcessingGroups: true,
                 includePropertySet: true,
                 includeInfoMessages: true,
@@ -28,13 +29,6 @@ export function createDevToolsStore(client: DtClientAPI) {
                 includeReconciliation: true,
                 includeCompute: true,
             }
-        });
-        const filters = data.logFilters;
-
-        store.compute("FilterKey", () => {
-            // create a unique key that represents the filter signature in order to cache the filter results
-            const boolProps = ["includeEmptyProcessingGroups", "includePropertyGet", "includeNew", "includeDispose"];
-            filters.key = boolProps.map((propName) => (filters as any)[propName] ? "Y" : "N").join("");
         });
 
         function reset() {
@@ -52,6 +46,7 @@ export function createDevToolsStore(client: DtClientAPI) {
             filters.includePropertyGet = noGroupActive;
             filters.includeNew = noGroupActive;
             filters.includeDispose = noGroupActive;
+            filters.includeProcessorSkip = noGroupActive;
             filters.includeProcessingEnd = noGroupActive;
             filters.includeEmptyProcessingGroups = yesGroupActive;
             filters.includePropertySet = yesGroupActive;
@@ -93,7 +88,7 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
     const cycleId = eventGroup.cycleId;
     let elapsedMs = 0;
     let computeMs = 0;
-    const evts: DtLogEvent[] = [];
+
 
     const groupEvents = eventGroup.events;
     let last = groupEvents.length - 1;
@@ -113,49 +108,55 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
         console.error(`[DevToolsStore] Invalid Event Group #${cycleId}: CycleComplete not found`);
         last++;
     }
-    while (i < last) {
-        i = ingestEvent(i, groupEvents, evts, 0);
-    }
 
-    const logs = store.root.logs;
+    const data = store.root;
+    const logs = data.logs;
     const len = logs.length;
-    if (len > 0) {
-        const lastCycleId = logs[len - 1].cycleId;
+    if (len > 0 && data.lastCycleId > -1) {
+        const lastCycleId = data.lastCycleId;
         if (cycleId > lastCycleId + 1) {
             // Some cycles were missed? -> raise a warning
             const errEvts: DtLogEvent[] = [];
             const msg = `"Missing log cycles detected: expected cycle #${lastCycleId + 1} instead of #${cycleId}"`; // JSON stringified -> keep the outer quotes
             ingestEvent(0, [{ id: `${lastCycleId + 1}:1`, type: traxEvents.Error, data: msg }], errEvts, 0);
-            addLogCycle(lastCycleId + 1, errEvts);
+            addLogCycle(lastCycleId + 1, [{
+                id: `${lastCycleId + 1}:1`, type: traxEvents.Error, data: msg
+            }], 0, 0);
         }
     }
-    addLogCycle(cycleId, evts, elapsedMs, computeMs);
+    addLogCycle(cycleId, groupEvents, i, last - 1, elapsedMs, computeMs);
 
-    function addLogCycle(cycleId: number, events: DtLogEvent[], elapsedMs = 0, computeMs = 0) {
+    function addLogCycle(cycleId: number, groupEvents: StreamEvent[], startIdx: number, lastIdx: number, elapsedMs = 0, computeMs = 0) {
         const logCycle = store.add<DtLogCycle>(["LogCycle", cycleId], {
             cycleId,
             elapsedMs,
             computeMs,
-            events: events,
-            filterKey: "",
+            events: [],
             expanded: true,
             matchFilter: true, // computed
             contentSize: 1     // computed
-        });
+        }, (logCycle, cc) => {
+            // events ingestion (run once)
+            cc.maxComputeCount = 1; // run once
 
-        logs.push(logCycle);
-
-        // create a processor to process the filtered value
-        store.compute(["LogView", cycleId], () => {
+            const evts: DtLogEvent[] = [];
+            let i = startIdx
+            while (i <= lastIdx) {
+                i = ingestEvent(i, groupEvents, evts, 0);
+            }
+            logCycle.events = evts;
+        }, (logCycle) => {
+            // decorate events according to logFilters
             const filter = store.root.logFilters;
-            const fkey = filter.key;
-            logCycle.filterKey = fkey;
 
             // process the filter for this filter key
             const sz = filterEvents(logCycle.events, filter);
             logCycle.contentSize = sz;
             logCycle.matchFilter = sz > 0;
         });
+
+        logs.push(logCycle);
+        data.lastCycleId = cycleId;
     }
 }
 
@@ -196,7 +197,7 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
         while (childEvent && !endReached) {
             if (childEvent.type === traxEvents.ProcessingPause) {
                 if (!async) {
-                    async=true;
+                    async = true;
                 }
                 endReached = true;
             } else {
@@ -237,6 +238,8 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
         parent.push({ id, type: tp, objectId: d.objectId, propName: d.propName, fromValue: d.fromValue, toValue: d.toValue, matchFilter: true });
     } else if (tp === traxEvents.ProcessorDirty) {
         parent.push({ id, type: tp, processorId: d.processorId, objectId: d.objectId, propName: d.propName, matchFilter: true });
+    } else if (tp === traxEvents.ProcessorSkipped) {
+        parent.push({ id, type: tp, processorId: d.processorId, matchFilter: true });
     } else if (tp === traxEvents.Info || tp === traxEvents.Error || tp === traxEvents.Warning) {
         // TraxLogMsg
         parent.push({ id, type: tp, data: d, matchFilter: true });
@@ -304,6 +307,8 @@ function filterEvents(events: (DtLogEvent[]) | undefined, filter: DtDevToolsData
             update(filter.includeErrorMessages, e);
         } else if (tp === traxEvents.ProcessorDirty) {
             update(filter.includeProcessorDirty, e);
+        } else if (tp === traxEvents.ProcessorSkipped) {
+            update(filter.includeProcessorSkip, e);
         } else {
             update(true, e);
         }

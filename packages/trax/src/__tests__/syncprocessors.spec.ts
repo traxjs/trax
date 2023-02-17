@@ -1007,9 +1007,9 @@ describe('Sync Processors', () => {
                 "0:3 !NEW - O: FStore/root",
                 "0:4 !NEW - O: FStore/Father",
                 "0:5 !NEW - P: FStore%Father[0]",
-                "0:6 !LOG - Skip compute (No external prop listeners)", // Skip
+                "0:6 !SKP - FStore%Father[0]", // Skip
                 "0:7 !NEW - P: FStore%Father[1]",
-                "0:8 !LOG - Skip compute (No external prop listeners)", // Skip
+                "0:8 !SKP - FStore%Father[1]", // Skip
                 "0:9 !SET - FStore/root.father = '[TRAX FStore/Father]' (prev: undefined)",
                 "0:10 !PCE - 0:1",
                 "0:11 !NEW - P: FStore%Render",
@@ -1068,7 +1068,7 @@ describe('Sync Processors', () => {
                 "2:3 !SET - FStore/Father.lastName = 'SimpsonSimpson' (prev: 'SIMPSON')",
                 "2:4 !DRT - FStore%Father[0] <- FStore/Father.lastName",
                 "2:5 !PCS - !Reconciliation #2 - 2 processors",
-                "2:6 !LOG - Skip compute (No external prop listeners)", // No processing -> processors stay dirty
+                "2:6 !SKP - FStore%Father[0]", // No processing -> processors stay dirty
                 "2:7 !PCE - 2:5",
             ]);
 
@@ -1132,7 +1132,7 @@ describe('Sync Processors', () => {
                 "5:3 !SET - FStore/Father.lastName = 'Sim3' (prev: 'Sim2')",
                 "5:4 !DRT - FStore%Father[0] <- FStore/Father.lastName",
                 "5:5 !PCS - !Reconciliation #5 - 2 processors",
-                "5:6 !LOG - Skip compute (No external prop listeners)",
+                "5:6 !SKP - FStore%Father[0]",
                 "5:7 !PCE - 5:5",
             ]);
         });

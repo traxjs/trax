@@ -17,7 +17,7 @@ describe('MessageBoard', () => {
         // not in beforeEach to avoid missing events
         let p: Promise<any>;
         if (awaitFullRender) {
-            p = trax.log.awaitEvent(traxEvents.ProcessingStart, { processorId: /%AuthorInfo/ });
+            p = trax.log.awaitEvent(traxEvents.ProcessingEnd, { processorId: /%Group/ }); // %AuthorInfo
         }
         container = render(<MessageBoard />);
         cptDiv = container.container.querySelector(".message-board")!;

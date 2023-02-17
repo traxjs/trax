@@ -112,7 +112,7 @@ describe('Logs', () => {
     }
 
     function logComputeCount(cycleId: number) {
-        const pr = trax.getProcessor(dts.id + "%LogView:" + cycleId);
+        const pr = trax.getProcessor(dts.id + "%LogCycle:" + cycleId + "[1]");
         return pr ? pr.computeCount : 0;
     }
 
@@ -485,8 +485,6 @@ describe('Logs', () => {
             const client = ce.init(testStore2);
             await trax.reconciliation();
 
-            expect(dts.data.logFilters.key).toBe("YNNN");
-
             expect(printLogs(dts.data.logs)).toMatchObject([
                 "Cycle #0 0/0",
                 "  - 0:1 !PCG !StoreInit TestStore",
@@ -529,7 +527,6 @@ describe('Logs', () => {
             logFilters.includePropertyGet = true;
             logFilters.includeEmptyProcessingGroups = false;
             await trax.reconciliation();
-            expect(dts.data.logFilters.key).toBe("NYNN");
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
@@ -581,8 +578,6 @@ describe('Logs', () => {
             const client = ce.init(testStore2);
             await trax.reconciliation();
 
-            expect(dts.data.logFilters.key).toBe("YNNN");
-
             // No new / no get
             expandPCG("0:1", false);
             await trax.reconciliation();
@@ -617,7 +612,6 @@ describe('Logs', () => {
             logFilters.includePropertyGet = true;
             logFilters.includeEmptyProcessingGroups = false;
             await trax.reconciliation();
-            expect(dts.data.logFilters.key).toBe("NYNN");
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
@@ -731,14 +725,10 @@ describe('Logs', () => {
             client.increment(42);
             await trax.reconciliation();
 
-            const startKey = "YNNN";
-
-            expect(logFilters.key).toBe(startKey);
             dts.resetFilters(); await trax.reconciliation();
-            expect(logFilters.key).toBe(startKey); // no changes
 
-            expect(logComputeCount(0)).toBe(1);
-            expect(logComputeCount(1)).toBe(1);
+            expect(logComputeCount(0)).toBe(0);
+            expect(logComputeCount(1)).toBe(0);
 
 
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
@@ -785,10 +775,9 @@ describe('Logs', () => {
 
             await trax.reconciliation();
 
-            expect(logComputeCount(0)).toBe(3);
-            expect(logComputeCount(1)).toBe(3);
+            expect(logComputeCount(0)).toBe(2);
+            expect(logComputeCount(1)).toBe(2);
 
-            expect(logFilters.key).toBe("NYYY");
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [11] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
@@ -813,17 +802,16 @@ describe('Logs', () => {
             expandPCG("0:1", false);
             expandPCG("1:8", true);
             await trax.reconciliation();
-            expect(logComputeCount(0)).toBe(4);
-            expect(logComputeCount(1)).toBe(4);
+            expect(logComputeCount(0)).toBe(3);
+            expect(logComputeCount(1)).toBe(3);
             expect(logComputeCount(2)).toBe(0);
-            expect(logFilters.key).toBe(startKey);
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject(startLogs);
 
             client.increment(12);
             await trax.reconciliation();
             expect(logComputeCount(0)).toBe(4);
             expect(logComputeCount(1)).toBe(4);
-            expect(logComputeCount(2)).toBe(1); // new log added without triggering new compute on previous logs
+            expect(logComputeCount(2)).toBe(0); // new log added without triggering new compute on previous logs (+ new log is lazy)
         });
 
         it('should support includePropertySet', async () => {

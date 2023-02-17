@@ -9,20 +9,21 @@ const logTypes = [
         { label: "SET", desc: "Include Property Set Logs", filterProp: "includePropertySet" },
         { label: "DRT", desc: "Include Logs triggered when Processors get Dirty", filterProp: "includeProcessorDirty" },
         { label: "EVT", desc: "Include Application events", filterProp: "includeAppEvents" },
-        { label: "COMPUTE", desc: "Include Compute Calls with no matching logs", filterProp: "includeCompute", type: "long" },
+        { label: "COMPUTE", desc: "Include Compute Calls with no events matching filters", filterProp: "includeCompute", type: "long" },
     ], [
         { label: "LOG", desc: "Include Info Messages", filterProp: "includeInfoMessages" },
         { label: "WRN", desc: "Include Warning Messages", filterProp: "includeWarningMessages" },
         { label: "ERR", desc: "Include Error Messages", filterProp: "includeErrorMessages" },
-        { label: "RENDER", desc: "Include Renderer Calls with no matching logs", filterProp: "includeRender", type: "long" },
+        { label: "RENDER", desc: "Include Renderer Calls with no events matching filters", filterProp: "includeRender", type: "long" },
     ], [
         { label: "GET", desc: "Include Property Get Logs", filterProp: "includePropertyGet" },
         { label: "NEW", desc: "Include Object Creation Logs", filterProp: "includeNew" },
         { label: "DEL", desc: "Include Object Disposal Logs", filterProp: "includeDispose" },
-        { label: "ACTIONS", desc: "Include Action Calls with no matching logs", filterProp: "includeEmptyProcessingGroups", type: "long" },
+        { label: "ACTIONS", desc: "Include Action Calls with no events matching filters", filterProp: "includeEmptyProcessingGroups", type: "long" },
     ], [
         { label: "END", desc: "Include Processing End & Pause Logs", filterProp: "includeProcessingEnd" },
-        { label: "RECONCILE", desc: "Include Reconciliation Calls with no matching logs", filterProp: "includeReconciliation", type: "reconcile" },
+        { label: "SKP", desc: "Include Skipped Compute (Lazy Processors)", filterProp: "includeProcessorSkip" },
+        { label: "RECONCILE", desc: "Include Reconciliation Calls with no events matching filters", filterProp: "includeReconciliation", type: "reconcile" },
     ]
 ]
 

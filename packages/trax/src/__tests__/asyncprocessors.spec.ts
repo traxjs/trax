@@ -688,11 +688,12 @@ describe('Async processors', () => {
             const processorId = "PStore%root[0]";
             const p = pstore.root;
             const pr = pstore.getProcessor("root[0]")!;
-            expect(lastIds).toMatchObject([processorId]);
+            expect(lastIds).toMatchObject([]); // lazy
             expect(pr.id).toBe(processorId);
-            expect(pr.computeCount).toBe(1);
+            expect(pr.computeCount).toBe(0); // lazy
             expect(pr.disposed).toBe(false);
-            expect(p.prettyName).toBe(undefined);
+            expect(lastCounts).toMatchObject([]); // lazy
+            expect(p.prettyName).toBe(undefined); // triggers the processor
             expect(pstore.getProcessor("root[0]")).toBe(pr);
             expect(trax.getProcessor(processorId)).toBe(pr);
             expect(lastCounts).toMatchObject([1]);
@@ -706,10 +707,16 @@ describe('Async processors', () => {
             expect(lastIds).toMatchObject([processorId, processorId]);
             expect(lastCounts).toMatchObject([1, 1]);
 
-
             pstore.root.firstName = "HOMER";
-
             await trax.reconciliation();
+
+            // Before lazy read
+            expect(lastIds).toMatchObject([processorId, processorId]);
+            expect(lastCounts).toMatchObject([1, 1]);
+
+            expect(pr.disposed).toBe(false);
+            expect(p.prettyName).toBe("Friendly(Homer) Simpson");
+            // After lazy read
             expect(lastIds).toMatchObject([processorId, processorId, processorId]);
             expect(lastCounts).toMatchObject([1, 1, 2]);
             expect(pr.disposed).toBe(false);
@@ -722,7 +729,6 @@ describe('Async processors', () => {
             expect(pr.disposed).toBe(true);
             expect(p.prettyName).toBe("Friendly(HOMER) Simpson");
             expect(trax.getProcessor(processorId)).toBe(undefined);
-
 
             pstore.root.firstName = "MARGE";
 

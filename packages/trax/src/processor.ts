@@ -1,12 +1,16 @@
-import { tmd } from "./core";
+import { registerMdPropListener, tmd, unregisterMdPropListener } from "./core";
 import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
-import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogTraxProcessingCtxt, TraxProcessor, TraxObjectType, TraxObjectComputeFn, TraxComputeContext } from "./types";
+import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogTraxProcessingCtxt, TraxProcessor, TraxObjectType, TraxObjectComputeFn, TraxComputeContext, traxEvents } from "./types";
 
 /**
  * Extend the public API with internal APIs
  */
 export interface TraxInternalProcessor extends TraxProcessor {
+    /**
+     * Target object - only used by lazy processors attached to an object (the target)
+     */
+    readonly target: any | null;
     /**
      * Tell when the processor was last called for reconciliation
      * Negative if never reconciled
@@ -33,9 +37,10 @@ export interface TraxInternalProcessor extends TraxProcessor {
      * @param trigger the reason that triggered the call to process
      * - Init = processor creation
      * - Reconcialiation = call made by trax at the end of each cycle (cf. processChanges)
+     * - TargetRead = (for processors associated to an object cf. store.add) call made when a property from the target is being read
      * - DirectCall = explicit call (usually made by processors that are not auto-computed)
      */
-    compute(forceExecution?: boolean, trigger?: "Init" | "Reconciliation" | "DirectCall", reconciliationIdx?: number): void;
+    compute(forceExecution?: boolean, trigger?: "Init" | "Reconciliation" | "TargetRead" | "DirectCall", reconciliationIdx?: number): void;
     /**
      * Update the compute function associated to a processor (allows to get access to different closure variables)
      * @param fn 
@@ -78,12 +83,12 @@ export function createTraxProcessor<T>(
     /** Reconciliation id used during the last compute() call - used to track invalid cycles */
     let reconciliationId = -1;
     /** Last reason that triggered a compute call */
-    let lastTrigger: "Init" | "Reconciliation" | "DirectCall" = "DirectCall";
+    let lastTrigger: "Init" | "Reconciliation" | "TargetRead" | "DirectCall" = "DirectCall";
     /** Current compute context */
     let cc: TraxComputeContext | undefined;
 
     function error(msg: string) {
-        logTraxEvent({ type: "!ERR", data: msg });
+        logTraxEvent({ type: traxEvents.Error, data: msg });
     }
 
     let wrappedCompute: TraxComputeFn | TraxObjectComputeFn<T>;
@@ -94,6 +99,9 @@ export function createTraxProcessor<T>(
     const pr: TraxInternalProcessor = {
         get id() {
             return processorId;
+        },
+        get target() {
+            return target;
         },
         get reconciliationId() {
             return reconciliationId;
@@ -125,7 +133,7 @@ export function createTraxProcessor<T>(
             if (disposed || computing) return false; // a processor cannot setitself dirty
             if (!dirty && propDependencies.has(propKey(objectId, propName))) {
                 dirty = true;
-                logTraxEvent({ type: "!DRT", processorId, objectId, propName });
+                logTraxEvent({ type: traxEvents.ProcessorDirty, processorId, objectId, propName });
                 if (this.onDirty) {
                     try {
                         this.onDirty();
@@ -144,12 +152,19 @@ export function createTraxProcessor<T>(
             }
             propDependencies.add(propKey(objectId, propName));
             objectDependencies.add(objectId);
+            registerMdPropListener(pr, tmd(getDataObject(objectId)));
         },
-        compute(forceExecution = false, trigger: "Init" | "Reconciliation" | "DirectCall" = "DirectCall", reconciliationIdx: number = -1) {
+        compute(forceExecution = false, trigger: "Init" | "Reconciliation" | "TargetRead" | "DirectCall" = "DirectCall", reconciliationIdx: number = -1) {
             if (disposed) return;
             if (!forceExecution && !autoCompute && (trigger === "Init" || trigger === "Reconciliation")) return;
 
-            if (dirty || forceExecution) {
+            let process = true;
+            if (target !== null && trigger !== "TargetRead") {
+                process = tmd(target)?.hasExternalPropListener || false;
+            }
+
+
+            if ((process && dirty) || forceExecution) {
                 dirty = false;
 
                 propDependencies.clear();
@@ -188,6 +203,9 @@ export function createTraxProcessor<T>(
                 if (autoCompute && propDependencies.size === 0) {
                     error(`(${processorId}) No dependencies found: processor will never be re-executed`);
                 }
+            } else if (!process) {
+                // TODO: SKP event
+                logTraxEvent({ type: traxEvents.Info, data: 'Skip compute (No external prop listeners)' });
             }
         },
         updateComputeFn(fn: TraxComputeFn): void {
@@ -204,18 +222,15 @@ export function createTraxProcessor<T>(
 
             // unregister current dependencies
             for (const objectId of objectDependencies) {
-                const md = tmd(getDataObject(objectId));
-                if (md && md.propListeners) {
-                    md.propListeners.delete(pr);
-                }
+                unregisterMdPropListener(pr, tmd(getDataObject(objectId)));
             }
-            logTraxEvent({ type: "!DEL", objectId: processorId });
+            logTraxEvent({ type: traxEvents.Dispose, objectId: processorId });
             return true;
         }
     }
 
     // initialization
-    logTraxEvent({ type: "!NEW", objectId: processorId, objectType: TraxObjectType.Processor });
+    logTraxEvent({ type: traxEvents.New, objectId: processorId, objectType: TraxObjectType.Processor });
     pr.compute(false, "Init");
 
     return pr;
@@ -262,23 +277,10 @@ export function createTraxProcessor<T>(
         if (oldObjectDependencies) {
             for (const objectId of oldObjectDependencies) {
                 if (!objectDependencies.has(objectId)) {
-                    const md = tmd(getDataObject(objectId));
-                    if (md && md.propListeners) {
-                        md.propListeners.delete(pr);
-                    }
+                    unregisterMdPropListener(pr, tmd(getDataObject(objectId)));
                 }
             }
             oldObjectDependencies = undefined;
-        }
-        // register current dependencies
-        for (const objectId of objectDependencies) {
-            const md = tmd(getDataObject(objectId));
-            if (md) {
-                if (!md.propListeners) {
-                    md.propListeners = new Set();
-                }
-                md.propListeners.add(pr);
-            }
         }
     }
 }

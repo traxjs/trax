@@ -46,6 +46,14 @@ interface TraxMd {
      */
     propListeners?: Set<TraxInternalProcessor>;
     /**
+    * Tell if the object has listeners outside the contentProcessors
+    */
+    hasExternalPropListener: boolean;
+    /**
+     * Tell when the contentProcessor were last checked (-1 if not used - only used for computedContent)
+     */
+    lastContentProcessorCheck: number;
+    /**
      * Map of computed properties and their associated processor
      * Allows to detect if a computed property is illegaly changed
      */
@@ -78,6 +86,50 @@ interface TraxMd {
 }
 
 /**
+ * Register a new processor as listener
+ * @param p the processor to register
+ * @param md the meta data object to update (update will be ignored if not provided)
+ */
+export function registerMdPropListener(p: TraxInternalProcessor, md?: TraxMd) {
+    if (md) {
+        if (!md.propListeners) {
+            md.propListeners = new Set();
+        }
+        md.propListeners.add(p);
+        if (md.contentProcessors !== undefined && !md.hasExternalPropListener) {
+            if ((!p.target || tmd(p.target) !== md)) {
+                md.hasExternalPropListener = true;
+            }
+        }
+    }
+}
+
+/**
+ * Unregister a processor from the meta-data listener
+ * @param p the processor to register
+ * @param md the meta data object to update (update will be ignored if not provided)
+ */
+export function unregisterMdPropListener(p: TraxInternalProcessor, md?: TraxMd) {
+    if (md && md.propListeners) {
+        md.propListeners.delete(p);
+        if (md.propListeners.size === 0) {
+            md.propListeners = undefined;
+            md.hasExternalPropListener = false;
+        } else if (md.contentProcessors) {
+            let hasExternalPropListener = false;
+            for (const ln of md.propListeners) {
+                if (!hasExternalPropListener && (!ln.target || tmd(ln.target) !== md)) {
+                    hasExternalPropListener = true;
+                }
+            }
+            md.hasExternalPropListener = hasExternalPropListener;
+        } else {
+            md.hasExternalPropListener = false;
+        }
+    }
+}
+
+/**
  * Get the trax meta data associated to an object
  * @param o 
  * @returns 
@@ -93,7 +145,7 @@ function attachMetaData(o: Object, id: string, type: TraxObjectType, storeId: st
     const md: TraxMd = {
         id, type, storeId,
         propListeners: undefined, computedProps: undefined, computedContent: undefined,
-        awLevel: undefined, dictSize: undefined, contentProcessors: undefined
+        awLevel: undefined, dictSize: undefined, contentProcessors: undefined, hasExternalPropListener: false, lastContentProcessorCheck: -1
     };
     (o as any)[traxMD] = md;
     return md;
@@ -322,6 +374,7 @@ export function createTraxEnv(): Trax {
                     if (pr) {
                         pr.registerDependency(target, md.id, prop);
                     }
+                    checkContentProcessors(md);
                     // don't add log for common internal built-in props
                     addLog = ((prop !== "then" && prop !== "constructor") || v !== undefined);
                     if (target[prop] !== undefined) {
@@ -344,6 +397,7 @@ export function createTraxEnv(): Trax {
                     if (pr) {
                         pr.registerDependency(target, md.id, DICT_SIZE_PROP);
                     }
+                    checkContentProcessors(md);
                     logTraxEvent({ type: "!GET", objectId: md.id, propName: DICT_SIZE_PROP, propValue: v });
                     return v;
                 }
@@ -636,6 +690,8 @@ export function createTraxEnv(): Trax {
     function logTraxEvent(e: TraxEvent) {
         if (e.type === traxEvents.Error) {
             error("" + e.data);
+        } else if (e.type === traxEvents.Info) {
+            log.info("" + e.data);
         } else {
             log.event(e.type, e as any, privateEventKey);
         }
@@ -654,6 +710,19 @@ export function createTraxEnv(): Trax {
                     // this processor turned dirty
                     registerProcessorForReconciliation(pr);
                 }
+            }
+        }
+    }
+
+    /** 
+     * Check that content processors associated to the meta data are run 
+     */
+    function checkContentProcessors(md: TraxMd) {
+        if (md.lastContentProcessorCheck === reconciliationCount) return; // run max once per reconciliation
+        md.lastContentProcessorCheck = reconciliationCount;
+        if (md.contentProcessors) {
+            for (const p of md.contentProcessors) {
+                p.compute(false, "TargetRead");
             }
         }
     }
@@ -1036,7 +1105,6 @@ export function createTraxEnv(): Trax {
             addStoreItem(pid, storeId);
             return pr;
         };
-
     }
 }
 

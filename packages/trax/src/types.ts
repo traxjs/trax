@@ -365,7 +365,7 @@ export const traxEvents = Object.freeze({
 export type TraxEvent = TraxLogMsg | TraxLogObjectLifeCycle | TraxLogPropGet | TraxLogPropSet | TraxLogProcDirty;
 
 /** Reason that triggered a call to a processor's compute function */
-export type TraxComputeTrigger = "Init" | "Reconciliation" | "DirectCall";
+export type TraxComputeTrigger = "Init" | "Reconciliation" | "DirectCall" | "TargetRead";
 
 export type TraxLogEvent =
     TraxLogMsg

@@ -39,7 +39,7 @@ describe('Sync Processors', () => {
         });
     }
 
-    describe('Compute', () => {
+    describe('Eager Compute', () => {
         it('should be able to output non trax values', async () => {
             const ps = createPStore(false);
             const p = ps.root;
@@ -884,7 +884,7 @@ describe('Sync Processors', () => {
         });
     });
 
-    describe('Lazy', () => {
+    describe('Lazy Compute', () => {
         it('store.init should allow to create a root object processor', async () => {
             const pstore = trax.createStore("PStore", (store: Store<Person>) => {
                 const p = store.init({ firstName: "Homer", lastName: "Simpson" }, (person) => {
@@ -1135,6 +1135,48 @@ describe('Sync Processors', () => {
                 "5:6 !SKP - FStore%Father[0]",
                 "5:7 !PCE - 5:5",
             ]);
+        });
+
+        it('should allow to update the processor name', async () => {
+            let id1 = "", id2 = "", name1 = "", name2 = ""
+            const pstore = trax.createStore("PStore", (store: Store<Person>) => {
+                const p = store.init({ firstName: "Homer", lastName: "Simpson" }, (person, cc) => {
+                    id1 = cc.processorId;
+                    name1 = cc.processorName;
+                    const nm = person.firstName + " " + person.lastName;
+                    person.prettyName = nm;
+                }, (person, cc) => {
+                    id2 = cc.processorId;
+                    name2 = cc.processorName;
+                    cc.processorName = "PrettyNameLength";
+                    person.prettyNameLength = (person.prettyName || "").length;
+                });
+            });
+            const proot = pstore.root;
+            let output = "";
+            pstore.compute("Render", () => {
+                output = "VIEW: " + proot.prettyName;
+            }, true, true);
+
+            expect(output).toBe("VIEW: Homer Simpson");
+            expect(proot.prettyNameLength).toBe(13);
+
+            expect(id1).toBe("PStore%root[0]");
+            expect(id2).toBe("PStore%root[1]");
+            expect(name1).toBe("0");
+            expect(name2).toBe("1");
+            await trax.reconciliation();
+
+            proot.firstName = "H";
+            await trax.reconciliation();
+
+            expect(output).toBe("VIEW: H Simpson");
+            expect(proot.prettyNameLength).toBe(9);
+
+            expect(name1).toBe("0");
+            expect(name2).toBe("PrettyNameLength");
+            expect(id1).toBe("PStore%root[0]");
+            expect(id2).toBe("PStore%root[1]");
         });
     });
 

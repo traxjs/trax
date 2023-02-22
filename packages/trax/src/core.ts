@@ -759,13 +759,17 @@ export function createTraxEnv(): Trax {
         if (o) {
             detachMetaData(o);
         }
-        if (md && md.contentProcessors) {
-            // dispose associated processors
-            for (const p of md.contentProcessors) {
-                p.dispose();
+        if (md) {
+            if (md.contentProcessors) {
+                // dispose associated processors
+                for (const p of md.contentProcessors) {
+                    p.dispose();
+                }
+                md.contentProcessors = undefined;
             }
-            md.contentProcessors = undefined;
+            removeStoreItem(id, md.storeId);
         }
+
         logTraxEvent({ type: "!DEL", objectId: id });
         return dataRefs.delete(id);
     }
@@ -857,7 +861,7 @@ export function createTraxEnv(): Trax {
             },
             compute(id: TraxIdDef, compute: TraxComputeFn, autoCompute?: boolean, isRenderer?: boolean): TraxProcessor {
                 let pid = buildId(id, storeId, true);
-                return createProcessor(pid, compute, null, autoCompute, isRenderer);
+                return createProcessor(pid, "", compute, null, autoCompute, isRenderer);
             },
             getProcessor(id: TraxIdDef): TraxProcessor | undefined {
                 const sid = buildId(id, storeId, true);
@@ -1069,7 +1073,7 @@ export function createTraxEnv(): Trax {
                     const procs: TraxProcessor[] = [];
                     for (let i = 0; len > i; i++) {
                         const pid = `${storeId}${ID_PROCESSOR_SEPARATOR}${idSuffix}[${i}]`;
-                        procs.push(createProcessor(pid, computeFunctions![i], p, true, false));
+                        procs.push(createProcessor(pid, "" + i, computeFunctions![i], p, true, false));
                     }
                     md.contentProcessors = procs as TraxInternalProcessor[];
                 }
@@ -1079,7 +1083,7 @@ export function createTraxEnv(): Trax {
             }
         }
 
-        function createProcessor<T>(pid: string, compute: TraxComputeFn | TraxObjectComputeFn<T>, target: T | null, autoCompute?: boolean, isRenderer?: boolean): TraxProcessor {
+        function createProcessor<T>(pid: string, pname: string, compute: TraxComputeFn | TraxObjectComputeFn<T>, target: T | null, autoCompute?: boolean, isRenderer?: boolean): TraxProcessor {
             let pr = processors.get(pid);
             if (pr) {
                 pr.updateComputeFn(compute);
@@ -1089,6 +1093,7 @@ export function createTraxEnv(): Trax {
             processorCount++; // used to track potential memory leaks
             pr = createTraxProcessor(
                 pid,
+                pname,
                 processorPriorityCounter,
                 compute,
                 processorStack,

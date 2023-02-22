@@ -50,6 +50,8 @@ export interface TraxInternalProcessor extends TraxProcessor {
 
 export function createTraxProcessor<T>(
     processorId: string,
+    /** Optional name added to the processor id - useful for object processor as default name is the processor index */
+    processorName: string,
     priority: number,
     compute: TraxComputeFn | TraxObjectComputeFn<T>,
     processorStack: LinkedList<TraxInternalProcessor>,
@@ -183,6 +185,7 @@ export function createTraxProcessor<T>(
 
                 cc = {
                     processorId,
+                    processorName,
                     computeCount,
                     maxComputeCount
                 };
@@ -265,6 +268,7 @@ export function createTraxProcessor<T>(
                 if (done && maxComputeCount > -1 && computeCount >= maxComputeCount) {
                     pr.dispose();
                 } else {
+                    processorName = cc?.processorName || "";
                     updateDependencies();
                 }
             }

@@ -244,8 +244,9 @@ export interface Store<T> {
  * Allows to stop a processor after a certain amount of counts
  */
 export interface TraxComputeContext {
-    processorId: string;
-    computeCount: number;
+    readonly processorId: string;
+    processorName: string;
+    readonly computeCount: number;
     maxComputeCount: number;
 }
 

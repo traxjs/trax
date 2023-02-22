@@ -1,0 +1,36 @@
+{
+    "name": "@traxjs/virtual-list",
+    "version": "0.0.1",
+    "description": "Trax virtual list",
+    "main": "dist/virtual-list.js",
+    "author": "Bertrand Laporte",
+    "license": "MIT",
+    "keywords": [
+        "trax",
+        "virual list",
+        "preact"
+    ],
+    "scripts": {
+        "build": "tsc && vite build",
+        "test": "vitest",
+        "coverage": "vitest run --coverage",
+        "dev": "vite"
+    },
+    "dependencies": {
+        "@traxjs/trax": "0.0.1",
+        "@traxjs/trax-react": "0.0.1"
+    },
+    "devDependencies": {
+        "@preact/preset-vite": "^2.5.0",
+        "@babel/core": "^7.0.0",
+        "@testing-library/preact": "^3.2.3",
+        "@testing-library/user-event": "^14.4.3",
+        "@testing-library/dom": "8.20.0",
+        "preact": "^10.11.3",
+        "preact-dom": "^1.0.1",
+        "jsdom": "^21.1.0",
+        "typescript": "^4.9.4",
+        "vite": "^4.0.3",
+        "vitest": "^0.26.3"
+    }
+}

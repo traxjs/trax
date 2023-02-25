@@ -1,4 +1,14 @@
-
 .virtual-list {
-    font-weight: bold;
+    position: relative;
+}
+
+.virtual-list-content {
+    left: 0;
+    position: relative;
+}
+
+.virtual-list-item {
+    position: absolute;
+    top: -1000px;
+    left: 0px;
 }

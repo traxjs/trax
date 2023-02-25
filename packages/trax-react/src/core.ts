@@ -132,12 +132,12 @@ export function resetReactEnv() {
  * @param factory a factory function to create the store instance
  * @returns the store object
  */
-export function useStore<T = any>(factory: () => T): T {
+export function useStore<T = any>(factory: (...args: any[]) => T, ...args: any[]): T {
     const ref = (useRef({})).current as any;
     let store: T = ref.store;
     if (!store) {
         // create it
-        ref.store = store = factory();
+        ref.store = store = factory(...args);
     }
     if (typeof (store as any).dispose === "function") {
         useEffect(() => {

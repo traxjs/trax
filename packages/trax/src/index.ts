@@ -5,6 +5,7 @@ export const trax = createTraxEnv();
 export type {
     Trax,
     Store,
+    TraxObject,
     TraxProcessor,
     EventStream,
     StreamEvent,

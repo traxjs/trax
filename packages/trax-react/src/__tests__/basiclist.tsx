@@ -1,3 +1,4 @@
+import { Store, trax } from '@traxjs/trax';
 import React from 'react';
 import { component, componentId, traxId, useStore } from "..";
 import { createListStore } from './liststore';
@@ -40,3 +41,24 @@ export const ConditionalList = component("Test:ConditionalList", (props: { conte
     </div>
 });
 
+
+/**
+ * Component that uses useStore with extra arguments
+ */
+export const CptWithUseStoreArgs = component("Test:CptWithUseStoreArgs", (props: { text: string }) => {
+    const store = useStore(createStoreWithArgs, props, 42);
+    const data = store.root;
+
+    return <div className='cpt-with-useStore-args'>
+        {data.value1}/{data.value2}
+    </div>
+});
+
+function createStoreWithArgs(props: { text: string }, misc: number) {
+    return trax.createStore("MiscStore", (store: Store<{ value1: string, value2: number }>) => {
+        store.init({
+            value1: props.text,
+            value2: misc
+        });
+    });
+}

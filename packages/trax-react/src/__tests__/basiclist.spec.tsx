@@ -4,7 +4,7 @@ import * as ReactDOM from 'react-dom/client';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { act, Simulate } from 'react-dom/test-utils';
 import { resetReactEnv } from '..';
-import { BasicList, ConditionalList } from './basiclist';
+import { BasicList, ConditionalList, CptWithUseStoreArgs } from './basiclist';
 import { trax } from '@traxjs/trax';
 
 // workaround to remove react-dom/test-utils warnings
@@ -36,7 +36,7 @@ describe('Simple List', () => {
     function clearListButton(listIdx: number) {
         return listHost(listIdx).querySelector("button.clearList")!;
     }
-    
+
     async function click(e: Element) {
         await act(async () => {
             Simulate.click(e);
@@ -139,6 +139,20 @@ describe('Simple List', () => {
             expect(listItemText(0, 0)).toBe("Item #1");
             expect(listItemLength(1)).toBe(0);
             expect(listTotalText(1)).toBe("Total: 0");
+        });
+    });
+
+    describe('UseStore', () => {
+        it('should support multiple arguments', async () => {
+            resetReactEnv();
+            host = document.createElement('div');
+            act(() => {
+                const root = ReactDOM.createRoot(host);
+                root.render(<CptWithUseStoreArgs text="Hello World" />);
+            });
+
+            const div = host.querySelector("div.cpt-with-useStore-args")! as HTMLDivElement;
+            expect(div.innerHTML.trim()).toBe("Hello World/42");
         });
     });
 

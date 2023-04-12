@@ -17,14 +17,10 @@ describe('MessageBoard', () => {
 
     async function init(awaitFullRender = true) {
         // not in beforeEach to avoid missing events
-        let p: Promise<any>;
-        if (awaitFullRender) {
-            p = trax.log.awaitEvent(traxEvents.ProcessingStart, { processorId: /%AuthorInfo/ });
-        }
         container = render(<MessageBoard />);
         cptDiv = container.container.querySelector(".message-board")!;
         if (awaitFullRender) {
-            await p!;
+            await trax.log.awaitEvent(traxEvents.ProcessingEnd, { processorId: /\[authorInfo\]/ });
             await renderComplete();
         }
     }
@@ -122,6 +118,7 @@ describe('MessageBoard', () => {
             "# Homer Simpson (Away) homer.png",
             "- Give me the number for 911!",
         ]);
+
 
         fireEvent.click(controlPanelDeleteBtn(0)!);
         await renderComplete();

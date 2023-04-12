@@ -48,26 +48,29 @@ export function createTodoStore() {
             filter: TodoFilter.ALL,
             nbrOfCompletedTodos: 0,
             itemsLeft: 0
+        }, {
+            processorName: "filteredTodos",
+            compute: (data) => {
+                let newContent = [];
+                if (data.filter === TodoFilter.ALL) {
+                    newContent = data.todos;
+                } else {
+                    const isComplete = (data.filter === TodoFilter.COMPLETED);
+                    newContent = data.todos.filter(item => item.completed === isComplete);
+                }
+                trax.updateArray(data.filteredTodos, newContent)
+            }
+        }, {
+            processorName: "counters",
+            compute: (data) => {
+                const count = data.todos.filter((todo) => todo.completed).length;
+                data.nbrOfCompletedTodos = count;
+                data.itemsLeft = data.todos.length - count;
+            }
         });
+
         const todos = data.todos;
         let idCount = 0; // counter used to generate unique todo ids
-
-        store.compute("FilteredTodos", () => {
-            let newContent = [];
-            if (data.filter === TodoFilter.ALL) {
-                newContent = todos;
-            } else {
-                const isComplete = (data.filter === TodoFilter.COMPLETED);
-                newContent = todos.filter(item => item.completed === isComplete);
-            }
-            trax.updateArray(data.filteredTodos, newContent)
-        });
-
-        store.compute("Counters", () => {
-            const count = todos.filter((todo) => todo.completed).length;
-            data.nbrOfCompletedTodos = count;
-            data.itemsLeft = todos.length - count;
-        });
 
         const api = {
             /** Todo store data */
@@ -117,7 +120,7 @@ export function createTodoStore() {
                 todos.forEach((item) => {
                     const editing = (item === todo);
                     item.editing = editing;
-                    item.editDescription = editing? item.description : "";
+                    item.editDescription = editing ? item.description : "";
                 });
             },
             /** Stop edit mode for a given todo */

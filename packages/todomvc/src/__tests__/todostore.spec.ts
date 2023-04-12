@@ -2,7 +2,7 @@ import { trax } from '@traxjs/trax';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { createTodoStore, Todo, TodoFilter, TodoStore } from '../todostore';
 
-describe('Todo Store', () => {
+describe('TodoStore', () => {
     let todoStore: TodoStore, data: TodoStore["data"], todos: Todo[];
 
     beforeEach(() => {

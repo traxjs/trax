@@ -29,7 +29,7 @@ export interface Trax {
     /**
      * Create a root store
      * @param id the store id
-     * @param initFunction the function that will be called to initialize the store. This function must 
+     * @param initFunction the function that will be called to initialize the store. This function must
      * define the store "root" object otherwise an error will be generated
      */
     createStore<T extends Object, R>(
@@ -53,27 +53,27 @@ export interface Trax {
     /**
      * Get the unique id associated to a trax object
      * Return an empty string if the object is not a trax object
-     * @param obj 
+     * @param obj
      */
     getTraxId(obj: any): string;
     /**
      * Get the trax type associated to an object
-     * @param obj 
+     * @param obj
      */
     getTraxObjectType(obj: any): TraxObjectType;
     /**
      * Get a processor from its id
-     * @param id 
+     * @param id
      */
     getProcessor(id: string): TraxProcessor | void;
     /**
      * Retrieve a store from its id
-     * @param id 
+     * @param id
      */
     getStore<T>(id: string): Store<T> | void;
     /**
      * Get a trax data object (object / array or dictionary)
-     * @param id 
+     * @param id
      */
     getData<T>(id: string): T | void;
     /**
@@ -95,7 +95,7 @@ export interface Trax {
      */
     processChanges(): void;
     /**
-     * Get a promise that will be fulfilled when trax reconciliation is complete 
+     * Get a promise that will be fulfilled when trax reconciliation is complete
      * (i.e. at the end of the current cycle)
      * If there is no cycle on-going, the promise will be immediately fulfilled
      */
@@ -122,7 +122,7 @@ export interface Trax {
      * Wrapper around Object.keys() that should be used in processors
      * that read objects as dictionaries. This will allow processors to get dirty when
      * properties are added or removed
-     * @param o 
+     * @param o
      */
     getObjectKeys(o: TraxObject): string[];
 }
@@ -150,10 +150,10 @@ export interface Store<T> {
     readonly root: T,
     /**
      * Initialize the root object - must be only called in the store init function
-     * @param computeFunctions optional compute functions associated to the root object. The processor associated to these functions will follow the object life cycle.
-     * @param root 
+     * @param computes optional compute functions associated to the root object. The processor associated to these functions will follow the object life cycle.
+     * @param root
      */
-    init(root: T, ...computeFunctions: TraxObjectComputeFn<T>[]): T;
+    init(root: T, ...computes: (TraxObjectComputeFn<T> | TraxObjectComputeDescriptor<T>)[]): T;
     /**
      * Tell if the store is disposed and should be ignored
      */
@@ -161,7 +161,7 @@ export interface Store<T> {
     /**
      * Create a sub-store
      * @param id the store id
-     * @param initFunction the function that will be called to initialize the store. This function must 
+     * @param initFunction the function that will be called to initialize the store. This function must
      * define the store "root" object otherwise an error will be generated
      */
     createStore<T extends Object, R>(
@@ -176,16 +176,16 @@ export interface Store<T> {
     createStore<T extends Object>(id: TraxIdDef, root: T): Store<T>;
     /**
      * Retrieve a sub-store
-     * @param id 
+     * @param id
      */
     getStore<T>(id: TraxIdDef): Store<T> | void;
     /**
     * Get or create a data object associated to the given id
     * @param id the object id - must be unique with the store scope
     * @param initValue the object init value (empty object if nothing is provided)
-    * @param computeFunctions optional compute functions associated to this object. The processor associated to these functions will follow the object life cycle.
+    * @param computes optional compute functions associated to this object. The processor associated to these functions will follow the object life cycle.
     */
-    add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, ...computeFunctions: TraxObjectComputeFn<T>[]): T;
+    add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, ...computes: (TraxObjectComputeFn<T> | TraxObjectComputeDescriptor<T>)[]): T;
     /**
      * Retrieve a data object/array/dictionary that has been previously created
      * (Doesn't work for processors or stores)
@@ -195,30 +195,30 @@ export interface Store<T> {
     get<T extends Object>(id: TraxIdDef): T | void;
     /**
      * Delete a data object from the store
-     * @param idOrObject 
+     * @param idOrObject
      * @returns true if an object was successfully deleted
      */
     remove<T extends Object>(dataObject: T): boolean;
     /**
      * Create or retrieve a compute processor
      * Processor may be synchronous or asynchronous (cf. $TraxComputeFn)
-     * If a processor with the same id is found, it will be returned instead of creating a new one 
+     * If a processor with the same id is found, it will be returned instead of creating a new one
      * but its compute function will be updated in order to benefit from new closure values that may not exist
      * in the previous function
      * @param id the processor id - must be unique with the store scope
      * @param compute the compute function
-     * @param autoCompute if true (default) the processor will be automatically called after getting dirty. 
+     * @param autoCompute if true (default) the processor will be automatically called after getting dirty.
      *                   (i.e. at the end of a cycle when trax.processChanges() is called)
      *                   If false, the process function will need to be explicitely called (useful for React renderers for instance)
      */
     compute(id: TraxIdDef, compute: TraxComputeFn, autoCompute?: boolean, isRenderer?: boolean): TraxProcessor;
     /**
      * Retrieve a processor created on this store
-     * @param id 
+     * @param id
      */
     getProcessor(id: TraxIdDef): TraxProcessor | void;
-    /** 
-     * Dispose the current store and all its sub-stores and processor 
+    /**
+     * Dispose the current store and all its sub-stores and processor
      * so that they can be garbage collected
      */
     dispose(): boolean;
@@ -226,7 +226,7 @@ export interface Store<T> {
      * Create an async function from a generator function
      * in order to have its logs properly tracked in the trax logger
      * This is meant to be used in store wrapper objects to expose action functions
-     * @param fn 
+     * @param fn
      */
     async<F extends (...args: any[]) => Generator<Promise<any>, any, any>>(fn: F): (...args: Parameters<F>) => Promise<any>;
     /**
@@ -234,7 +234,7 @@ export interface Store<T> {
      * in order to have its logs properly tracked in the trax logger
      * This can be used to define an async block that will be called asychronously (e.g. store async initialization)
      * @param name the name of the function as it should appear in the logs
-     * @param fn 
+     * @param fn
      */
     async<F extends (...args: any[]) => Generator<Promise<any>, any, any>>(name: string, fn: F): (...args: Parameters<F>) => Promise<any>;
 }
@@ -265,6 +265,17 @@ export type TraxComputeFn = (cc: TraxComputeContext) => (void | Generator<Promis
  * compute functions shall not return anything
  */
 export type TraxObjectComputeFn<T> = (o: T, cc: TraxComputeContext) => (void | Generator<Promise<any>, void, any>);
+
+/**
+ * Trax object compute descriptor
+ * Allows to add extra arguments to a compute function
+ */
+export interface TraxObjectComputeDescriptor<T> {
+    /** Processor name (default = argument index in the store.add() call */
+    processorName?: string;
+    /** Compute function */
+    compute: TraxObjectComputeFn<T>;
+}
 
 /**
  * Processor id
@@ -318,7 +329,7 @@ export interface TraxProcessor {
      * @param forceExecution if true compute will be exececuted event if processor is not dirty
      */
     compute(forceExecution?: boolean): void;
-    /** 
+    /**
      * Dispose the current processor to stop further compute and
      * have it garbage collected
      */
@@ -480,7 +491,7 @@ export type LogData = JSONValue;
  * Log Event
  */
 export interface StreamEvent {
-    /** 
+    /**
      * Unique id composed of 2 numbers: cycle id and event count
      * e.g. 42:12 where 42 is the cycle index and 12 the event count within cycle #42
      */
@@ -532,24 +543,24 @@ export interface EventStream {
     event(type: string, data?: LogData, src?: any): void;
     /**
      * Log info data in the trax logs
-     * @param data 
+     * @param data
      */
     info(...data: LogData[]): void;
     /**
      * Log warning data in the trax logs
-     * @param data 
+     * @param data
      */
     warn(...data: LogData[]): void;
     /**
      * Log error data in the trax logs
-     * @param data 
+     * @param data
      */
     error(...data: LogData[]): void;
     /**
      * Create a processing context and raise a start event in the event stream
      * Processing contexts are used to virtually regroup events that occur in a given context
      * Processing contexts can be stacked
-     * @param data data associated with the processing context. Must contain a name (e.g. process name) 
+     * @param data data associated with the processing context. Must contain a name (e.g. process name)
      * and may contain an id (useful for awaitEvent())
      */
     startProcessingContext(data: ProcessingContextData, src?: any): ProcessingContext;
@@ -586,20 +597,20 @@ export interface EventStream {
     /**
      * Await a certain event. Typical usage:
      * await log.await(traxEvents.CycleComplete);
-     * @param eventType 
+     * @param eventType
      * @param targetData [optional] value or fields that should be matched against the event data (depends on the event type)
      */
     awaitEvent(eventType: string | "*", targetData?: string | number | boolean | Record<string, string | number | boolean | RegExp>): Promise<StreamEvent>;
     /**
      * Register an event consumer that will be synchronously called when a given event occurs
      * @param eventType an event type or "*" to listen to all events
-     * @param callback 
+     * @param callback
      * @returns a subcribtion id that will be used to unsubscribe
      */
     subscribe(eventType: string | "*", callback: (e: StreamEvent) => void): SubscriptionId;
     /**
      * Unregister an event consumer
-     * @param subscriptionId 
+     * @param subscriptionId
      * @returns true if the consumer was found and succesfully unregistered
      */
     unsubscribe(subscriptionId: SubscriptionId): boolean;

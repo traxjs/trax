@@ -19,17 +19,17 @@ export interface TraxInternalProcessor extends TraxProcessor {
     /**
      * Notify a property change on one of the objects that the processors
      * registered in its object dependency set
-     * @param objId 
-     * @param propName 
+     * @param objId
+     * @param propName
      * @returns true if the processor turned dirty
      */
     notifyChange(objId: string, propName: string): boolean;
     /**
      * Register a dependency on this processor
      * (Call will be ignored if the processor is not processing)
-     * @param object 
-     * @param objectID 
-     * @param propName 
+     * @param object
+     * @param objectID
+     * @param propName
      */
     registerDependency(object: any, objectID: string, propName: string): void;
     /**
@@ -43,14 +43,13 @@ export interface TraxInternalProcessor extends TraxProcessor {
     compute(forceExecution?: boolean, trigger?: "Init" | "Reconciliation" | "TargetRead" | "DirectCall", reconciliationIdx?: number): void;
     /**
      * Update the compute function associated to a processor (allows to get access to different closure variables)
-     * @param fn 
+     * @param fn
      */
     updateComputeFn(fn: TraxComputeFn | TraxObjectComputeFn<any>): void;
 }
 
 export function createTraxProcessor<T>(
     processorId: string,
-    /** Optional name added to the processor id - useful for object processor as default name is the processor index */
     processorName: string,
     priority: number,
     compute: TraxComputeFn | TraxObjectComputeFn<T>,
@@ -76,8 +75,8 @@ export function createTraxProcessor<T>(
     let computing = false;
     /** Set of property dependencies - e.g. myObjectId.propName  */
     let propDependencies = new Set<string>();
-    /** 
-     * Set of object ids that the processor depends on 
+    /**
+     * Set of object ids that the processor depends on
      * We cannot keep direct object references as it would prevent object garbage collection
      */
     let objectDependencies = new Set<string>();
@@ -268,7 +267,6 @@ export function createTraxProcessor<T>(
                 if (done && maxComputeCount > -1 && computeCount >= maxComputeCount) {
                     pr.dispose();
                 } else {
-                    processorName = cc?.processorName || "";
                     updateDependencies();
                 }
             }

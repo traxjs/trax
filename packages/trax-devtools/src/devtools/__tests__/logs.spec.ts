@@ -112,7 +112,7 @@ describe('Logs', () => {
     }
 
     function logComputeCount(cycleId: number) {
-        const pr = trax.getProcessor(dts.id + "%LogCycle:" + cycleId + "[1]");
+        const pr = trax.getProcessor(dts.id + "%LogCycle:" + cycleId + "[filter]");
         return pr ? pr.computeCount : 0;
     }
 
@@ -774,6 +774,8 @@ describe('Logs', () => {
             expandPCG("1:13", false);
 
             await trax.reconciliation();
+
+            console.log()
 
             expect(logComputeCount(0)).toBe(2);
             expect(logComputeCount(1)).toBe(2);

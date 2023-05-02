@@ -2,7 +2,7 @@ import { createEventStream } from "./eventstream";
 import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
 import { TraxInternalProcessor, createTraxProcessor } from "./processor";
-import { Store, StoreWrapper, Trax, TraxIdDef, TraxProcessor, TraxObjectType, TraxLogTraxProcessingCtxt, traxEvents, TraxComputeFn, TraxEvent, ProcessingContext, TraxProcessorId, TraxObject, TraxObjectComputeFn, TraxObjectComputeDescriptor } from "./types";
+import { Store, StoreWrapper, Trax, TraxIdDef, TraxProcessor, TraxObjectType, TraxLogTraxProcessingCtxt, traxEvents, TraxComputeFn, TraxEvent, ProcessingContext, TraxProcessorId, TraxObject, TraxObjectComputeFn, TraxLazyComputeDescriptor } from "./types";
 
 /** Symbol used to attach meta data to trax objects */
 export const traxMD = Symbol("trax.md");
@@ -824,16 +824,16 @@ export function createTraxEnv(): Trax {
                 addStoreItem(st.id, storeId);
                 return st;
             },
-            init(r: T, ...computes: (TraxObjectComputeFn<T> | TraxObjectComputeDescriptor<T>)[]) {
+            init(r: T, lazyProcessors?: TraxLazyComputeDescriptor<T>) {
                 if (initPhase) {
-                    root = getOrAdd(ROOT, r, true, computes);
+                    root = getOrAdd(ROOT, r, true, lazyProcessors);
                 } else {
                     error(`(${storeId}) Store.init can only be called during the store init phase`);
                 }
                 return root;
             },
-            add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, ...computes: (TraxObjectComputeFn<T> | TraxObjectComputeDescriptor<T>)[]): T {
-                return getOrAdd(id, initValue, false, computes);
+            add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T {
+                return getOrAdd(id, initValue, false, lazyProcessors);
             },
             get<T extends Object>(id: TraxIdDef): T | void {
                 const sid = buildId(id, storeId, false);
@@ -1052,7 +1052,7 @@ export function createTraxEnv(): Trax {
          * @param o
          * @reeturns
          */
-        function getOrAdd<T extends Object>(id: TraxIdDef, o: T, acceptRootId: boolean, computes?: (TraxObjectComputeFn<T> | TraxObjectComputeDescriptor<T>)[]): T {
+        function getOrAdd<T extends Object>(id: TraxIdDef, o: T, acceptRootId: boolean, lazyProcessors?: TraxLazyComputeDescriptor<T>): T {
             let idSuffix = buildIdSuffix(id, storeId);
 
             if (!acceptRootId) {
@@ -1067,27 +1067,15 @@ export function createTraxEnv(): Trax {
                     o = {} as T;
                 }
                 const p = getProxy(buildId(idSuffix, storeId, false), o, storeId);
-                const len = (computes && computes.length) || 0;
-                if (len > 0) {
+
+                if (lazyProcessors !== undefined) {
                     const md = tmd(p)!;
                     const procs: TraxProcessor[] = [];
-                    const names = new Set<string>();
-                    for (let i = 0; len > i; i++) {
-                        const cmp = computes![i];
-                        let pname = "" + i;
-                        let fn: TraxObjectComputeFn<T>;
-                        if (typeof cmp === "object") {
-                            const nm = cmp.processorName;
-                            if (nm && !names.has(nm)) {
-                                pname = nm;
-                            }
-                            fn = cmp.compute;
-                        } else {
-                            fn = cmp;
-                        }
 
-                        const pid = `${storeId}${ID_PROCESSOR_SEPARATOR}${idSuffix}[${pname}]`;
-                        procs.push(createProcessor(pid, pname, fn, p, true, false));
+                    for (const name of Object.getOwnPropertyNames(lazyProcessors)) {
+
+                        const pid = `${storeId}${ID_PROCESSOR_SEPARATOR}${idSuffix}[${name}]`;
+                        procs.push(createProcessor(pid, name, lazyProcessors[name], p, true, false));
                     }
                     md.contentProcessors = procs as TraxInternalProcessor[];
                 }

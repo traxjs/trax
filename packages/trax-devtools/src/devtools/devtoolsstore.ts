@@ -135,24 +135,27 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
             expanded: true,
             matchFilter: true, // computed
             contentSize: 1     // computed
-        }, (logCycle, cc) => {
-            // events ingestion (run once)
-            cc.maxComputeCount = 1; // run once
+        }, {
+            ingest: (logCycle, cc) => {
+                // events ingestion (run once)
+                cc.maxComputeCount = 1; // run once
 
-            const evts: DtLogEvent[] = [];
-            let i = startIdx
-            while (i <= lastIdx) {
-                i = ingestEvent(i, groupEvents, evts, 0);
+                const evts: DtLogEvent[] = [];
+                let i = startIdx
+                while (i <= lastIdx) {
+                    i = ingestEvent(i, groupEvents, evts, 0);
+                }
+                logCycle.events = evts;
+            },
+            filter: (logCycle) => {
+                // decorate events according to logFilters
+                const filter = store.root.logFilters;
+
+                // process the filter for this filter key
+                const sz = filterEvents(logCycle.events, filter);
+                logCycle.contentSize = sz;
+                logCycle.matchFilter = sz > 0;
             }
-            logCycle.events = evts;
-        }, (logCycle) => {
-            // decorate events according to logFilters
-            const filter = store.root.logFilters;
-
-            // process the filter for this filter key
-            const sz = filterEvents(logCycle.events, filter);
-            logCycle.contentSize = sz;
-            logCycle.matchFilter = sz > 0;
         });
 
         logs.push(logCycle);
@@ -251,7 +254,7 @@ function ingestEvent(idx: number, groupEvents: StreamEvent[], parent: DtLogEvent
     return idx + 1;
 }
 
-/** 
+/**
  * Update the contentSize attribute of a list of events according to the given filter and their expanded status
  */
 function filterEvents(events: (DtLogEvent[]) | undefined, filter: DtDevToolsData["logFilters"]): number {

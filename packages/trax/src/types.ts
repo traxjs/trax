@@ -150,10 +150,10 @@ export interface Store<T> {
     readonly root: T,
     /**
      * Initialize the root object - must be only called in the store init function
-     * @param computes optional compute functions associated to the root object. The processor associated to these functions will follow the object life cycle.
+     * @param lazyProcessors optional compute functions associated to the root object. The processor associated to these functions will follow the object life cycle.
      * @param root
      */
-    init(root: T, ...computes: (TraxObjectComputeFn<T> | TraxObjectComputeDescriptor<T>)[]): T;
+    init(root: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T;
     /**
      * Tell if the store is disposed and should be ignored
      */
@@ -183,9 +183,9 @@ export interface Store<T> {
     * Get or create a data object associated to the given id
     * @param id the object id - must be unique with the store scope
     * @param initValue the object init value (empty object if nothing is provided)
-    * @param computes optional compute functions associated to this object. The processor associated to these functions will follow the object life cycle.
+    * @param lazyProcessors optional compute functions associated to this object. The processor associated to these functions will follow the object life cycle.
     */
-    add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, ...computes: (TraxObjectComputeFn<T> | TraxObjectComputeDescriptor<T>)[]): T;
+    add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T;
     /**
      * Retrieve a data object/array/dictionary that has been previously created
      * (Doesn't work for processors or stores)
@@ -245,7 +245,7 @@ export interface Store<T> {
  */
 export interface TraxComputeContext {
     readonly processorId: string;
-    processorName: string;
+    readonly processorName: string;
     readonly computeCount: number;
     maxComputeCount: number;
 }
@@ -275,6 +275,13 @@ export interface TraxObjectComputeDescriptor<T> {
     processorName?: string;
     /** Compute function */
     compute: TraxObjectComputeFn<T>;
+}
+
+/**
+ * Ordered map of lazy compute processors associated to a trax object
+ */
+export interface TraxLazyComputeDescriptor<T> {
+    [computeName: string]: TraxObjectComputeFn<T>;
 }
 
 /**

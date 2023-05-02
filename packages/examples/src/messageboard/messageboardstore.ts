@@ -54,8 +54,7 @@ export function createMessageBoardStore(msgStore?: MessageStore, usrStore?: User
                         authorAvatar: "",
                         messages: []
                     }, {
-                        processorName: "authorInfo",
-                        compute: function* (g) {
+                        authorInfo: function* (g) {
                             const user: User | null = yield userStore.getUser(g!.authorId);
                             if (user) {
                                 g!.authorName = user.name;

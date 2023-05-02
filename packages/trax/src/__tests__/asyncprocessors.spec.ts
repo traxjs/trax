@@ -509,10 +509,16 @@ describe('Async processors', () => {
     describe('Store.add', () => {
         it('should allow to create sync and async root object processors on init', async () => {
             const pstore = trax.createStore("PStore", (store: Store<Person>) => {
-                const p = store.init({ firstName: "Homer", lastName: "Simpson" }, function* (person) {
-                    person.prettyName = yield getFriendlyName(person.firstName);
-                }, (person) => {
-                    person.prettyNameLength = (person.prettyName || "").length;
+                const p = store.init({
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                }, {
+                    prettyName: function* (person) {
+                        person.prettyName = yield getFriendlyName(person.firstName);
+                    },
+                    prettyNameLength: (person) => {
+                        person.prettyNameLength = (person.prettyName || "").length;
+                    }
                 });
             });
             const proot = pstore.root;
@@ -522,10 +528,10 @@ describe('Async processors', () => {
             }, true, true);
 
             const rootId = "PStore/root";
-            const processorId = "PStore%root[0]";
+            const processorId = "PStore%root[prettyName]";
 
             expect(trax.getTraxId(pstore.root)).toBe(rootId);
-            const pr = pstore.getProcessor("root[0]");
+            const pr = pstore.getProcessor("root[prettyName]");
             expect(pr).not.toBe(undefined);
             expect(pr!.id).toBe(processorId);
             expect(output).toBe("VIEW: [empty]");
@@ -548,10 +554,16 @@ describe('Async processors', () => {
         it('should allow to create and dispose multiple processors on add', async () => {
             const fstore = trax.createStore("FStore", (store: Store<SimpleFamilyStore>) => {
                 const root = store.init({});
-                const f = store.add<Person>("Father", { firstName: "Homer", lastName: "Simpson" }, function* (o) {
-                    o.prettyName = yield getFriendlyName(o.firstName);
-                }, (o) => {
-                    o.prettyNameLength = (o.prettyName || "").length;
+                const f = store.add<Person>("Father", {
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                }, {
+                    pn: function* (o) {
+                        o.prettyName = yield getFriendlyName(o.firstName);
+                    },
+                    pnLength: (o) => {
+                        o.prettyNameLength = (o.prettyName || "").length;
+                    }
                 });
                 root.father = f;
             });
@@ -587,8 +599,8 @@ describe('Async processors', () => {
                 "6:2 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
                 "6:3 !GET - FStore/Father.prettyNameLength -> 11",
                 "6:4 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
-                "6:5 !DEL - FStore%Father[0]",
-                "6:6 !DEL - FStore%Father[1]",
+                "6:5 !DEL - FStore%Father[pn]",
+                "6:6 !DEL - FStore%Father[pnLength]",
                 "6:7 !DEL - FStore/Father",
                 "6:8 !GET - FStore/root.father -> {\"firstName\":\"H\",\"lastName\":\"Simpson\",\"prettyNameLength\":11,\"prettyName\":\"Friendly(H)\"}",
                 "6:9 !GET - FStore/root.father -> {\"firstName\":\"HOMER\",\"lastName\":\"Simpson\",\"prettyNameLength\":11,\"prettyName\":\"Friendly(H)\"}",
@@ -672,29 +684,34 @@ describe('Async processors', () => {
             let lastIds: string[] = [], lastCounts: number[] = [];
 
             const pstore = trax.createStore("PStore", (store: Store<Person>,) => {
-                store.init({ firstName: "Homer", lastName: "Simpson" }, function* (p, cc) {
-                    cc.maxComputeCount = 2;
-                    lastIds.push(cc.processorId);
-                    lastCounts.push(cc.computeCount);
-                    const ffn: string = yield getFriendlyName(p.firstName);
-                    let nm = ffn + " " + p.lastName;
-                    lastIds.push(cc.processorId);
-                    lastCounts.push(cc.computeCount);
-                    p.prettyName = nm;
-                    p.prettyNameLength = nm.length;
+                store.init({
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                }, {
+                    prettyNames: function* (p, cc) {
+                        cc.maxComputeCount = 2;
+                        lastIds.push(cc.processorId);
+                        lastCounts.push(cc.computeCount);
+                        const ffn: string = yield getFriendlyName(p.firstName);
+                        let nm = ffn + " " + p.lastName;
+                        lastIds.push(cc.processorId);
+                        lastCounts.push(cc.computeCount);
+                        p.prettyName = nm;
+                        p.prettyNameLength = nm.length;
+                    }
                 });
             });
 
-            const processorId = "PStore%root[0]";
+            const processorId = "PStore%root[prettyNames]";
             const p = pstore.root;
-            const pr = pstore.getProcessor("root[0]")!;
+            const pr = pstore.getProcessor("root[prettyNames]")!;
             expect(lastIds).toMatchObject([]); // lazy
             expect(pr.id).toBe(processorId);
             expect(pr.computeCount).toBe(0); // lazy
             expect(pr.disposed).toBe(false);
             expect(lastCounts).toMatchObject([]); // lazy
             expect(p.prettyName).toBe(undefined); // triggers the processor
-            expect(pstore.getProcessor("root[0]")).toBe(pr);
+            expect(pstore.getProcessor("root[prettyNames]")).toBe(pr);
             expect(trax.getProcessor(processorId)).toBe(pr);
             expect(lastCounts).toMatchObject([1]);
 

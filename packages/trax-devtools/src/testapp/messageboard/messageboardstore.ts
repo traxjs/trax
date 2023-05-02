@@ -38,7 +38,7 @@ export function createMessageBoardStore(msgStore?: MessageStore, usrStore?: User
         trax.log.error("Sample error message...");
 
         store.compute("MessageGroups", () => {
-            // we need to clone messages as sort mutates the array 
+            // we need to clone messages as sort mutates the array
             // and we don't want to sort the messageStore collection
             const messages = messageStoreMsgs.slice(0);
             messages.sort((m1, m2) => m1.timeStamp - m2.timeStamp);
@@ -51,20 +51,20 @@ export function createMessageBoardStore(msgStore?: MessageStore, usrStore?: User
                 if (!currentMsgGroup || currentMsgGroup.authorId !== msg.authorId) {
                     updateCurrentMsgGroup();
 
-                    // get or create a new group for this User/message
                     currentMsgGroup = store.add(["Group", msg.authorId, msg.id], {
                         authorId: msg.authorId,
                         authorName: "", // empty until initialized
                         authorStatus: "Unknown" as User["status"],
                         authorAvatar: "",
                         messages: []
-                    }, function* (g) {
-                        // AuthorInfo
-                        const user: User | null = yield userStore.getUser(g!.authorId);
-                        if (user) {
-                            g!.authorName = user.name;
-                            g!.authorStatus = user.status;
-                            g!.authorAvatar = user.avatar;
+                    }, {
+                        authorInfo: function* (g) {
+                            const user: User | null = yield userStore.getUser(g!.authorId);
+                            if (user) {
+                                g!.authorName = user.name;
+                                g!.authorStatus = user.status;
+                                g!.authorAvatar = user.avatar;
+                            }
                         }
                     });
                     groups.push(currentMsgGroup);

@@ -49,8 +49,7 @@ export function createTodoStore() {
             nbrOfCompletedTodos: 0,
             itemsLeft: 0
         }, {
-            processorName: "filteredTodos",
-            compute: (data) => {
+            filteredTodos: (data) => {
                 let newContent = [];
                 if (data.filter === TodoFilter.ALL) {
                     newContent = data.todos;
@@ -59,10 +58,8 @@ export function createTodoStore() {
                     newContent = data.todos.filter(item => item.completed === isComplete);
                 }
                 trax.updateArray(data.filteredTodos, newContent)
-            }
-        }, {
-            processorName: "counters",
-            compute: (data) => {
+            },
+            counters: (data) => {
                 const count = data.todos.filter((todo) => todo.completed).length;
                 data.nbrOfCompletedTodos = count;
                 data.itemsLeft = data.todos.length - count;

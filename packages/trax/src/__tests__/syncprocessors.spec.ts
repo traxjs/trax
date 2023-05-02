@@ -887,10 +887,15 @@ describe('Sync Processors', () => {
     describe('Lazy Compute', () => {
         it('store.init should allow to create a root object processor', async () => {
             const pstore = trax.createStore("PStore", (store: Store<Person>) => {
-                const p = store.init({ firstName: "Homer", lastName: "Simpson" }, (person) => {
-                    const nm = person.firstName + " " + person.lastName;
-                    person.prettyName = nm;
-                    person.prettyNameLength = nm.length;
+                store.init({
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                }, {
+                    prettyNames: (person) => {
+                        const nm = person.firstName + " " + person.lastName;
+                        person.prettyName = nm;
+                        person.prettyNameLength = nm.length;
+                    }
                 });
             });
             const proot = pstore.root;
@@ -900,10 +905,10 @@ describe('Sync Processors', () => {
             }, true, true);
 
             const rootId = "PStore/root";
-            const processorId = "PStore%root[0]";
+            const processorId = "PStore%root[prettyNames]";
 
             expect(trax.getTraxId(pstore.root)).toBe(rootId);
-            const pr = pstore.getProcessor("root[0]");
+            const pr = pstore.getProcessor("root[prettyNames]");
             expect(pr).not.toBe(undefined);
             expect(pr!.id).toBe(processorId);
             expect(output).toBe("VIEW: Homer Simpson");
@@ -916,96 +921,77 @@ describe('Sync Processors', () => {
         });
 
         it('store.init should allow to create multiple root object processors', async () => {
+            let count1 = 0, count2 = 0;
             const pstore = trax.createStore("PStore", (store: Store<Person>) => {
-                const p = store.init({ firstName: "Homer", lastName: "Simpson" }, (person) => {
-                    const nm = person.firstName + " " + person.lastName;
-                    person.prettyName = nm;
-                }, (person) => {
-                    person.prettyNameLength = (person.prettyName || "").length;
+                const p = store.init({
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                }, {
+                    prettyName: (person) => {
+                        count1++;
+                        const nm = person.firstName + " " + person.lastName;
+                        person.prettyName = nm;
+                    },
+                    prettyNameLength: (person) => {
+                        count2++;
+                        person.prettyNameLength = (person.prettyName || "").length;
+                    }
                 });
             });
             const proot = pstore.root;
             let output = "";
-            pstore.compute("Render", () => {
+            expect(count1).toBe(0);
+            expect(count2).toBe(0);
+            const r1 = pstore.compute("Render", () => {
                 output = "VIEW: " + proot.prettyName;
             }, true, true);
+            expect(count1).toBe(1);
+            expect(count2).toBe(1);
 
             expect(output).toBe("VIEW: Homer Simpson");
             expect(proot.prettyNameLength).toBe(13);
+            expect(count1).toBe(1);
+            expect(count2).toBe(1);
 
             proot.firstName = "H";
+            expect(count1).toBe(1);
+            expect(count2).toBe(1);
             await trax.reconciliation();
+            expect(count1).toBe(2);
+            expect(count2).toBe(2);
             expect(output).toBe("VIEW: H Simpson");
             expect(proot.prettyNameLength).toBe(9);
+
+            r1.dispose();
+            proot.firstName = "HOMER";
+            expect(count1).toBe(2);
+            expect(count2).toBe(2);
+            await trax.reconciliation();
+            expect(count1).toBe(2); // dirty but not called
+            expect(count2).toBe(2);
+
+            const r2 = pstore.compute("Render", () => {
+                output = "VIEW2: " + proot.prettyName;
+            }, true, true);
+            expect(count1).toBe(3);
+            expect(count2).toBe(3);
+            expect(output).toBe("VIEW2: HOMER Simpson");
         });
 
         it('store.add should allow to create and dipose multiple processors', async () => {
             let nm1 = "", nm2 = "";
             const fstore = trax.createStore("FStore", (store: Store<SimpleFamilyStore>) => {
                 const root = store.init({ childNames: "S" });
-                const f = store.add<Person>("Father", { firstName: "Homer", lastName: "Simpson" }, (o, cc) => {
-                    o.prettyName = o.firstName + "/" + o.lastName + "/" + root.childNames;
-                    nm1 = cc.processorName;
+
+                const f = store.add<Person>("Father", {
+                    firstName: "Homer",
+                    lastName: "Simpson"
                 }, {
-                    // no name: compute index is used instead
-                    compute: (o, cc) => {
-                        o.prettyNameLength = (o.prettyName || "").length;
-                        nm2 = cc.processorName;
-                    }
-                });
-                root.father = f;
-            });
-            const fam = fstore.root;
-            let output = "";
-            fstore.compute("Render", () => {
-                output = "VIEW: " + fam.father!.prettyName;
-            }, true, true);
-
-            expect(output).toBe("VIEW: Homer/Simpson/S");
-            expect(fam.father!.prettyNameLength).toBe(15);
-            expect(nm1).toBe("0");
-            expect(nm2).toBe("1");
-            expect(trax.isTraxObject(fam.father)).toBe(true);
-
-            fam.childNames = "SIMS"
-            await trax.reconciliation();
-            expect(output).toBe("VIEW: Homer/Simpson/SIMS");
-            expect(fam.father!.prettyNameLength).toBe(18);
-            expect(nm1).toBe("0");
-            expect(nm2).toBe("1");
-
-            const father = fam.father!;
-            fstore.remove(father);
-            // warnint: cannot call fam.father here otherwise it may re-wrap the object
-            expect(trax.isTraxObject(father)).toBe(false);
-
-            fam.childNames = "S"
-            await trax.reconciliation();
-
-            expect(printLogs(1)).toMatchObject([
-                "1:1 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
-                "1:2 !GET - FStore/Father.prettyNameLength -> 18",
-                "1:3 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
-                "1:4 !DEL - FStore%Father[0]",
-                "1:5 !DEL - FStore%Father[1]",
-                "1:6 !DEL - FStore/Father",
-                "1:7 !SET - FStore/root.childNames = 'S' (prev: 'SIMS')",
-                // no call to FStore%Father[0] or FStore%Father[1]
-            ]);
-        });
-
-        it('store.add should allow to create and dipose multiple processors (object form)', async () => {
-            let nm2 = "";
-            const fstore = trax.createStore("FStore", (store: Store<SimpleFamilyStore>) => {
-                const root = store.init({ childNames: "S" });
-                const f = store.add<Person>("Father", { firstName: "Homer", lastName: "Simpson" }, {
-                    processorName: "prettyName",
-                    compute: (o) => {
+                    pn: (o, cc) => {
                         o.prettyName = o.firstName + "/" + o.lastName + "/" + root.childNames;
-                    }
-                }, {
-                    processorName: "prettyNameLength",
-                    compute: (o, cc) => {
+                        nm1 = cc.processorName;
+                    },
+                    pnl: (o, cc) => {
                         o.prettyNameLength = (o.prettyName || "").length;
                         nm2 = cc.processorName;
                     }
@@ -1020,14 +1006,16 @@ describe('Sync Processors', () => {
 
             expect(output).toBe("VIEW: Homer/Simpson/S");
             expect(fam.father!.prettyNameLength).toBe(15);
-            expect(nm2).toBe("prettyNameLength");
+            expect(nm1).toBe("pn");
+            expect(nm2).toBe("pnl");
             expect(trax.isTraxObject(fam.father)).toBe(true);
 
             fam.childNames = "SIMS"
             await trax.reconciliation();
             expect(output).toBe("VIEW: Homer/Simpson/SIMS");
             expect(fam.father!.prettyNameLength).toBe(18);
-            expect(nm2).toBe("prettyNameLength");
+            expect(nm1).toBe("pn");
+            expect(nm2).toBe("pnl");
 
             const father = fam.father!;
             fstore.remove(father);
@@ -1041,8 +1029,8 @@ describe('Sync Processors', () => {
                 "1:1 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
                 "1:2 !GET - FStore/Father.prettyNameLength -> 18",
                 "1:3 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
-                "1:4 !DEL - FStore%Father[prettyName]",
-                "1:5 !DEL - FStore%Father[prettyNameLength]",
+                "1:4 !DEL - FStore%Father[pn]",
+                "1:5 !DEL - FStore%Father[pnl]",
                 "1:6 !DEL - FStore/Father",
                 "1:7 !SET - FStore/root.childNames = 'S' (prev: 'SIMS')",
                 // no call to FStore%Father[0] or FStore%Father[1]
@@ -1052,10 +1040,16 @@ describe('Sync Processors', () => {
         it('should not be reprocessed when listeners get disposed', async () => {
             const fstore = trax.createStore("FStore", (store: Store<SimpleFamilyStore>) => {
                 const root = store.init({ childNames: "S" });
-                const f = store.add<Person>("Father", { firstName: "Homer", lastName: "Simpson" }, (o) => {
-                    o.prettyName = o.firstName + "/" + o.lastName + "/" + root.childNames;
-                }, (o) => {
-                    o.prettyNameLength = (o.prettyName || "").length;
+                const f = store.add<Person>("Father", {
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                }, {
+                    prettyName: (o) => {
+                        o.prettyName = o.firstName + "/" + o.lastName + "/" + root.childNames;
+                    },
+                    prettyNameLength: (o) => {
+                        o.prettyNameLength = (o.prettyName || "").length;
+                    }
                 });
                 root.father = f;
             });
@@ -1071,22 +1065,22 @@ describe('Sync Processors', () => {
                 "0:2 !NEW - S: FStore",
                 "0:3 !NEW - O: FStore/root",
                 "0:4 !NEW - O: FStore/Father",
-                "0:5 !NEW - P: FStore%Father[0]",
-                "0:6 !SKP - FStore%Father[0]", // Skip
-                "0:7 !NEW - P: FStore%Father[1]",
-                "0:8 !SKP - FStore%Father[1]", // Skip
+                "0:5 !NEW - P: FStore%Father[prettyName]",
+                "0:6 !SKP - FStore%Father[prettyName]",
+                "0:7 !NEW - P: FStore%Father[prettyNameLength]",
+                "0:8 !SKP - FStore%Father[prettyNameLength]",
                 "0:9 !SET - FStore/root.father = '[TRAX FStore/Father]' (prev: undefined)",
                 "0:10 !PCE - 0:1",
                 "0:11 !NEW - P: FStore%Render",
                 "0:12 !PCS - !Compute #1 (FStore%Render) P3 Init R",
                 "0:13 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
-                "0:14 !PCS - !Compute #1 (FStore%Father[0]) P1 TargetRead - parentId=0:12", // Compute triggered through target read
+                "0:14 !PCS - !Compute #1 (FStore%Father[prettyName]) P1 TargetRead - parentId=0:12",
                 "0:15 !GET - FStore/Father.firstName -> 'Homer'",
                 "0:16 !GET - FStore/Father.lastName -> 'Simpson'",
                 "0:17 !GET - FStore/root.childNames -> 'S'",
                 "0:18 !SET - FStore/Father.prettyName = 'Homer/Simpson/S' (prev: undefined)",
                 "0:19 !PCE - 0:14",
-                "0:20 !PCS - !Compute #1 (FStore%Father[1]) P2 TargetRead - parentId=0:12",
+                "0:20 !PCS - !Compute #1 (FStore%Father[prettyNameLength]) P2 TargetRead - parentId=0:12",
                 "0:21 !GET - FStore/Father.prettyName -> 'Homer/Simpson/S'",
                 "0:22 !SET - FStore/Father.prettyNameLength = 15 (prev: undefined)",
                 "0:23 !PCE - 0:20",
@@ -1102,17 +1096,17 @@ describe('Sync Processors', () => {
             expect(printLogs(1)).toMatchObject([
                 "1:1 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
                 "1:2 !SET - FStore/Father.lastName = 'SIMPSON' (prev: 'Simpson')",
-                "1:3 !DRT - FStore%Father[0] <- FStore/Father.lastName",
+                "1:3 !DRT - FStore%Father[prettyName] <- FStore/Father.lastName",
                 "1:4 !PCS - !Reconciliation #1 - 3 processors",
-                "1:5 !PCS - !Compute #2 (FStore%Father[0]) P1 Reconciliation - parentId=1:4", // Compute triggered through reconciliation because we have a listener
+                "1:5 !PCS - !Compute #2 (FStore%Father[prettyName]) P1 Reconciliation - parentId=1:4", // Compute triggered through reconciliation because we have a listener
                 "1:6 !GET - FStore/Father.firstName -> 'Homer'",
                 "1:7 !GET - FStore/Father.lastName -> 'SIMPSON'",
                 "1:8 !GET - FStore/root.childNames -> 'S'",
                 "1:9 !SET - FStore/Father.prettyName = 'Homer/SIMPSON/S' (prev: 'Homer/Simpson/S')",
                 "1:10 !DRT - FStore%Render <- FStore/Father.prettyName",
-                "1:11 !DRT - FStore%Father[1] <- FStore/Father.prettyName",
+                "1:11 !DRT - FStore%Father[prettyNameLength] <- FStore/Father.prettyName",
                 "1:12 !PCE - 1:5",
-                "1:13 !PCS - !Compute #2 (FStore%Father[1]) P2 Reconciliation - parentId=1:4",
+                "1:13 !PCS - !Compute #2 (FStore%Father[prettyNameLength]) P2 Reconciliation - parentId=1:4",
                 "1:14 !GET - FStore/Father.prettyName -> 'Homer/SIMPSON/S'",
                 "1:15 !PCE - 1:13",
                 "1:16 !PCS - !Compute #2 (FStore%Render) P3 Reconciliation R - parentId=1:4",
@@ -1131,9 +1125,9 @@ describe('Sync Processors', () => {
                 "2:1 !DEL - FStore%Render",
                 "2:2 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
                 "2:3 !SET - FStore/Father.lastName = 'SimpsonSimpson' (prev: 'SIMPSON')",
-                "2:4 !DRT - FStore%Father[0] <- FStore/Father.lastName",
+                "2:4 !DRT - FStore%Father[prettyName] <- FStore/Father.lastName",
                 "2:5 !PCS - !Reconciliation #2 - 2 processors",
-                "2:6 !SKP - FStore%Father[0]", // No processing -> processors stay dirty
+                "2:6 !SKP - FStore%Father[prettyName]", // No processing -> processors stay dirty
                 "2:7 !PCE - 2:5",
             ]);
 
@@ -1150,14 +1144,14 @@ describe('Sync Processors', () => {
                 "3:1 !NEW - P: FStore%Render2",
                 "3:2 !PCS - !Compute #1 (FStore%Render2) P4 Init R",
                 "3:3 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
-                "3:4 !PCS - !Compute #3 (FStore%Father[0]) P1 TargetRead - parentId=3:2",
+                "3:4 !PCS - !Compute #3 (FStore%Father[prettyName]) P1 TargetRead - parentId=3:2",
                 "3:5 !GET - FStore/Father.firstName -> 'Homer'",
                 "3:6 !GET - FStore/Father.lastName -> 'SimpsonSimpson'",
                 "3:7 !GET - FStore/root.childNames -> 'S'",
                 "3:8 !SET - FStore/Father.prettyName = 'Homer/SimpsonSimpson/S' (prev: 'Homer/SIMPSON/S')",
-                "3:9 !DRT - FStore%Father[1] <- FStore/Father.prettyName",
+                "3:9 !DRT - FStore%Father[prettyNameLength] <- FStore/Father.prettyName",
                 "3:10 !PCE - 3:4",
-                "3:11 !PCS - !Compute #3 (FStore%Father[1]) P2 TargetRead - parentId=3:2",
+                "3:11 !PCS - !Compute #3 (FStore%Father[prettyNameLength]) P2 TargetRead - parentId=3:2",
                 "3:12 !GET - FStore/Father.prettyName -> 'Homer/SimpsonSimpson/S'",
                 "3:13 !SET - FStore/Father.prettyNameLength = 22 (prev: 15)",
                 "3:14 !PCE - 3:11",
@@ -1195,71 +1189,30 @@ describe('Sync Processors', () => {
                 "5:1 !DEL - FStore%Render3",
                 "5:2 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
                 "5:3 !SET - FStore/Father.lastName = 'Sim3' (prev: 'Sim2')",
-                "5:4 !DRT - FStore%Father[0] <- FStore/Father.lastName",
+                "5:4 !DRT - FStore%Father[prettyName] <- FStore/Father.lastName",
                 "5:5 !PCS - !Reconciliation #5 - 2 processors",
-                "5:6 !SKP - FStore%Father[0]",
+                "5:6 !SKP - FStore%Father[prettyName]",
                 "5:7 !PCE - 5:5",
             ]);
         });
 
-        it('should allow to update the processor name', async () => {
+        it('should not allow to update the processor name', async () => {
             let id1 = "", id2 = "", name1 = "", name2 = ""
             const pstore = trax.createStore("PStore", (store: Store<Person>) => {
-                const p = store.init({ firstName: "Homer", lastName: "Simpson" }, (person, cc) => {
-                    id1 = cc.processorId;
-                    name1 = cc.processorName;
-                    const nm = person.firstName + " " + person.lastName;
-                    person.prettyName = nm;
-                }, (person, cc) => {
-                    id2 = cc.processorId;
-                    name2 = cc.processorName;
-                    cc.processorName = "PrettyNameLength";
-                    person.prettyNameLength = (person.prettyName || "").length;
-                });
-            });
-            const proot = pstore.root;
-            let output = "";
-            pstore.compute("Render", () => {
-                output = "VIEW: " + proot.prettyName;
-            }, true, true);
-
-            expect(output).toBe("VIEW: Homer Simpson");
-            expect(proot.prettyNameLength).toBe(13);
-
-            expect(id1).toBe("PStore%root[0]");
-            expect(id2).toBe("PStore%root[1]");
-            expect(name1).toBe("0");
-            expect(name2).toBe("1");
-            await trax.reconciliation();
-
-            proot.firstName = "H";
-            await trax.reconciliation();
-
-            expect(output).toBe("VIEW: H Simpson");
-            expect(proot.prettyNameLength).toBe(9);
-
-            expect(name1).toBe("0");
-            expect(name2).toBe("PrettyNameLength");
-            expect(id1).toBe("PStore%root[0]");
-            expect(id2).toBe("PStore%root[1]");
-        });
-
-        it('should allow to update the processor name (init with ComputeDescriptors)', async () => {
-            let id1 = "", id2 = "", name1 = "", name2 = ""
-            const pstore = trax.createStore("PStore", (store: Store<Person>) => {
-                const p = store.init({ firstName: "Homer", lastName: "Simpson" }, {
-                    processorName: "", // empty -> will be ignored
-                    compute: (person, cc) => {
+                const p = store.init({
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                }, {
+                    prettyName: (person, cc) => {
                         id1 = cc.processorId;
                         name1 = cc.processorName;
                         const nm = person.firstName + " " + person.lastName;
                         person.prettyName = nm;
-                    }
-                }, {
-                    processorName: "prettyNameLength",
-                    compute: (person, cc) => {
+                    },
+                    prettyNameLength: (person, cc) => {
                         id2 = cc.processorId;
                         name2 = cc.processorName;
+                        (cc as any).processorName = "PrettyNameLength2";
                         person.prettyNameLength = (person.prettyName || "").length;
                     }
                 });
@@ -1273,9 +1226,9 @@ describe('Sync Processors', () => {
             expect(output).toBe("VIEW: Homer Simpson");
             expect(proot.prettyNameLength).toBe(13);
 
-            expect(id1).toBe("PStore%root[0]");
+            expect(id1).toBe("PStore%root[prettyName]");
             expect(id2).toBe("PStore%root[prettyNameLength]");
-            expect(name1).toBe("0");
+            expect(name1).toBe("prettyName");
             expect(name2).toBe("prettyNameLength");
             await trax.reconciliation();
 
@@ -1285,9 +1238,9 @@ describe('Sync Processors', () => {
             expect(output).toBe("VIEW: H Simpson");
             expect(proot.prettyNameLength).toBe(9);
 
-            expect(name1).toBe("0");
-            expect(name2).toBe("prettyNameLength");
-            expect(id1).toBe("PStore%root[0]");
+            expect(name1).toBe("prettyName");
+            expect(name2).toBe("prettyNameLength"); // not PrettyNameLength2
+            expect(id1).toBe("PStore%root[prettyName]");
             expect(id2).toBe("PStore%root[prettyNameLength]");
         });
     });
@@ -1432,26 +1385,31 @@ describe('Sync Processors', () => {
         it('should be called when maxComputeCount is reached through store.init', async () => {
             let lastId = "", lastCount = -1;
             const pstore = trax.createStore("PStore", (store: Store<Person>) => {
-                store.init({ firstName: "Homer", lastName: "Simpson" }, (p, cc) => {
-                    cc.maxComputeCount = 2;
-                    lastId = cc.processorId;
-                    lastCount = cc.computeCount;
-                    let nm = p.firstName + " " + p.lastName;
-                    p.prettyName = nm;
-                    p.prettyNameLength = nm.length;
+                store.init({
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                }, {
+                    prettyNames: (p, cc) => {
+                        cc.maxComputeCount = 2;
+                        lastId = cc.processorId;
+                        lastCount = cc.computeCount;
+                        let nm = p.firstName + " " + p.lastName;
+                        p.prettyName = nm;
+                        p.prettyNameLength = nm.length;
+                    }
                 });
             });
-            const processorId = "PStore%root[0]";
+            const processorId = "PStore%root[prettyNames]";
 
             const p = pstore.root;
-            const pr = pstore.getProcessor("root[0]")!;
+            const pr = pstore.getProcessor("root[prettyNames]")!;
             expect(lastId).toBe(""); // lazy call
             expect(pr.id).toBe(processorId);
             expect(pr.computeCount).toBe(0);
             expect(pr.disposed).toBe(false);
             expect(p.prettyName).toBe("Homer Simpson");
             expect(pr.computeCount).toBe(1); // read triggered compute
-            expect(pstore.getProcessor("root[0]")).toBe(pr);
+            expect(pstore.getProcessor("root[prettyNames]")).toBe(pr);
             expect(trax.getProcessor(processorId)).toBe(pr);
             expect(lastCount).toBe(1);
 
@@ -1475,7 +1433,7 @@ describe('Sync Processors', () => {
             expect(lastCount).toBe(2);
             expect(pr.disposed).toBe(true);
 
-            expect(pstore.getProcessor("root[0]")).toBe(undefined);
+            expect(pstore.getProcessor("root[prettyNames]")).toBe(undefined);
             expect(trax.getProcessor(processorId)).toBe(undefined);
             expect(pstore.getProcessor(processorId)).toBe(undefined);
 
@@ -1498,16 +1456,21 @@ describe('Sync Processors', () => {
             const fstore = trax.createStore("FStore", (store: Store<SimpleFamilyStore>) => {
                 const root = store.init({ childNames: "S" });
 
-                const f = store.add<Person>("Father", { firstName: "Homer", lastName: "Simpson" }, (o, cc) => {
-                    lastIds.push(cc.processorId);
-                    lastCounts.push(cc.computeCount);
-                    cc.maxComputeCount = 2;
-                    o.prettyName = o.firstName + "/" + o.lastName + "/" + root.childNames;
+                const f = store.add<Person>("Father", {
+                    firstName: "Homer",
+                    lastName: "Simpson"
+                }, {
+                    prettyName: (o, cc) => {
+                        lastIds.push(cc.processorId);
+                        lastCounts.push(cc.computeCount);
+                        cc.maxComputeCount = 2;
+                        o.prettyName = o.firstName + "/" + o.lastName + "/" + root.childNames;
+                    }
                 });
                 root.father = f;
             });
 
-            const processorId = "FStore%Father[0]";
+            const processorId = "FStore%Father[prettyName]";
             const pr = trax.getProcessor(processorId);
             const f = fstore.root.father!;
             expect(f.prettyName).toBe("Homer/Simpson/S");
@@ -1515,7 +1478,7 @@ describe('Sync Processors', () => {
             expect(lastCounts).toMatchObject([1]);
             expect(pr).not.toBe(undefined);
             expect(pr!.disposed).toBe(false);
-            expect(fstore.getProcessor("Father[0]")).toBe(pr);
+            expect(fstore.getProcessor("Father[prettyName]")).toBe(pr);
 
             await trax.reconciliation();
             f.firstName = "H";
@@ -1524,7 +1487,7 @@ describe('Sync Processors', () => {
             expect(lastIds).toMatchObject([processorId, processorId]);
             expect(lastCounts).toMatchObject([1, 2]);
             expect(pr!.disposed).toBe(true);
-            expect(fstore.getProcessor("Father[0]")).toBe(undefined);
+            expect(fstore.getProcessor("Father[prettyName]")).toBe(undefined);
 
             f.firstName = "HOMER";
             await trax.reconciliation();

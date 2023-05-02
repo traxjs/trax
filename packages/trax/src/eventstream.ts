@@ -1,4 +1,4 @@
-import { traxMD } from "./core";
+import { tmd } from "./core";
 import { LinkedList } from "./linkedlist";
 import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, TraxLogTraxProcessingCtxt, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet, TraxLogObjectCreate, TraxLogObjectDispose, TraxLogProcSkipped } from "./types";
 
@@ -13,8 +13,8 @@ type awaitResolve = (e: StreamEvent) => boolean;
 /**
  * Create an event stream
  * The key passed as argument will be used to authorize events with reserved types
- * @param internalSrcKey 
- * @returns 
+ * @param internalSrcKey
+ * @returns
  */
 export function createEventStream(internalSrcKey: any, dataStringifier?: (data: any) => string, onCycleComplete?: () => void): EventStream {
     let size = 0;
@@ -381,7 +381,7 @@ function format(internalSrcKey: any, entry: StreamListEvent, type: string, dataS
             && type !== traxEvents.Error
             && type !== traxEvents.Warning
             && type !== traxEvents.Info) {
-            // reserved 
+            // reserved
             hasError = true;
             errMsg = "Event type cannot start with reserved prefix: " + type;
         } else {
@@ -470,7 +470,8 @@ function stringify(v: any) {
     } else if (v === null) {
         return "null";
     } else if (typeof v === "object") {
-        if (v[traxMD]) return v[traxMD].id;
+        const md = tmd(v);
+        if (md) return md.id;
         return JSON.stringify(v);
     } else if (typeof v === "string") {
         return "'" + v.replace(/\'/g, "\\'") + "'"

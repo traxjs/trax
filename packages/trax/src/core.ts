@@ -5,9 +5,9 @@ import { TraxInternalProcessor, createTraxProcessor } from "./processor";
 import { Store, StoreWrapper, Trax, TraxIdDef, TraxProcessor, TraxObjectType, TraxLogTraxProcessingCtxt, traxEvents, TraxComputeFn, TraxEvent, ProcessingContext, TraxProcessorId, TraxObject, TraxObjectComputeFn, TraxLazyComputeDescriptor } from "./types";
 
 /** Symbol used to attach meta data to trax objects */
-export const traxMD = Symbol("trax.md");
-/** Symbol used to identify trax proxies */
-const traxProxy = Symbol("trax.proxy");
+const metaData = new WeakMap<object, TraxMd>(); // note: the key is the actual object, not its proxy
+/** Symbol used to retrieve a proxy target */
+const traxProxyTarget = Symbol("trax.proxy.target");
 /** Symbol used to attach the Object.keys() size to objects used as dictionaries - cf. getObjectKeys() */
 const dictSize = Symbol("trax.dict.size");
 const RX_INVALID_ID = /(\/|\>|\.|\%)/g;
@@ -135,7 +135,7 @@ export function unregisterMdPropListener(p: TraxInternalProcessor, md?: TraxMd) 
  * @returns
  */
 export function tmd(o: any): TraxMd | undefined {
-    return o ? o[traxMD] : undefined;
+    return o ? metaData.get((o as any)[traxProxyTarget] || o) : undefined;
 }
 
 /**
@@ -147,7 +147,7 @@ function attachMetaData(o: Object, id: string, type: TraxObjectType, storeId: st
         propListeners: undefined, computedProps: undefined, computedContent: undefined,
         awLevel: undefined, dictSize: undefined, contentProcessors: undefined, hasExternalPropListener: false, lastContentProcessorCheck: -1
     };
-    (o as any)[traxMD] = md;
+    metaData.set((o as any)[traxProxyTarget] || o, md);
     return md;
 }
 
@@ -155,9 +155,7 @@ function attachMetaData(o: Object, id: string, type: TraxObjectType, storeId: st
  * Detach meta data (called on dispose)
  */
 function detachMetaData(o: Object) {
-    if ((o as any)[traxMD] !== undefined) {
-        (o as any)[traxMD] = undefined;
-    }
+    metaData.delete((o as any)[traxProxyTarget] || o);
 }
 
 
@@ -357,10 +355,9 @@ export function createTraxEnv(): Trax {
          */
         get(target: any, prop: string | symbol) {
             const md = tmd(target);
-            if (prop === traxMD) {
-                return md;
-            } else if (prop === traxProxy) {
-                return true;
+            if (prop === traxProxyTarget) {
+                // pseudo-property used to retrieve the target behind a proxy
+                return target;
             } else if (prop === "toJSON") {
                 // JSON.stringify call on a proxy will get here
                 return undefined;
@@ -412,9 +409,7 @@ export function createTraxEnv(): Trax {
          * @param value the value
          */
         set(target: any, prop: string | number | symbol, value: any) {
-            if (prop === traxMD) {
-                target[traxMD] = value;
-            } else if (typeof prop !== "symbol") {
+            if (typeof prop !== "symbol") {
                 const v = target[prop];
                 const md = tmd(target);
 
@@ -525,7 +520,7 @@ export function createTraxEnv(): Trax {
      */
     function wrapPropObject(v: any, propName: string, targetMd: TraxMd) {
         if (v !== null && v !== undefined && typeof v === "object") {
-            if (v[traxProxy]) return v; // already wrapped or deleted
+            if (v[traxProxyTarget]) return v; // v is already a proxy
             // automatically wrap sub-objects
             let vmd = tmd(v);
             if (vmd) return v; // already wrapped

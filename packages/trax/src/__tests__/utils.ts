@@ -1,4 +1,3 @@
-import { traxMD } from "../core";
 import { formatEventData } from "../eventstream";
 import { EventStream, traxEvents } from "../index";
 

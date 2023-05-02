@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createTraxEnv, traxMD } from '../core';
+import { createTraxEnv, tmd } from '../core';
 import { Store, Trax, TraxProcessor } from '../types';
 import { Person, SimpleFamilyStore, printEvents, ArrayFamilyStore } from './utils';
 
@@ -442,7 +442,7 @@ describe('Sync Processors', () => {
             expect(hasListener(members[3], namesPr)).toBe(false);
 
             function hasListener(o: any, pr: TraxProcessor) {
-                return (o[traxMD].propListeners as Set<TraxProcessor>)?.has(pr) || false;
+                return (tmd(o)?.propListeners as Set<TraxProcessor>)?.has(pr) || false;
             }
         });
 

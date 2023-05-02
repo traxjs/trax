@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Store, Trax } from '../types';
-import { createTraxEnv, traxMD } from '../core';
+import { createTraxEnv, tmd } from '../core';
 import { SimpleFamilyStore, printEvents } from './utils';
 
 
@@ -113,11 +113,11 @@ describe('Trax Objects', () => {
         it('must support delete and create new objects if previous id was deleted', async () => {
             let o1 = fst.add("foo", { foo: "bar" });
 
-            const md1a = o1[traxMD];
+            const md1a = tmd(o1)!;
             expect(md1a.id).toBe("SimpleFamilyStore/foo");
             let dr = fst.remove(o1);
             expect(dr).toBe(true);
-            const md1b = o1[traxMD];
+            const md1b = tmd(o1);
             expect(md1b).toBe(undefined);
             dr = fst.remove(o1);
             expect(dr).toBe(false);
@@ -149,6 +149,12 @@ describe('Trax Objects', () => {
                 "1:6 !DEL - SimpleFamilyStore/x",
                 "1:7 !NEW - O: SimpleFamilyStore/x",
             ]);
+        });
+
+        it('must support JSON.stringify and not expose any specific property', async () => {
+            let o = fst.add("foo", { foo: "bar" });
+            expect(JSON.stringify(o)).toBe('{"foo":"bar"}');
+            expect(tmd(o)!.id).toBe("SimpleFamilyStore/foo");
         });
 
         it('must not re-wrap deleted data objects', async () => {

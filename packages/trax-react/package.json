@@ -1,14 +1,18 @@
 {
     "name": "@traxjs/trax-react",
-    "version": "0.0.1",
+    "version": "0.0.3",
     "description": "React bindings for Trax: create reactive components",
     "main": "dist/trax-react.mjs",
+    "types": "dist/index.d.ts",
+    "typings": "dist/index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/traxjs/trax"
+    },
     "files": [
         "src",
         "dist"
     ],
-    "types": "lib/index.d.ts",
-    "typings": "lib/index.d.ts",
     "author": "Bertrand Laporte",
     "license": "MIT",
     "bugs": "https://github.com/traxjs/trax/issues",
@@ -23,11 +27,14 @@
         "reactive"
     ],
     "scripts": {
-        "build": "tsc && vite build",
+        "clean": "rimraf dist lib",
+        "build": "yarn clean && tsc && vite build && cp -R lib/*.d.ts dist",
         "test": "vitest",
         "coverage": "vitest run --coverage",
         "dev": "vite",
-        "serve": "vite preview"
+        "serve": "vite preview",
+        "prepublish": "yarn build && vitest run",
+        "npm-publish": "yarn prepublish && npm publish --access public"
     },
     "devDependencies": {
         "@traxjs/trax": "0.0.1",
@@ -36,6 +43,7 @@
         "jsdom": "^21.1.0",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
+        "rimraf": "5.0.0",
         "typescript": "^4.9.4",
         "vite": "^4.0.3",
         "vitest": "^0.26.3"

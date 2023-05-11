@@ -1,7 +1,6 @@
-import { trax } from '@traxjs/trax';
 import React from 'react';
 import { component, traxId } from "..";
-import { useTraxState } from '../core';
+import { useTraxState } from '..';
 
 export const StateCpt = component("StateCpt", () => {
     const state1 = useTraxState({

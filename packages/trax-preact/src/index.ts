@@ -4,5 +4,6 @@ export {
     traxId,
     componentId,
     resetPreactEnv,
-    useStore
+    useStore,
+    useTraxState
 } from './core';

@@ -1,5 +1,5 @@
 import { trax } from "@traxjs/trax";
-import { component, componentId, useStore } from "@traxjs/trax-react";
+import { component, componentId, useStore } from "@traxjs/trax-preact";
 import { createMessageBoardStore, MessageBoardGroup } from "./messageboardstore";
 import { ControlPanel } from "./controlpanel";
 import { Message } from "./types";

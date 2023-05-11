@@ -33,10 +33,11 @@
         "serve": "vite preview"
     },
     "dependencies": {
-        "@traxjs/trax": "0.0.1",
-        "@traxjs/trax-react": "0.0.1",
+        "@traxjs/trax": "^0.0.3",
+        "@traxjs/trax-react": "^0.0.4",
         "preact": "^10.11.3",
-        "preact-dom": "^1.0.1"
+        "preact-dom": "^1.0.1",
+        "preact-jsx-runtime": "^1.2.0"
     },
     "devDependencies": {
         "@preact/preset-vite": "^2.5.0",

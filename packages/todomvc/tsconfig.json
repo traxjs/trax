@@ -3,6 +3,7 @@
   "compilerOptions": {
     "outDir": "./lib",
     "esModuleInterop": true,
+    "jsxImportSource": "preact"
   },
   "include": [
     "src/*",

@@ -1,5 +1,4 @@
-import { traxEvents } from "@traxjs/trax";
-import { component } from "@traxjs/trax-react";
+import { component } from "@traxjs/trax-preact";
 import { DevToolsStore } from "../devtoolsstore";
 import './filters.css';
 

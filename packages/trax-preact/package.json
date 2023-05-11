@@ -34,7 +34,7 @@
         "npm-publish": "yarn prepublish && npm publish --access public"
     },
     "devDependencies": {
-        "@traxjs/trax": "0.0.1",
+        "@traxjs/trax": "0.0.3",
         "@types/react": "^18.0.27",
         "@types/react-dom": "^18.0.10",
         "@testing-library/preact": "^3.2.3",

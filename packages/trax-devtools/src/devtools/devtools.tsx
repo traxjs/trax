@@ -1,4 +1,4 @@
-import { component, useStore } from "@traxjs/trax-react";
+import { component, useStore } from "@traxjs/trax-preact";
 import { createDevToolsStore } from "./devtoolsstore";
 import { DtClientAPI } from "./types";
 import { DtLogPane } from "./components/logs";

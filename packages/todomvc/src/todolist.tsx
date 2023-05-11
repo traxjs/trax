@@ -1,6 +1,6 @@
 import { trax } from "@traxjs/trax";
-import { component, componentId, useStore } from "@traxjs/trax-react";
 import { useRef } from "preact/hooks";
+import { component, componentId, useStore } from "@traxjs/trax-preact";
 import { createTodoStore, Todo, TodoFilter, TodoStore } from "./todostore";
 import './css/base.css';
 import './css/app.css';
@@ -19,7 +19,7 @@ export const TodoList = component("TodoList", () => {
                     autoFocus={true}
                     autoComplete="off"
                     value={data.newEntry}
-                    onChange={e => data.newEntry = e.target.value}
+                    onChange={e => data.newEntry = (e.target as any)?.value || ""}
                     onKeyUp={e => e.key === "Enter" && tds.addTodo()}
                 />
             </header>
@@ -62,14 +62,14 @@ const TodoItem = component("TodoItem", (props: { tds: TodoStore, todo: Todo }) =
     return <li className={cssClassName} data-id={componentId()}>
         <div className="view">
             <input className="toggle" type="checkbox" checked={todo.completed} onChange={() => tds.toggleCompletion(todo)} />
-            <label onDoubleClick={startEditing} > {todo.description} </label>
+            <label onDblClick={startEditing} > {todo.description} </label>
             <button className="destroy" onClick={() => tds.deleteTodo(todo)}></button>
         </div>
         {!todo.editing ? "" :
             <input ref={inputRef} type="text" className="edit"
                 autoFocus={true}
                 value={todo.editDescription}
-                onChange={(e) => { tds.updateEditDescription(todo, e.target.value) }}
+                onChange={(e) => { tds.updateEditDescription(todo, (e.target as any)?.value) }}
                 onKeyUp={e => handleExitKeys(e.key)}
                 onBlur={() => tds.stopEditing(todo)}
             />

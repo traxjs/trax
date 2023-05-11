@@ -1,5 +1,5 @@
 import { traxEvents } from "@traxjs/trax";
-import { component } from "@traxjs/trax-react";
+import { component } from "@traxjs/trax-preact";
 import { DevToolsStore } from "../devtoolsstore";
 import { APP_EVENT_TYPE, DtLogCycle, DtLogEvent, DtTraxPgCollectionUpdate, DtTraxPgCompute, DtTraxPgStoreInit, PCG_NAME_COMPUTE, PCG_NAME_RECONCILIATION, PROCESSING_GROUP_END, PROCESSING_GROUP_TYPE } from "../types";
 import { Filters } from "./filters";

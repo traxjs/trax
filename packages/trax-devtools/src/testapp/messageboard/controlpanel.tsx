@@ -1,4 +1,4 @@
-import { component, componentId, useTraxState } from "@traxjs/trax-react";
+import { component, componentId, useTraxState } from "@traxjs/trax-preact";
 import './css/messageboard.css';
 import { messageStore } from "./messagestore";
 import { users } from "./serverapi";

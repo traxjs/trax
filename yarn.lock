@@ -473,6 +473,20 @@
     lz-string "^1.4.4"
     pretty-format "^27.0.2"
 
+"@testing-library/dom@9.2.0":
+  version "9.2.0"
+  resolved "https://registry.yarnpkg.com/@testing-library/dom/-/dom-9.2.0.tgz#0e1f45e956f2a16f471559c06edd8827c4832f04"
+  integrity sha512-xTEnpUKiV/bMyEsE5bT4oYA0x0Z/colMtxzUY8bKyPXBNLn/e0V4ZjBZkEhms0xE4pv9QsPfSRu9AWS4y5wGvA==
+  dependencies:
+    "@babel/code-frame" "^7.10.4"
+    "@babel/runtime" "^7.12.5"
+    "@types/aria-query" "^5.0.1"
+    aria-query "^5.0.0"
+    chalk "^4.1.0"
+    dom-accessibility-api "^0.5.9"
+    lz-string "^1.5.0"
+    pretty-format "^27.0.2"
+
 "@testing-library/preact@^3.2.3":
   version "3.2.3"
   resolved "https://registry.yarnpkg.com/@testing-library/preact/-/preact-3.2.3.tgz#0d331b7a7f934a4b0fc6c95ff3a9e1d6fa93094e"
@@ -1538,6 +1552,11 @@ lz-string@^1.4.4:
   resolved "https://registry.yarnpkg.com/lz-string/-/lz-string-1.4.4.tgz#c0d8eaf36059f705796e1e344811cf4c498d3a26"
   integrity sha512-0ckx7ZHRPqb0oUm8zNr+90mtf9DQB60H1wMCjBtfi62Kl3a7JbHob6gA2bC+xRvZoOL+1hzUK8jeuEIQE8svEQ==
 
+lz-string@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/lz-string/-/lz-string-1.5.0.tgz#c1ab50f77887b712621201ba9fd4e3a6ed099941"
+  integrity sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==
+
 make-dir@^3.0.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/make-dir/-/make-dir-3.1.0.tgz#415e967046b3a7f1d185277d84aa58203726a13f"
@@ -1761,6 +1780,11 @@ preact-dom@^1.0.1:
   integrity sha512-gMWUeZv13FNwYAb3jdWtt8cA9LxDQNeJ3oxdnphqpFpUev+9rJ16cWW/1KlnpIBiA4V0zsAaM0JdGxjYBFU+Sg==
   dependencies:
     preact "^3.4.0"
+
+preact-jsx-runtime@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/preact-jsx-runtime/-/preact-jsx-runtime-1.2.0.tgz#a950ace575216a1c0cbe7ea29f3104f898a9aff8"
+  integrity sha512-427WYzJixkSjwV69pjmjxDBRVv80xYoOrz+D+gIqMNioO5o1LfJDS72CWkHoRgIhdIs87Tff3nWh2NtN8erXpw==
 
 preact@^10.11.3:
   version "10.11.3"

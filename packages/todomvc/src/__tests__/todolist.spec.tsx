@@ -1,10 +1,10 @@
-import React from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { resetReactEnv } from "@traxjs/trax-react";
 import { render, fireEvent, RenderResult } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event'
 import { TodoList } from '../todolist';
 import { trax, traxEvents } from '@traxjs/trax';
+import React from 'react';
 
 describe('TodoList', () => {
     let container: RenderResult;
@@ -154,7 +154,7 @@ describe('TodoList', () => {
     }
 
     it('should load properly', async () => {
-        expect(todoList().dataset.id).toBe("React%TodoList:1");
+        expect(todoList().dataset.id).toBe("Preact%TodoList:1");
         expect(mainInput().value).toBe("");
         expect(todoItemsLength()).toBe(0);
     });
@@ -168,7 +168,6 @@ describe('TodoList', () => {
 
         typeEnterInMainInput();
         await renderComplete();
-
         expect(printTodos()).toMatchObject([
             "Main Input: ''",
             "- First",

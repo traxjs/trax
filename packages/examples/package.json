@@ -34,7 +34,7 @@
     },
     "dependencies": {
         "@traxjs/trax": "^0.0.3",
-        "@traxjs/trax-react": "^0.0.4",
+        "@traxjs/trax-react": "^0.0.5",
         "preact": "^10.11.3",
         "preact-dom": "^1.0.1",
         "preact-jsx-runtime": "^1.2.0"

@@ -1,5 +1,6 @@
 {
     "name": "trax-root",
+    "description": "Reactive state management",
     "private": true,
     "workspaces": [
         "packages/*"

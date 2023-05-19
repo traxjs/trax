@@ -87,7 +87,8 @@ export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.E
             };
         }, [cc]);
         cc.props = props;
-        cc.processor!.compute();
+        // compute must be forced as this function is called when component props have changed
+        cc.processor!.compute(true);
         return cc.jsx;
     }
 
@@ -200,7 +201,7 @@ function memo(c: React.FunctionComponent, comparer?: (prev: object, next: object
  * Check if two objects have a different shape
  */
 export function shallowDiffers(a: Object, b: Object): boolean {
-    // extraced from https://github.com/preactjs/preact/blob/master/compat/src/util.js
+    // extracted from https://github.com/preactjs/preact/blob/master/compat/src/util.js
     for (let i in a) if (i !== '__source' && !(i in b)) return true;
     for (let i in b) if (i !== '__source' && (a as any)[i] !== (b as any)[i]) return true;
     return false;

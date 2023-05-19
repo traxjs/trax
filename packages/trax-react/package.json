@@ -1,6 +1,6 @@
 {
     "name": "@traxjs/trax-react",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "description": "React bindings for Trax: create reactive components",
     "main": "dist/trax-react.mjs",
     "types": "dist/index.d.ts",

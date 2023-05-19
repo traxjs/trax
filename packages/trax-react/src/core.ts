@@ -57,14 +57,14 @@ function addProcessor(name: string, reactFunctionCpt: (prop?: any) => JSX.Elemen
 
 /**
  * Wrap a react function component into a trax processor
- * Note: the functional component will be then considered as a pure function and 
+ * Note: the functional component will be then considered as a pure function and
  * will only be re-rendered if
- * - one of its trax dependencies changed (these dependencies can be passed by any means, 
+ * - one of its trax dependencies changed (these dependencies can be passed by any means,
  * e.g. props, contexts or even global variables)
  * - a property reference changes (i.e. new reference for objects)
  * @param name the compontent name - usually the same as the component function
  * @param reactFunctionCpt the functional component
- * @returns 
+ * @returns
  */
 export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.Element): (props: T) => JSX.Element {
     // Make the component pure (React.memo) to avoid re-processing if prop reference didn't change
@@ -86,7 +86,8 @@ export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.E
             };
         }, [cc]);
         cc.props = props;
-        cc.processor!.compute();
+        // compute must be forced as this function is called when component props have changed
+        cc.processor!.compute(true);
         return cc.jsx;
     }
 
@@ -99,8 +100,8 @@ export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.E
 /**
  * Get the trax identifier associated to a trax object
  * Shortcut to trax.getTraxId(...)
- * @param o 
- * @returns 
+ * @param o
+ * @returns
  */
 export function traxId(o: any) {
     return trax.getTraxId(o);
@@ -109,7 +110,7 @@ export function traxId(o: any) {
 /**
  * Return the id of the trax processor associated to a react component
  * when called in in the component render function
- * Useful to insert the component id in the component HTML 
+ * Useful to insert the component id in the component HTML
  * (e.g. through the data-id attribute)
  */
 export function componentId(): string {
@@ -151,9 +152,9 @@ export function useStore<T = any>(factory: (...args: any[]) => T, ...args: any[]
 
 /**
  * Create a trax state object to hold state values associated to a component.
- * Note: this function should only be called once in a given component as multiple state 
+ * Note: this function should only be called once in a given component as multiple state
  * values can be set in a given state object
- * @param state the default state value 
+ * @param state the default state value
  * @returns the current state value
  */
 export function useTraxState<T extends Object>(state: T): T {

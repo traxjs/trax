@@ -15,7 +15,8 @@
         "reactive"
     ],
     "scripts": {
-        "build": "tsc && vite build",
+        "clean": "rimraf dist lib",
+        "build": "yarn clean && tsc && vite build",
         "test": "vitest",
         "coverage": "vitest run --coverage",
         "dev": "vite",
@@ -35,6 +36,7 @@
         "@testing-library/preact": "^3.2.3",
         "@testing-library/user-event": "^14.4.3",
         "jsdom": "^21.1.0",
+        "rimraf": "^5.0.1",
         "typescript": "^4.9.4",
         "vite": "^4.3.9",
         "vitest": "^0.26.3"

@@ -1,28 +1,33 @@
 
 # Trax
 
-Trax is a reactive state management framework for web front-end developement.
+Trax is a reactive state management library that simplifies and optimizes the update flow of [React] or [Preact] applications.
+Its purpose is similar to solutions like [redux], [mobx] or [preact signals].
 
-Main benefits compared to other solutions:
-- designed to provide the best troubleshooting experience through the trax dev tools (under construction)
-- support of asynchronous and batched operations
-- event stream allowing to synchronize tests and troubleshoot complex async transformations
-- support of complex reactive chains including dynamic collections (cf. examples)
-- limited set of concepts, minimal API and simple learning curve
-- tests and TDD friendly
+Key features:
+- **unique ids**: trax API design ensures that every trax object gets a unique id in order to support the best
+troubleshooting experience through the trax dev tools (under construction)
+- **asynchronous by design**: trax transformations (aka. compute processors) can run synchronous or asynchronous operations. Data updates are also propagated asynchronously in order to mutualize compute operations in case of consecutive changes.
+- **event stream**: all trax operations are systematically logged in an event stream in oder to ease troubleshooting and simplify test synchronization (stream events can be awaited in test scripts).
+- **collections**: support of complex reactive chains that involve computed collections (cf. examples)
 
-[Project and Documentation under construction - please check trax [examples]]
+[React]: https://react.dev/
+[Preact]: https://preactjs.com/
+[redux]: https://redux.js.org/
+[mobx]: https://mobx.js.org/
+[preact signals]: https://preactjs.com/guide/v10/signals/
 
-Useful commands:
-```bash
-# install dependencies
-yarn install
-# build project
-yarn build
-# run tests
-yarn test
-```
 
+
+## API documentation
+
+- [Global trax object](./packages/trax/doc/trax.md)
+- [Trax stores](./packages/trax/doc/stores.md)
+- [Trax processors](./packages/trax/doc/processors.md)
+- [Trax logs](./packages/trax/doc/log.md)
+
+
+[Documentation under construction - please check trax [todomvc] implementation or other [examples]]
 
 [examples]: https://github.com/traxjs/trax/tree/main/packages/examples
 

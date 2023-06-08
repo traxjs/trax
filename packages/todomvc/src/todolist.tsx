@@ -5,7 +5,7 @@ import { createTodoStore, Todo, TodoFilter, TodoStore } from "./todostore";
 import './css/base.css';
 import './css/app.css';
 
-/** Main Todo Lis component */
+/** Main Todo List component */
 export const TodoList = component("TodoList", () => {
     // get or create a TodoStore instance
     const tds = useStore(createTodoStore);

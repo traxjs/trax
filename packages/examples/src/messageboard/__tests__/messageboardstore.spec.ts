@@ -1,5 +1,5 @@
-import { trax } from '@traxjs/trax';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { TraxProcessor, trax } from '@traxjs/trax';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createMessageBoardStore, MessageBoardStore } from '../messageboardstore';
 import { createMessageStore, LOG_MESSAGE_STORE_INITIALIZED, MessageStore } from '../messagestore';
 import { createUserStore, LOG_USER_STORE_USERS_RECEIVED, UserStore } from '../userstore';
@@ -8,14 +8,26 @@ describe('MessageBoard Store', () => {
     let store: MessageBoardStore,
         data: MessageBoardStore["data"],
         msgStore: MessageStore,
-        usrStore: UserStore
+        usrStore: UserStore,
+        count = 0;
+    const rs = trax.createStore("Render", {});
+    let ps: TraxProcessor;
 
     beforeEach(() => {
         msgStore = createMessageStore();
         usrStore = createUserStore();
         store = createMessageBoardStore(msgStore, usrStore);
         data = store.data;
+
+        ps = rs.compute("Count", () => {
+            // this processor will force the message board store lazy processors to run
+            count = store.data.groups.length;
+        });
     });
+
+    afterEach(() => {
+        ps!.dispose();
+    })
 
     function printContent() {
         const r: string[] = [];

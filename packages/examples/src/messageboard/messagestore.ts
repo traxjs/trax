@@ -14,18 +14,25 @@ export type MessageStore = ReturnType<typeof createMessageStore>;
 
 export function createMessageStore() {
     return trax.createStore("MessageStore", (store: Store<MessageStoreData>) => {
-        const data = store.init({ messages: [], initialized: false });
-        const messages = data.messages;
         let serverMessages: any[];
+        const data = store.init({
+            messages: [],
+            initialized: false
+        }, {
+            "init": function* (data, cc) {
+                // initialize the store (async)
+                cc.maxComputeCount = 1; // run once
 
-        // initialize the store (async)
-        store.async("Init", function* () {
-            const msgs = yield serverAPI.getLastMessages();
-            serverMessages = msgs;
-            trax.updateArray(messages, messages.concat(msgs));
-            data.initialized = true;
-            trax.log.event(LOG_MESSAGE_STORE_INITIALIZED, { src: store.id });
-        })();
+                let messages = data.messages;
+                const msgs: Message[] = yield serverAPI.getLastMessages();
+                serverMessages = msgs;
+                trax.updateArray(messages, messages.concat(msgs));
+                data.initialized = true;
+                trax.log.event(LOG_MESSAGE_STORE_INITIALIZED, { src: store.id });
+            }
+        });
+
+        const messages = data.messages;
 
         return {
             data,

@@ -1,6 +1,6 @@
 # Trax TodoMVC
 
-This package contains a full implementation of the [TodoMVC] application with trax and [react]
+This package contains a full implementation of the [TodoMVC] application with trax and [preact]
 
 To run this example you must first go to the root trax project and install & build all packages (```yarn install``` / ```yarn build```). Then you can come back to this package and:
 ```bash
@@ -24,4 +24,5 @@ The trax implementation is composed of 2 files:
 Note: the test suite also demonstrates how trax internal events can be used to synchronize asynchronous tests (cf. ```log.awaitEvent```)
 
 [react]: https://reactjs.org/
+[preact]: https://preactjs.com/
 [TodoMVC]: https://todomvc.com/

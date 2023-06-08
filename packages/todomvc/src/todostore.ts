@@ -19,11 +19,11 @@ export interface Todo {
     /** todo description */
     description: string;
     /** description in edit mode (prior to validation) */
-    editDescription: string;
+    editDescription?: string;
     /** tell if the todo item is completed */
     completed: boolean;
     /** tell if the todo item is being edited */
-    editing: boolean;
+    editing?: boolean;
 }
 
 /** Possible filter values */
@@ -57,6 +57,8 @@ export function createTodoStore() {
                     const isComplete = (data.filter === TodoFilter.COMPLETED);
                     newContent = data.todos.filter(item => item.completed === isComplete);
                 }
+                // use trax.updateArray instead of returning a new object
+                // to keep the same object reference (will avoid un-necessary re-render)
                 trax.updateArray(data.filteredTodos, newContent)
             },
             counters: (data) => {
@@ -124,7 +126,7 @@ export function createTodoStore() {
             stopEditing(todo: Todo, updateDescription = true) {
                 if (!todo.editing) return;
                 if (updateDescription) {
-                    const v = todo.editDescription.trim();
+                    const v = (todo.editDescription || "").trim();
                     if (v === "") {
                         api.deleteTodo(todo);
                         return;

@@ -1,6 +1,18 @@
 import { createTraxEnv } from "./core";
+import { Trax } from "./types";
 
-export const trax = createTraxEnv();
+let _trax: Trax;
+
+// trax must be unique
+// this prevents bugs that would appear when trax is loaded multiple times
+if ((globalThis as any)["trax"]) {
+    _trax = (globalThis as any)["trax"];
+} else {
+    _trax = createTraxEnv();
+}
+(globalThis as any)["trax"] = _trax
+
+export const trax = _trax;
 
 export type {
     Trax,

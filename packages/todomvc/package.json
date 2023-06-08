@@ -22,21 +22,21 @@
         "serve": "vite preview"
     },
     "dependencies": {
-        "@traxjs/trax": "0.0.3",
+        "@traxjs/trax": "^0.0.3",
         "@traxjs/trax-preact": "0.0.4",
         "preact": "^10.11.3",
         "preact-dom": "^1.0.1",
         "preact-jsx-runtime": "^1.2.0"
     },
     "devDependencies": {
-        "@preact/preset-vite": "^2.5.0",
         "@babel/core": "^7.0.0",
+        "@preact/preset-vite": "^2.5.0",
+        "@testing-library/dom": "9.2.0",
         "@testing-library/preact": "^3.2.3",
         "@testing-library/user-event": "^14.4.3",
-        "@testing-library/dom": "9.2.0",
         "jsdom": "^21.1.0",
         "typescript": "^4.9.4",
-        "vite": "^4.0.3",
+        "vite": "^4.3.9",
         "vitest": "^0.26.3"
     }
 }

@@ -87,7 +87,7 @@ const TodoItem = component("TodoItem", (props: { tds: TodoStore, todo: Todo }) =
     }
 
     function handleExitKeys(key: string) {
-        if (key === "Enter") {
+        if (key === "Enter" || key === "Tab") {
             tds.stopEditing(todo);
         } else if (key === "Escape") {
             tds.stopEditing(todo, false);

@@ -1,16 +1,17 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { resetReactEnv } from "@traxjs/trax-react";
 import { render, fireEvent, RenderResult } from '@testing-library/preact';
 import userEvent from '@testing-library/user-event'
 import { TodoList } from '../todolist';
 import { trax, traxEvents } from '@traxjs/trax';
+import { resetPreactEnv } from '@traxjs/trax-preact';
 import React from 'react';
+
 
 describe('TodoList', () => {
     let container: RenderResult;
 
     beforeEach(() => {
-        resetReactEnv();
+        resetPreactEnv();
         container = render(<div>
             <TodoList />
         </div>);
@@ -99,6 +100,7 @@ describe('TodoList', () => {
             input.value = "";
         }
         await userEvent.type(input, text);
+        fireEvent.change(input);
     }
 
     function printTodos() {
@@ -137,14 +139,19 @@ describe('TodoList', () => {
         return res;
     }
 
+    async function typeMainText(text: string) {
+        await userEvent.type(mainInput(), text);
+        fireEvent.change(mainInput());
+    }
+
     async function initItems(insertCompleted = true) {
-        await userEvent.type(mainInput(), "AAA");
+        await typeMainText("AAA");
         typeEnterInMainInput();
         await renderComplete();
-        await userEvent.type(mainInput(), "BBB");
+        await typeMainText("BBB");
         typeEnterInMainInput();
         await renderComplete();
-        await userEvent.type(mainInput(), "CCC");
+        await typeMainText("CCC");
         typeEnterInMainInput();
         await renderComplete();
         if (insertCompleted) {
@@ -160,13 +167,15 @@ describe('TodoList', () => {
     });
 
     it('should create and delete todos', async () => {
-        await userEvent.type(mainInput(), "First");
+        await typeMainText("First");
+
         expect(printTodos()).toMatchObject([
             "Main Input: 'First'",
             "[Empty List]",
         ]);
 
         typeEnterInMainInput();
+
         await renderComplete();
         expect(printTodos()).toMatchObject([
             "Main Input: ''",
@@ -176,7 +185,7 @@ describe('TodoList', () => {
             "Filter: All",
         ]);
 
-        await userEvent.type(mainInput(), "Second");
+        await typeMainText("Second");
         typeEnterInMainInput();
         await renderComplete();
 
@@ -200,7 +209,7 @@ describe('TodoList', () => {
             "Filter: All",
         ]);
 
-        await userEvent.type(mainInput(), "Third");
+        await typeMainText("Third");
         typeEnterInMainInput();
         await renderComplete();
 
@@ -494,7 +503,7 @@ describe('TodoList', () => {
         // Same with Tab
         await editTodo(0);
         await typeEditValue(0, "XXX");
-        userEvent.tab();
+        fireEvent.keyUp(inputEdit(0), { key: "Tab", charCode: 9 });
         await renderComplete();
         expect(printTodos()).toMatchObject([
             "Main Input: ''",

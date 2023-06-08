@@ -183,7 +183,7 @@ export function createTraxEnv(): Trax {
     /** Total number of active processors */
     let processorCount = 0;
     /** Call stack of the processors in compute mode */
-    let processorStack = new LinkedList<TraxInternalProcessor>();
+    const processorStack = new LinkedList<TraxInternalProcessor>();
     /** Reconciliation linked list: list of processors that need to be reconciled */
     let reconciliationList = new LinkedList<TraxInternalProcessor>();
     /** Count the number of reconciliation executions */

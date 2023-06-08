@@ -1,4 +1,6 @@
 .DS_Store
+.yarn
+.yarnrc.yml
 coverage
 dist
 lib

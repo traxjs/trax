@@ -26,9 +26,14 @@ The global trax object gather several utility functions associated to trax objec
     + [**updateDictionary**<T>(dict: { [k: string]: T }, newContent: { [k: string]: T }): void](#user-content-updateDictionary)
     + [**getObjectKeys**(o: TraxObject): string[]](#user-content-getObjectKeys)
 
-## <a id="objects"></a>Trax objects
+<a id="objects"></a>
 
-### <a id="ids"></a>Trax ids
+## Trax objects
+
+<a id="ids"></a>
+
+### Trax ids
+
 One of trax main differentiator compared to similar solutions is that trax generates unique ids for each
 its entities in order to ease troubleshooting. Trax supports 4 types of entities:
 - **Stores** that constitute mini trax context that gather trax entities associated to a given functional context (e.g. data, processors and sub-stores). More on stores [here][stores].
@@ -59,7 +64,9 @@ Where
 [stores]: ./stores.md
 [processors]: ./processors.md
 
-### <a id="isTraxObject"></a>```isTraxObject(obj: any): boolean```
+<a id="isTraxObject"></a>
+
+### ```isTraxObject(obj: any): boolean```
 
 Tell if an object is a trax object.
 
@@ -71,7 +78,9 @@ expect(trax.isTraxObject(testStore)).toBe(true);
 expect(trax.isTraxObject(testStore.root)).toBe(true);
 ```
 
-### <a id="getTraxId"></a>```getTraxId(obj: any): string```
+<a id="getTraxId"></a>
+
+### ```getTraxId(obj: any): string```
 
 Get the unique id associated to a trax object. Return an empty string if the object is not a trax object.
 
@@ -83,8 +92,9 @@ expect(trax.getTraxId(testStore.root)).toBe("TestStore/root");
 expect(trax.getTraxId(testStore.root.foo)).toBe("TestStore/root*foo");
 expect(trax.getTraxId(testStore.root.foo.bar)).toBe(""); // bar is not an object
 ```
+<a id="getTraxObjectType"></a>
 
-### <a id="getTraxObjectType"></a>```getTraxObjectType(obj: any): TraxObjectType```
+### ```getTraxObjectType(obj: any): TraxObjectType```
 
 Get the trax type associated to an object
 
@@ -104,8 +114,9 @@ expect(trax.getTraxObjectType(testStore)).toBe("S"); // TraxObjectType.Store
 expect(trax.getTraxObjectType(testStore.root.foo)).toBe("O"); // TraxObjectType.Object
 expect(trax.getTraxObjectType(testStore.root.foo.bar)).toBe("A"); // TraxObjectType.Array
 ```
+<a id="getData"></a>
 
-### <a id="getData"></a>```getData<T>(id: string): T | void```
+### ```getData<T>(id: string): T | void```
 
 Get a trax data object (object / array or dictionary). Note: only objects that have already been
 accessed can be returned (otherwise their id is not yet defined)
@@ -129,7 +140,9 @@ Stores also hold compute processors that will automatically create/update/or del
 
 Trax objects cannot be created outside data stores, this is why the **first operation** to perform to use trax is to **create a datastore**
 
-### <a id="create-store"></a>```createStore(...)```
+<a id="create-store"></a>
+
+### ```createStore(...)```
 
 ```typescript
 createStore<T extends Object>(id: TraxIdDef, root: T): Store<T>;
@@ -206,7 +219,9 @@ expect(data.itemsLeft).toBe(1);
 expect(data.todos[0].description).toBe("Second");
 ```
 
-### <a id="get-store"></a>```getStore<T>(id: string): Store<T> | void```
+<a id="get-store"></a>
+
+### ```getStore<T>(id: string): Store<T> | void```
 
 Retrieve a store from its id. Note: this method returns the **internal trax store** object, not the store API that may be returned by createStore
 ```typescript
@@ -217,7 +232,9 @@ expect(gs).toBe(greetingStore);
 
 ## Processors
 
-### <a id="get-proc"></a>```getProcessor(id: string): TraxProcessor | void```
+<a id="get-proc"></a>
+
+### ```getProcessor(id: string): TraxProcessor | void```
 
 Get a processor from its (full) trax id. Note trax processors have the following format
 - eager processors: **STORE_ID%PROCESSOR_NAME** - e.g. *PersonStore%prettyName* in the example below
@@ -264,7 +281,9 @@ expect(processor2.id).toBe("PersonStore%prettyName");
 expect(trax.getProcessor("PersonStore%prettyName")).toBe(processor2);
 expect(trax.getProcessor(processorId1)!.id).toBe(processorId1);
 ```
-### <a id="get-active-proc"></a>```getActiveProcessor(): TraxProcessor | void```
+<a id="get-active-proc"></a>
+
+### ```getActiveProcessor(): TraxProcessor | void```
 
 Return the processor that is being computing (if getActiveProcessor() is called in a compute call stack). Return undefined otherwise.
 
@@ -275,10 +294,13 @@ expect(active1).toBe("PersonStore%root[adult]");
 expect(active2).toBe("PersonStore%prettyName");
 expect(active3).toBe("");
 ```
+<a id="update"></a>
 
-## <a id="update"></a>Update life cycle
+## Update life cycle
 
-### <a id="reconciliation"></a>```reconciliation(): Promise<void>```
+<a id="reconciliation"></a>
+
+### ```reconciliation(): Promise<void>```
 
 Trax update (i.e. change propagation) is performed asynchronously. This method returns a promise that
 will be fulfilled when trax reconciliation is complete (i.e. at the end of the current cycle)
@@ -300,7 +322,9 @@ is fully updated** as DOM processors don't run in *autoCompute* mode (i.e. they 
 
 Note2: **lazy processors** are only run if an **eager processor** accesses the object on which they are anchored.
 
-### <a id="pending-changes"></a>```readonly pendingChanges: boolean```
+<a id="pending-changes"></a>
+
+### ```readonly pendingChanges: boolean```
 
 Tell if some changes are pending (i.e. dirty processors) Return true if there are some dirty processors - which means that all computed values can be safely read with no risks of invalid value
 
@@ -317,8 +341,9 @@ await trax.reconciliation();
 expect(data.prettyName).toBe("Bart SIMPSON");
 expect(trax.pendingChanges).toBe(false);
 ```
+<a id="process-changes"></a>
 
-### <a id="process-changes"></a>```processChanges(): void```
+### ```processChanges(): void```
 
 Process the pending changes synchronoysly - i.e. run the dirty processors dependency chain.
 This function will be automatically asynchronously called at the end of each trax cycle but it can be also explictly called if a synchronous behaviour is required
@@ -333,9 +358,14 @@ expect(data.prettyName).toBe("Bart SIMPSON"); // change not yet propagated
 trax.processChanges();
 expect(data.prettyName).toBe("Lisa Simpson"); // change propagated
 ```
-## <a id="general"></a>General utilities
 
-### <a id="log"></a>```log: EventStream```
+<a id="general"></a>
+
+## General utilities
+
+<a id="log"></a>
+
+### ```log: EventStream```
 
 Get acess to the trax event logs. Useful to add application logs in the trax even streams. (More info on the log event stream [here][events])
 
@@ -347,7 +377,10 @@ trax.log.error("Sample Error Message");
 ```
 
 [events]: ./log.md
-### <a id="updateArray"></a>```updateArray(array: any[], newContent: any[]): void```
+
+<a id="updateArray"></a>
+
+### ```updateArray(array: any[], newContent: any[]): void```
 
 Helper function to **update the content of an array through mutations**, without changing its reference.
 Must be used in processors generating computed array collections.
@@ -364,8 +397,9 @@ familyStore.compute("Infos", () => {
     trax.updateArray(familyStore.infos, content);
 });
 ```
+<a id="updateDictionary"></a>
 
-### <a id="updateDictionary"></a>```updateDictionary<T>(dict: { [k: string]: T }, newContent: { [k: string]: T }): void```
+### ```updateDictionary<T>(dict: { [k: string]: T }, newContent: { [k: string]: T }): void```
 
 Helper function to **update the content of a dictionary object through mutations**, without changing its reference.
 Must be used in processors generating computed dictionary collections.
@@ -392,7 +426,10 @@ store.compute("Infos", () => {
     trax.updateDictionary(infos, content);
 });
 ```
-### <a id=""></a>```getObjectKeys(o: TraxObject): string[]```
+
+<a id="getObjectKeys"></a>
+
+### ```getObjectKeys(o: TraxObject): string[]```
 
 Wrapper around Object.keys() that should be used in processors that read objects as dictionaries. This will allow processors to get dirty when properties are added or removed.
 

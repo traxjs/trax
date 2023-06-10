@@ -67,18 +67,20 @@ export interface Trax {
      */
     getProcessor(id: string): TraxProcessor | void;
     /**
-     * Retrieve a store from its id
+     * Retrieve a store from its id. Note: this method returns the internal trax store object,
+     * not the store API that may be returned by createStore
      * @param id
      */
     getStore<T>(id: string): Store<T> | void;
     /**
-     * Get a trax data object (object / array or dictionary)
+     * Get a trax data object (object / array or dictionary). Note: only objects that have already been
+     * accessed can be returned (otherwise their id is not yet defined)
      * @param id
      */
     getData<T>(id: string): T | void;
     /**
-     * Return the processor that is being computing if called in a compute call stack
-     * Return void otherwise
+     * Return the processor that is being computing (if getActiveProcessor() is called in a compute call stack).
+     * Return undefined otherwise.
      * @seealso componentId in trax-react
      */
     getActiveProcessor(): TraxProcessor | void;

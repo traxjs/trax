@@ -82,7 +82,7 @@ describe('Trax Objects', () => {
             ]);
         });
 
-        it('must support using other trax objects to build advance ids (diffet store)', async () => {
+        it('must support using other trax objects to build advance ids (different store)', async () => {
             const st = trax.createStore("AnotherStore", (store: Store<{ msg: string }>) => {
                 store.init({ msg: "Hello World" })
             })

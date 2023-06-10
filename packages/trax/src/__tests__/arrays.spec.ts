@@ -18,7 +18,7 @@ describe('Arrays', () => {
     /**
      * 2 kind of arrays
      * - !Computed: its items are added/sorted/filterd/removed by a processor
-     * - primary: its items are manually managed outside processors (primary values) 
+     * - primary: its items are manually managed outside processors (primary values)
      */
 
     describe('Primary', () => {
@@ -1053,7 +1053,7 @@ describe('Arrays', () => {
             });
 
             it('should be raised when a computed array is updated by multiple processors (updateArray change)', async () => {
-                const fs = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
+                const familyStore = trax.createStore("FStore", (store: Store<ArrayFamilyStore>) => {
                     store.init({
                         familyName: "Simpson",
                         members: [{
@@ -1076,7 +1076,7 @@ describe('Arrays', () => {
                         trax.updateArray(infos, content);
                     });
                 });
-                const family = fs.root;
+                const family = familyStore.root;
                 const members = family.members;
                 const infos = family.infos;
 
@@ -1085,7 +1085,7 @@ describe('Arrays', () => {
                 trax.log.info("A");
 
                 // create a new processor
-                fs.compute("Info2", () => {
+                familyStore.compute("Info2", () => {
                     const content: any[] = [];
                     if (members.length) {
                         content.push({ desc: "D: " + members[0]?.firstName });
@@ -1109,7 +1109,7 @@ describe('Arrays', () => {
                     "1:12 !PCE - 1:3",
                 ]);
 
-                fs.getProcessor("Infos")!.dispose();
+                familyStore.getProcessor("Infos")!.dispose();
                 await trax.reconciliation();
 
                 trax.log.info("B");

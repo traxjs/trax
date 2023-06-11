@@ -4,34 +4,32 @@
 The global trax object gather several utility functions associated to trax objects. It also exposes the main ```createStore``` entry point.
 
 <!-- Table of content -->
-* [Trax objects](#user-content-objects)
-    + [**ids**](#user-content-ids)
-    + [**isTraxObject**(obj: any): boolean](#user-content-isTraxObject)
-    + [**getTraxId**(obj: any): string](#user-content-getTraxId)
-    + [**getTraxObjectType**(obj: any): TraxObjectType](#user-content-getTraxObjectType)
-    + [**getData**<T>(id: string): T | void](#user-content-getData)
+* [Trax objects](#trax-objects)
+    + [**ids**](#trax-ids)
+    + [**isTraxObject**(obj: any): boolean](#istraxobjectobj-any-boolean)
+    + [**getTraxId**(obj: any): string](#gettraxidobj-any-string)
+    + [**getTraxObjectType**(obj: any): TraxObjectType](#gettraxobjecttypeobj-any-traxobjecttype)
+    + [**getData**<T>(id: string): T | void](#getdatatid-string-t--void)
 * [Stores](#stores)
-    + [**createStore**(...)](#user-content-create-store)
-    + [**getStore**<T>(id: string): Store<T> | void](#user-content-get-store)
-* [Processors](#user-content-processors)
-    + [**getProcessor**(id: string): TraxProcessor | void](#user-content-get-proc)
-    + [**getActiveProcessor**(): TraxProcessor | void](#user-content-get-active-proc)
-* [Update life-cycle](#user-content-update)
-    + [**reconciliation**(): Promise<void>](#user-content-reconciliation)
-    + [readonly **pendingChanges**: boolean](#user-content-pending-changes)
-    + [**processChanges**(): void](#user-content-process-changes)
-* [General utilities](#user-content-general)
-    + [**log**: EventStream](#user-content-log)
-    + [**updateArray**(array: any[], newContent: any[]): void](#user-content-updateArray)
-    + [**updateDictionary**<T>(dict: { [k: string]: T }, newContent: { [k: string]: T }): void](#user-content-updateDictionary)
-    + [**getObjectKeys**(o: TraxObject): string[]](#user-content-getObjectKeys)
+    + [**createStore**(...)](#createstore)
+    + [**getStore**<T>(id: string): Store<T> | void](#getstoretid-string-storet--void)
+* [Processors](#processors)
+    + [**getProcessor**(id: string): TraxProcessor | void](#getprocessorid-string-traxprocessor--void)
+    + [**getActiveProcessor**(): TraxProcessor | void](#getactiveprocessor-traxprocessor--void)
+* [Update life-cycle](#update-life-cycle)
+    + [**reconciliation**(): Promise<void>](#reconciliation-promisevoid)
+    + [readonly **pendingChanges**: boolean](#readonly-pendingchanges-boolean)
+    + [**processChanges**(): void](#processchanges-void)
+* [General utilities](#general-utilities)
+    + [**log**: EventStream](#log-eventstream)
+    + [**updateArray**(array: any[], newContent: any[]): void](#updatearrayarray-any-newcontent-any-void)
+    + [**updateDictionary**<T>(dict: { [k: string]: T }, newContent: { [k: string]: T }): void](#updatedictionarytdict--k-string-t--newcontent--k-string-t--void)
+    + [**getObjectKeys**(o: TraxObject): string[]](#getobjectkeyso-traxobject-string)
 
-<a id="objects"></a>
 
 ## Trax objects
 
-<a id="ids"></a>
-
+https://github.com/traxjs/trax/blob/main/packages/trax/doc/trax.md#
 ### Trax ids
 
 One of trax main differentiator compared to similar solutions is that trax generates unique ids for each
@@ -64,8 +62,6 @@ Where
 [stores]: ./stores.md
 [processors]: ./processors.md
 
-<a id="isTraxObject"></a>
-
 ### ```isTraxObject(obj: any): boolean```
 
 Tell if an object is a trax object.
@@ -77,8 +73,6 @@ const testStore = trax.createStore("TestStore", {foo: "bar"});
 expect(trax.isTraxObject(testStore)).toBe(true);
 expect(trax.isTraxObject(testStore.root)).toBe(true);
 ```
-
-<a id="getTraxId"></a>
 
 ### ```getTraxId(obj: any): string```
 
@@ -92,7 +86,6 @@ expect(trax.getTraxId(testStore.root)).toBe("TestStore/root");
 expect(trax.getTraxId(testStore.root.foo)).toBe("TestStore/root*foo");
 expect(trax.getTraxId(testStore.root.foo.bar)).toBe(""); // bar is not an object
 ```
-<a id="getTraxObjectType"></a>
 
 ### ```getTraxObjectType(obj: any): TraxObjectType```
 
@@ -114,7 +107,6 @@ expect(trax.getTraxObjectType(testStore)).toBe("S"); // TraxObjectType.Store
 expect(trax.getTraxObjectType(testStore.root.foo)).toBe("O"); // TraxObjectType.Object
 expect(trax.getTraxObjectType(testStore.root.foo.bar)).toBe("A"); // TraxObjectType.Array
 ```
-<a id="getData"></a>
 
 ### ```getData<T>(id: string): T | void```
 
@@ -140,7 +132,6 @@ Stores also hold compute processors that will automatically create/update/or del
 
 Trax objects cannot be created outside data stores, this is why the **first operation** to perform to use trax is to **create a datastore**
 
-<a id="create-store"></a>
 
 ### ```createStore(...)```
 
@@ -219,8 +210,6 @@ expect(data.itemsLeft).toBe(1);
 expect(data.todos[0].description).toBe("Second");
 ```
 
-<a id="get-store"></a>
-
 ### ```getStore<T>(id: string): Store<T> | void```
 
 Retrieve a store from its id. Note: this method returns the **internal trax store** object, not the store API that may be returned by createStore
@@ -231,8 +220,6 @@ expect(gs).toBe(greetingStore);
 ```
 
 ## Processors
-
-<a id="get-proc"></a>
 
 ### ```getProcessor(id: string): TraxProcessor | void```
 
@@ -281,7 +268,6 @@ expect(processor2.id).toBe("PersonStore%prettyName");
 expect(trax.getProcessor("PersonStore%prettyName")).toBe(processor2);
 expect(trax.getProcessor(processorId1)!.id).toBe(processorId1);
 ```
-<a id="get-active-proc"></a>
 
 ### ```getActiveProcessor(): TraxProcessor | void```
 
@@ -297,8 +283,6 @@ expect(active3).toBe("");
 <a id="update"></a>
 
 ## Update life cycle
-
-<a id="reconciliation"></a>
 
 ### ```reconciliation(): Promise<void>```
 
@@ -322,8 +306,6 @@ is fully updated** as DOM processors don't run in *autoCompute* mode (i.e. they 
 
 Note2: **lazy processors** are only run if an **eager processor** accesses the object on which they are anchored.
 
-<a id="pending-changes"></a>
-
 ### ```readonly pendingChanges: boolean```
 
 Tell if some changes are pending (i.e. dirty processors) Return true if there are some dirty processors - which means that all computed values can be safely read with no risks of invalid value
@@ -341,7 +323,6 @@ await trax.reconciliation();
 expect(data.prettyName).toBe("Bart SIMPSON");
 expect(trax.pendingChanges).toBe(false);
 ```
-<a id="process-changes"></a>
 
 ### ```processChanges(): void```
 
@@ -359,26 +340,32 @@ trax.processChanges();
 expect(data.prettyName).toBe("Lisa Simpson"); // change propagated
 ```
 
-<a id="general"></a>
-
 ## General utilities
-
-<a id="log"></a>
 
 ### ```log: EventStream```
 
-Get acess to the trax event logs. Useful to add application logs in the trax even streams. (More info on the log event stream [here][events])
+Get acess to the trax event logs. Main use cases for application developers:
+- add application logs in the trax even streams.
+- activate log in the console (can be quite verbose) - cf. ```trax.log.consoleOutput = "All"```
+
+More info on the log event stream [here][events].
 
 Example:
 ```typescript
 trax.log.info("Sample Info Message", { foo: "Sample object"});
 trax.log.warn("Sample Warning Message");
 trax.log.error("Sample Error Message");
+
+// Show log in the console
+trax.log.consoleOutput = "All";
+trax.log.consoleOutput = "AllButGet"; // All logs except property get
+// Stop logging in the console
+trax.log.consoleOutput = "None";
 ```
 
-[events]: ./log.md
+Another use
 
-<a id="updateArray"></a>
+[events]: ./log.md
 
 ### ```updateArray(array: any[], newContent: any[]): void```
 
@@ -397,7 +384,6 @@ familyStore.compute("Infos", () => {
     trax.updateArray(familyStore.infos, content);
 });
 ```
-<a id="updateDictionary"></a>
 
 ### ```updateDictionary<T>(dict: { [k: string]: T }, newContent: { [k: string]: T }): void```
 
@@ -426,8 +412,6 @@ store.compute("Infos", () => {
     trax.updateDictionary(infos, content);
 });
 ```
-
-<a id="getObjectKeys"></a>
 
 ### ```getObjectKeys(o: TraxObject): string[]```
 

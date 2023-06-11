@@ -18,6 +18,14 @@ describe('Doc examples', () => {
 
         const gs = trax.getStore("Greeting");
         expect(gs).toBe(greetingStore);
+
+        const subGreetingStore = greetingStore.createStore("Misc", { miscInfo: "Blah blah" });
+        expect(subGreetingStore.id).toBe("Greeting>Misc");
+
+
+        expect(greetingStore.disposed).toBe(false);
+        greetingStore.dispose();
+        expect(greetingStore.disposed).toBe(true);
     });
 
     it('should support createStore for a simple todo list', async () => {
@@ -81,6 +89,47 @@ describe('Doc examples', () => {
 
         const tds = trax.getStore("Todos");
         expect(tds).toBe(tdsStore);
+    });
+
+    it('should support createStore for a simple todo list (lazy processors)', async () => {
+        interface TodoData {
+            todos: TodoItem[],
+            completedCount: number;
+            itemsLeft: number;
+        }
+
+        interface TodoItem {
+            description: string;
+            completed: boolean;
+        }
+
+        const todoStore = trax.createStore("TodoStore", (store: Store<TodoData>) => {
+            const data = store.init({
+                // initial root data
+                todos: [],
+                completedCount: 0,
+                itemsLeft: 0
+            }, {
+                count: (data) => {
+                    // lazy processor to compute the 2 counters
+                    const completedCount = data.todos.filter((todo) => todo.completed).length;
+                    data.completedCount = completedCount;
+                    data.itemsLeft = data.todos.length - completedCount;
+                }
+            })
+        });
+
+        const data = todoStore.root;
+        data.todos.push({
+            description: "Do something",
+            completed: false
+        });
+        expect(data.itemsLeft).toBe(0); // changes not propagated
+        await trax.reconciliation();
+        expect(data.itemsLeft).toBe(1);
+
+        expect(trax.isTraxObject(data.todos[0])).toBe(true);
+
     });
 
     it('should support getProcessor and getActiveProcessor', async () => {
@@ -188,6 +237,140 @@ describe('Doc examples', () => {
         const v = testStore.root.foo.bar
         expect(trax.getData("TestStore/root*foo*bar")).toBe(testStore.root.foo.bar);
         expect(trax.getData("XYZ")).toBe(undefined);
+    });
+
+    it('should support store.add', async () => {
+        interface MessageData {
+            messages: {
+                id: string;
+                text: string;
+                read?: boolean; // true if the message has been read
+            }[];
+            unread: number; // number of unread messages
+        }
+
+        const msgStore = trax.createStore("MessageStore", (store: Store<MessageData>) => {
+            const data = store.init({
+                messages: [],
+                unread: 0
+            }, {
+                unread: (data) => {
+                    const msgs = data.messages;
+                    const readCount = msgs.filter((m) => !!m.read).length;
+                    data.unread = msgs.length - readCount;
+                }
+            });
+
+            return {
+                data,
+                addMsg(id: string, text: string, read = false) {
+                    const m = store.add(["Message", id], { id, text, read });
+                    data.messages.push(m);
+                }
+            }
+        });
+
+        msgStore.addMsg("M0", "Message 0");
+        msgStore.addMsg("M1", "Message 1");
+        msgStore.addMsg("M2", "Message 2", true);
+        await trax.reconciliation();
+        expect(msgStore.data.unread).toBe(2);
+        const m0 = msgStore.data.messages[0];
+        expect(trax.getTraxId(m0)).toBe("MessageStore/Message:M0");  // id defined by the application
+        expect(trax.getData("MessageStore/Message:M0")).toBe(m0);
+
+        const ms = trax.getStore<MessageData>("MessageStore")!;
+        // add message outside the addMsg method
+        ms.root.messages.push({ id: "M3", text: "Message 3" });
+        const m3 = msgStore.data.messages[3];
+        expect(trax.getTraxId(m3)).toBe("MessageStore/root*messages*3"); // generated id
+        await trax.reconciliation();
+
+        expect(ms.get("Message:M0")).toBe(m0);
+        expect(ms.get(["Message", "M0"])).toBe(m0);
+
+        expect(ms.root.unread).toBe(3)
+        ms.root.messages.shift(); // remove first array element
+        const ok = ms.remove(m0);
+        expect(ok).toBe(true);
+        await trax.reconciliation();
+        expect(ms.root.unread).toBe(2);
+    });
+
+    it('should support store.compute', async () => {
+
+        const store = trax.createStore("UserStore", {
+            id: "X1",
+            firstName: "Bart",
+            lastName: "Simpson"
+        });
+
+        let output = "";
+        const r = store.compute("Output", () => {
+            // Note: we could update the DOM instead of processin a string
+            const usr = store.root;
+            output = `User: ${usr.firstName} ${usr.lastName}`;
+        });
+
+        expect(output).toBe("User: Bart Simpson");
+
+        store.root.firstName = "Homer";
+        await trax.reconciliation();
+        expect(output).toBe("User: Homer Simpson");
+
+        expect(store.getProcessor("Output")).toBe(r);
+    });
+
+    it('should support sub-stores', async () => {
+
+        const store = trax.createStore("Foo", { value: "ABC" });
+        const subStore = store.createStore("Bar", { anotherValue: "DEF" });
+
+        expect(subStore.id).toBe("Foo>Bar");
+        expect(trax.getTraxId(subStore.root)).toBe("Foo>Bar/root");
+
+        expect(store.getStore("Bar")).toBe(subStore);
+    });
+
+    it('should support store.async', async () => {
+        interface Person {
+            firstName: string;
+            lastName: string;
+            prettyName?: string;
+        }
+
+        const store = trax.createStore("PStore", (store: Store<Person>) => {
+            const data = store.init({ firstName: "Homer", lastName: "Simpson" }, {
+                prettyName: (data) => {
+                    data.prettyName = data.firstName + " " + data.lastName;
+                }
+            });
+
+            return {
+                person: data,
+                updateName: store.async(function* (firstNameSuffix: string, lastNameSuffix: string) {
+                    data.firstName += firstNameSuffix;
+                    yield pause(1); // simulate an external async call
+                    const r = data.lastName + lastNameSuffix;
+                    data.lastName = r;
+                    return r;
+                })
+            }
+        });
+
+        async function pause(timeMs = 10) {
+            return new Promise((resolve) => {
+                setTimeout(resolve, timeMs);
+            });
+        }
+
+        const data = store.person;
+        expect(store.person.prettyName).toBe("Homer Simpson");
+
+        // updateName has an async signature
+        const r = await store.updateName("(FirstName)", "(LastName)");
+        expect(r).toBe("Simpson(LastName)");
+        expect(store.person.prettyName).toBe("Homer(FirstName) Simpson(LastName)");
     });
 
 });

@@ -202,11 +202,10 @@ export interface Store<T> {
      */
     remove<T extends Object>(dataObject: T): boolean;
     /**
-     * Create or retrieve a compute processor
-     * Processor may be synchronous or asynchronous (cf. $TraxComputeFn)
+     * Create or retrieve an **eager** compute processor (eager processors are always called even if the data they compute are not read). These processors may be **synchronous** or **asynchronous** (cf. $TraxComputeFn)
      * If a processor with the same id is found, it will be returned instead of creating a new one
      * but its compute function will be updated in order to benefit from new closure values that may not exist
-     * in the previous function
+     * in the previous function.
      * @param id the processor id - must be unique with the store scope
      * @param compute the compute function
      * @param autoCompute if true (default) the processor will be automatically called after getting dirty.

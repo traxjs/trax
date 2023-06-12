@@ -86,7 +86,7 @@ export interface Trax {
     getActiveProcessor(): TraxProcessor | void;
     /**
      * Tell if some changes are pending (i.e. dirty processors)
-     * Return true if there are some dirty processors - which means that all computed values
+     * Return false if there are no dirty processors - which means that all computed values
      * can be safely read with no risks of invalid value
      */
     readonly pendingChanges: boolean;
@@ -300,7 +300,7 @@ export interface TraxProcessor {
     /**
      * Tell if the processor should automatically re-run the compute function
      * when it gets dirty or not (in which case the processor creator should use
-     * the onDirty callback and call process() explicitely)
+     * the onDirty callback and eventually call compute() explicitely)
      */
     readonly autoCompute: boolean;
     /**
@@ -313,7 +313,7 @@ export interface TraxProcessor {
      */
     readonly computeCount: number;
     /**
-     * Tell if the processor internal value is dirty and if it must be reprocessed
+     * Tell if the processor is dirty (following a dependency update) and must be reprocessed.
      */
     readonly dirty: boolean;
     /**

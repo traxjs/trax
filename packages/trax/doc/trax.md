@@ -28,8 +28,6 @@ The global trax object gather several utility functions associated to trax objec
 
 
 ## Trax objects
-
-https://github.com/traxjs/trax/blob/main/packages/trax/doc/trax.md#
 ### Trax ids
 
 One of trax main differentiator compared to similar solutions is that trax generates unique ids for each
@@ -308,7 +306,7 @@ Note2: **lazy processors** are only run if an **eager processor** accesses the o
 
 ### ```readonly pendingChanges: boolean```
 
-Tell if some changes are pending (i.e. dirty processors) Return true if there are some dirty processors - which means that all computed values can be safely read with no risks of invalid value
+Tell if some changes are pending (i.e. dirty processors) Return false if there are no dirty processors - which means that all computed values can be safely read with no risks of invalid value
 
 Example:
 ```typescript

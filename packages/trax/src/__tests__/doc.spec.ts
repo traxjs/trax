@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, test } from 'vitest';
 import { createTraxEnv } from '../core';
-import { Store, Trax, TraxObjectType } from '../index';
+import { Store, Trax, TraxObjectType, TraxProcessor } from '../index';
 
 describe('Doc examples', () => {
     let trax: Trax;
@@ -371,6 +371,187 @@ describe('Doc examples', () => {
         const r = await store.updateName("(FirstName)", "(LastName)");
         expect(r).toBe("Simpson(LastName)");
         expect(store.person.prettyName).toBe("Homer(FirstName) Simpson(LastName)");
+    });
+
+    it('should support sync and async processors', async () => {
+
+        async function pause(timeMs = 1) {
+            return new Promise((resolve) => {
+                setTimeout(resolve, timeMs);
+            });
+        }
+
+        async function getAvatar(userId: string) {
+            // simulate an async fetch
+            await pause();
+            return "AVATAR[" + userId + "]";
+        }
+        interface Person {
+            id: string;
+            firstName: string;
+            lastName: string;
+            prettyName?: string;
+            avatar?: string;
+        }
+
+        const store1 = trax.createStore("PersonStore", (store: Store<Person>) => {
+            const data = store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" }, {
+                prettyName: (data) => {
+                    // lazy + synchronous processor
+                    data.prettyName = data.firstName + " " + data.lastName;
+                },
+                avatar: function* (data) {
+                    // lazy + asynchronous processor
+                    data.avatar = yield getAvatar(data.id);
+                }
+            });
+        });
+
+        const person1 = store1.root;
+
+        expect(person1.prettyName).toBe("Homer Simpson"); // processed because we accessed person
+        expect(person1.avatar).toBe(undefined); // being retrieved
+        await pause(10);
+        expect(person1.avatar).toBe("AVATAR[U1]"); // retrieved
+
+
+        const store2 = trax.createStore("PersonStore2", (store: Store<Person>) => {
+            const data = store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" });
+
+            store.compute("PrettyName", () => {
+                // eager + synchronous processor
+                data.prettyName = data.firstName + " " + data.lastName;
+            });
+
+            store.compute("Avatar", function* () {
+                // eager + asynchronous processor
+                data.avatar = yield getAvatar(data.id);
+            });
+        });
+
+        const person2 = store2.root;
+
+        expect(person2.prettyName).toBe("Homer Simpson");
+        expect(person2.avatar).toBe(undefined); // being retrieved
+        await pause(10);
+        expect(person2.avatar).toBe("AVATAR[U1]"); // retrieved
+    });
+
+    it('should demo all processor properties and methods', async () => {
+        async function pause(timeMs = 1) {
+            return new Promise((resolve) => {
+                setTimeout(resolve, timeMs);
+            });
+        }
+
+        async function getAvatar(userId: string) {
+            // simulate an async fetch
+            await pause();
+            return "AVATAR[" + userId + "]";
+        }
+        interface Person {
+            id: string;
+            firstName: string;
+            lastName: string;
+            prettyName?: string;
+            avatar?: string;
+        }
+
+
+        let p2: TraxProcessor;
+
+        const store = trax.createStore("PersonStore", (store: Store<Person>) => {
+            const data = store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" }, {
+                prettyName: (data) => {
+                    // lazy + synchronous processor
+                    data.prettyName = data.firstName + " " + data.lastName;
+                }
+            });
+
+            p2 = store.compute("Avatar", function* () {
+                // eager + asynchronous processor
+                data.avatar = yield getAvatar(data.id);
+            });
+        });
+
+        const p1 = store.getProcessor("root[prettyName]")!;
+
+        expect(p1.id).toBe("PersonStore%root[prettyName]");
+        expect(p2!.id).toBe("PersonStore%Avatar");
+
+        const person = store.root;
+        expect(p1.dirty).toBe(false);
+        expect(person.prettyName).toBe("Homer Simpson");
+        person.firstName = "Marge";
+        expect(p1.dirty).toBe(true);
+        expect(person.prettyName).toBe("Homer Simpson"); // change not propagated
+        await trax.reconciliation();
+        expect(p1.dirty).toBe(false);
+        expect(person.prettyName).toBe("Marge Simpson");
+
+        expect(p1.dependencies).toMatchObject([
+            "PersonStore/root.firstName",
+            "PersonStore/root.lastName",
+        ]);
+
+        // autocompute
+        let output = "";
+        const outputProcessor = store.compute("Output", () => {
+            output = `Person[${person.id}] ${person.prettyName}`;
+        }, true, true);
+
+        expect(output).toBe("Person[U1] Marge Simpson");
+        expect(outputProcessor.isRenderer).toBe(true);
+        expect(outputProcessor.computeCount).toBe(1);
+        person.firstName = "BART";
+        person.lastName = "SIMPSON";
+        expect(outputProcessor.computeCount).toBe(1); // changes not propagated
+        await trax.reconciliation();
+        expect(outputProcessor.computeCount).toBe(2);
+        expect(output).toBe("Person[U1] BART SIMPSON");
+
+        expect(outputProcessor.disposed).toBe(false);
+        expect(outputProcessor.computeCount).toBe(2);
+        outputProcessor.dispose();
+        expect(outputProcessor.disposed).toBe(true);
+
+        // new changes will have no impacts
+        person.firstName = "MAGGIE";
+        await trax.reconciliation();
+        expect(outputProcessor.computeCount).toBe(2); // processor didn't run
+
+        // render
+        let renderResult = "";
+        const renderProcessor = store.compute("Render", () => {
+            renderResult = `RENDER: ${person.prettyName}`;
+        }, false); // false -> no auto-compute
+        let dirtyCount = 0;
+        renderProcessor.onDirty = () => {
+            dirtyCount++;
+        }
+
+        expect(renderResult).toBe(""); // not rendered
+        expect(dirtyCount).toBe(0); // onDirty is not called at init
+        expect(renderProcessor.dirty).toBe(true);
+        renderProcessor.compute();
+        expect(renderResult).toBe("RENDER: MAGGIE SIMPSON"); // rendered
+        expect(dirtyCount).toBe(0);
+
+        person.firstName = 'LISA';
+        expect(dirtyCount).toBe(0); // onDirty hasn't been called yet
+        await trax.reconciliation();
+        expect(dirtyCount).toBe(1); // onDirty was called
+        expect(renderResult).toBe("RENDER: MAGGIE SIMPSON"); // not re-rendered
+        expect(renderProcessor.dirty).toBe(true);
+        renderProcessor.compute();
+        expect(renderResult).toBe("RENDER: LISA SIMPSON");
+        expect(renderProcessor.computeCount).toBe(2);
+        expect(renderProcessor.dirty).toBe(false);
+        renderProcessor.compute();                    // will be ignored as renderProcessor is not dirty
+        expect(renderProcessor.computeCount).toBe(2); // still 2
+        renderProcessor.compute(true);                // forced re-render
+        expect(renderProcessor.computeCount).toBe(3); // 2 -> 3
+
     });
 
 });

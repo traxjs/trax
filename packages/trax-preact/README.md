@@ -1,5 +1,5 @@
 
-# Trax React Bindings
+# Trax Preact Bindings
 
 This package contains trax bindings for [preact] only, with no dependencies to react (this can be useful to load it through an import map)
 

@@ -14,7 +14,7 @@ describe('Event Stream', () => {
 
     function getLogArray() {
         const arr: StreamEvent[] = [];
-        log.scan((itm) => {
+        log.scan((itm: StreamEvent) => {
             arr.push(itm);
         });
         return arr;

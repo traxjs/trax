@@ -11,6 +11,7 @@ describe('Doc examples', () => {
 
     it('simple createStore', async () => {
         // Simple data store
+        // trax.log.consoleOutput = "All";
         const greetingStore = trax.createStore("Greeting", { message: "Hellow World" });
 
         expect(greetingStore.root.message).toBe("Hellow World");
@@ -26,6 +27,9 @@ describe('Doc examples', () => {
         expect(greetingStore.disposed).toBe(false);
         greetingStore.dispose();
         expect(greetingStore.disposed).toBe(true);
+        // trax.log.consoleOutput = "None";
+        expect(trax.log.maxSize).toBe(1000); // default value
+        trax.log.maxSize = 5000; // increase log buffer size
     });
 
     it('should support createStore for a simple todo list', async () => {

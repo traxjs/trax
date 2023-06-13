@@ -371,7 +371,7 @@ export const traxEvents = Object.freeze({
     "Get": "!GET",
     /** When a processor is set dirty */
     "ProcessorDirty": "!DRT",
-    /** When a processor is skipped */
+    /** When a lazy processor is skipped */
     "ProcessorSkipped": "!SKP",
 
     /** When a processing context starts */
@@ -580,7 +580,7 @@ export interface EventStream {
      * Stream max size
      * Use -1 to specify no limits
      * Otherwise minimum size will be 2
-     * (Default: 500)
+     * (Default: 1000)
      */
     maxSize: number;
     /**
@@ -613,7 +613,7 @@ export interface EventStream {
      * Register an event consumer that will be synchronously called when a given event occurs
      * @param eventType an event type or "*" to listen to all events
      * @param callback
-     * @returns a subcribtion id that will be used to unsubscribe
+     * @returns a subscribtion id that will be used to unsubscribe
      */
     subscribe(eventType: string | "*", callback: (e: StreamEvent) => void): SubscriptionId;
     /**

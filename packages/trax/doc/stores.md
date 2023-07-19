@@ -76,7 +76,7 @@ Initialize the root data object - must be only called in the store init function
 - **data**: the initial data graph value (JSON object)
 - **lazyProcessors**: optional compute functions associated to the root data object. The processor associated to these functions will follow the object life cycle and will be automatically disposed when the store is disposed
 
-Note: ```store.init(x)``` is equivalent to ```store.add("root", x)``` (but init cannot be done with *add()* as *root* is a reserved id).
+Note: ```store.init(x)``` is equivalent to ```store.add("data", x)``` (but init cannot be done with *add()* as *data* is a reserved id).
 
 ```typescript
 interface TodoData {
@@ -187,7 +187,7 @@ const ms = trax.getStore<MessageData>("MessageStore")!;
 // add message outside the addMsg method
 ms.data.messages.push({ id: "M3", text: "Message 3" }); // message added without store.add()
 const m3 = msgStore.data.messages[3];
-expect(trax.getTraxId(m3)).toBe("MessageStore/root*messages*3"); // generated id -> message cannot be easily retrieved by id as its id cannot be easily guessed
+expect(trax.getTraxId(m3)).toBe("MessageStore/data*messages*3"); // generated id -> message cannot be easily retrieved by id as its id cannot be easily guessed
 ```
 
 
@@ -273,7 +273,7 @@ Create a sub-store. Similar to [trax.createStore](./trax.md#createstore).
 const store = trax.createStore("Foo", { value: "ABC" });
 const subStore = store.createStore("Bar", { anotherValue: "DEF" })
 expect(subStore.id).toBe("Foo>Bar");
-expect(trax.getTraxId(subStore.data)).toBe("Foo>Bar/root");
+expect(trax.getTraxId(subStore.data)).toBe("Foo>Bar/data");
 ```
 
 ### ```getStore<T>(id: TraxIdDef): Store<T> | void```

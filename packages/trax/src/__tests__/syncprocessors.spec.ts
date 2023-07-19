@@ -69,28 +69,28 @@ describe('Sync Processors', () => {
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !PCE - 0:1",
                 "0:5 !NEW - P: PStore%Render",
                 "0:6 !PCS - !Compute #1 (PStore%Render) P1 Init",
-                "0:7 !GET - PStore/root.firstName -> 'Homer'",
-                "0:8 !GET - PStore/root.lastName -> 'Simpson'",
+                "0:7 !GET - PStore/data.firstName -> 'Homer'",
+                "0:8 !GET - PStore/data.lastName -> 'Simpson'",
                 "0:9 !PCE - 0:6",
                 "0:10 !LOG - -----------------------------",
-                "0:11 !SET - PStore/root.firstName = 'Bart' (prev: 'Homer')",
-                "0:12 !DRT - PStore%Render <- PStore/root.firstName",
+                "0:11 !SET - PStore/data.firstName = 'Bart' (prev: 'Homer')",
+                "0:12 !DRT - PStore%Render <- PStore/data.firstName",
                 "0:13 !PCS - !Reconciliation #1 - 1 processor",
                 "0:14 !PCS - !Compute #2 (PStore%Render) P1 Reconciliation - parentId=0:13",
-                "0:15 !GET - PStore/root.firstName -> 'Bart'",
-                "0:16 !GET - PStore/root.lastName -> 'Simpson'",
+                "0:15 !GET - PStore/data.firstName -> 'Bart'",
+                "0:16 !GET - PStore/data.lastName -> 'Simpson'",
                 "0:17 !PCE - 0:14",
                 "0:18 !PCE - 0:13",
                 "1:1 !LOG - END",
             ]);
 
             expect(pr.dependencies).toMatchObject([
-                "PStore/root.firstName",
-                "PStore/root.lastName"
+                "PStore/data.firstName",
+                "PStore/data.lastName"
             ]);
 
         });
@@ -117,8 +117,8 @@ describe('Sync Processors', () => {
                 "1:1 !LOG - A",
                 "1:2 !LOG - B",
                 "1:3 !PCS - !Compute #2 (PStore%Render) P1 DirectCall",
-                "1:4 !GET - PStore/root.firstName -> 'Homer'",
-                "1:5 !GET - PStore/root.lastName -> 'Simpson'",
+                "1:4 !GET - PStore/data.firstName -> 'Homer'",
+                "1:5 !GET - PStore/data.lastName -> 'Simpson'",
                 "1:6 !PCE - 1:3",
                 "1:7 !LOG - C",
             ]);
@@ -133,7 +133,7 @@ describe('Sync Processors', () => {
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - !StoreInit (Some:Store:42)",
                 "0:2 !NEW - S: Some:Store:42",
-                "0:3 !NEW - O: Some:Store:42/root",
+                "0:3 !NEW - O: Some:Store:42/data",
                 "0:4 !PCE - 0:1",
             ]);
         });
@@ -157,27 +157,27 @@ describe('Sync Processors', () => {
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> 'Homer'",
-                "0:7 !GET - PStore/root.firstName -> 'Homer'",
-                "0:8 !GET - PStore/root.lastName -> 'Simpson'",
-                "0:9 !SET - PStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
-                "0:10 !SET - PStore/root.prettyNameLength = 13 (prev: undefined)",
+                "0:6 !GET - PStore/data.firstName -> 'Homer'",
+                "0:7 !GET - PStore/data.firstName -> 'Homer'",
+                "0:8 !GET - PStore/data.lastName -> 'Simpson'",
+                "0:9 !SET - PStore/data.prettyName = 'Homer Simpson' (prev: undefined)",
+                "0:10 !SET - PStore/data.prettyNameLength = 13 (prev: undefined)",
                 "0:11 !PCE - 0:5",
                 "0:12 !PCE - 0:1",
-                "0:13 !SET - PStore/root.firstName = 'Bart' (prev: 'Homer')",
-                "0:14 !DRT - PStore%PrettyName <- PStore/root.firstName",
+                "0:13 !SET - PStore/data.firstName = 'Bart' (prev: 'Homer')",
+                "0:14 !DRT - PStore%PrettyName <- PStore/data.firstName",
                 "0:15 !PCS - !Reconciliation #1 - 1 processor",
                 "0:16 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=0:15",
-                "0:17 !GET - PStore/root.firstName -> 'Bart'",
-                "0:18 !GET - PStore/root.lastName -> 'Simpson'",
-                "0:19 !SET - PStore/root.prettyName = 'Bart Simpson' (prev: 'Homer Simpson')",
-                "0:20 !SET - PStore/root.prettyNameLength = 12 (prev: 13)",
+                "0:17 !GET - PStore/data.firstName -> 'Bart'",
+                "0:18 !GET - PStore/data.lastName -> 'Simpson'",
+                "0:19 !SET - PStore/data.prettyName = 'Bart Simpson' (prev: 'Homer Simpson')",
+                "0:20 !SET - PStore/data.prettyNameLength = 12 (prev: 13)",
                 "0:21 !PCE - 0:16",
                 "0:22 !PCE - 0:15",
-                "1:1 !GET - PStore/root.prettyName -> 'Bart Simpson'",
+                "1:1 !GET - PStore/data.prettyName -> 'Bart Simpson'",
             ]);
         });
 
@@ -233,24 +233,24 @@ describe('Sync Processors', () => {
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !PCE - 0:1",
                 "0:5 !NEW - P: PStore%Render",
                 "0:6 !LOG - A",
                 "1:1 !PCS - !Compute #1 (PStore%Render) P1 DirectCall",
-                "1:2 !GET - PStore/root.firstName -> 'Homer'",
-                "1:3 !GET - PStore/root.lastName -> 'Simpson'",
+                "1:2 !GET - PStore/data.firstName -> 'Homer'",
+                "1:3 !GET - PStore/data.lastName -> 'Simpson'",
                 "1:4 !PCE - 1:1",
                 "1:5 !LOG - B",
-                "2:1 !SET - PStore/root.firstName = 'Bart' (prev: 'Homer')",
-                "2:2 !DRT - PStore%Render <- PStore/root.firstName",
-                "2:3 !SET - PStore/root.lastName = 'SIMPSON' (prev: 'Simpson')",
+                "2:1 !SET - PStore/data.firstName = 'Bart' (prev: 'Homer')",
+                "2:2 !DRT - PStore%Render <- PStore/data.firstName",
+                "2:3 !SET - PStore/data.lastName = 'SIMPSON' (prev: 'Simpson')",
                 "2:4 !PCS - !Compute #2 (PStore%Render) P1 DirectCall",
-                "2:5 !GET - PStore/root.firstName -> 'Bart'",
-                "2:6 !GET - PStore/root.lastName -> 'SIMPSON'",
+                "2:5 !GET - PStore/data.firstName -> 'Bart'",
+                "2:6 !GET - PStore/data.lastName -> 'SIMPSON'",
                 "2:7 !PCE - 2:4",
-                "2:8 !SET - PStore/root.firstName = 'BART' (prev: 'Bart')",
-                "2:9 !DRT - PStore%Render <- PStore/root.firstName",
+                "2:8 !SET - PStore/data.firstName = 'BART' (prev: 'Bart')",
+                "2:9 !DRT - PStore%Render <- PStore/data.firstName",
             ]);
         });
 
@@ -308,28 +308,28 @@ describe('Sync Processors', () => {
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !PCE - 0:1",
                 "0:5 !NEW - P: PStore%Render",
                 "0:6 !PCS - !Compute #1 (PStore%Render) P1 Init",
-                "0:7 !GET - PStore/root.firstName -> 'Homer'",
-                "0:8 !GET - PStore/root.lastName -> 'Simpson'",
+                "0:7 !GET - PStore/data.firstName -> 'Homer'",
+                "0:8 !GET - PStore/data.lastName -> 'Simpson'",
                 "0:9 !PCE - 0:6",
                 "0:10 !LOG - A",
                 "1:1 !LOG - B",
-                "2:1 !SET - PStore/root.firstName = 'Bart' (prev: 'Homer')",
-                "2:2 !DRT - PStore%Render <- PStore/root.firstName",
-                "2:3 !SET - PStore/root.lastName = 'SIMPSON' (prev: 'Simpson')",
+                "2:1 !SET - PStore/data.firstName = 'Bart' (prev: 'Homer')",
+                "2:2 !DRT - PStore%Render <- PStore/data.firstName",
+                "2:3 !SET - PStore/data.lastName = 'SIMPSON' (prev: 'Simpson')",
                 "2:4 !LOG - C",
                 "2:5 !PCS - !Reconciliation #1 - 1 processor",
                 "2:6 !PCS - !Compute #2 (PStore%Render) P1 Reconciliation - parentId=2:5",
-                "2:7 !GET - PStore/root.firstName -> 'Bart'",
-                "2:8 !GET - PStore/root.lastName -> 'SIMPSON'",
+                "2:7 !GET - PStore/data.firstName -> 'Bart'",
+                "2:8 !GET - PStore/data.lastName -> 'SIMPSON'",
                 "2:9 !PCE - 2:6",
                 "2:10 !PCE - 2:5",
                 "3:1 !LOG - D",
-                "3:2 !SET - PStore/root.firstName = 'BART' (prev: 'Bart')",
-                "3:3 !DRT - PStore%Render <- PStore/root.firstName",
+                "3:2 !SET - PStore/data.firstName = 'BART' (prev: 'Bart')",
+                "3:3 !DRT - PStore%Render <- PStore/data.firstName",
             ]);
         });
 
@@ -355,43 +355,43 @@ describe('Sync Processors', () => {
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> 'Homer'",
-                "0:7 !GET - PStore/root.firstName -> 'Homer'", // read twice in the processor
-                "0:8 !GET - PStore/root.lastName -> 'Simpson'",
-                "0:9 !SET - PStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
-                "0:10 !SET - PStore/root.prettyNameLength = 13 (prev: undefined)",
+                "0:6 !GET - PStore/data.firstName -> 'Homer'",
+                "0:7 !GET - PStore/data.firstName -> 'Homer'", // read twice in the processor
+                "0:8 !GET - PStore/data.lastName -> 'Simpson'",
+                "0:9 !SET - PStore/data.prettyName = 'Homer Simpson' (prev: undefined)",
+                "0:10 !SET - PStore/data.prettyNameLength = 13 (prev: undefined)",
                 "0:11 !PCE - 0:5",
                 "0:12 !PCE - 0:1",
-                "0:13 !GET - PStore/root.prettyName -> 'Homer Simpson'",
-                "0:14 !SET - PStore/root.firstName = '' (prev: 'Homer')",
-                "0:15 !DRT - PStore%PrettyName <- PStore/root.firstName",
-                "0:16 !GET - PStore/root.prettyName -> 'Homer Simpson'",
+                "0:13 !GET - PStore/data.prettyName -> 'Homer Simpson'",
+                "0:14 !SET - PStore/data.firstName = '' (prev: 'Homer')",
+                "0:15 !DRT - PStore%PrettyName <- PStore/data.firstName",
+                "0:16 !GET - PStore/data.prettyName -> 'Homer Simpson'",
                 "0:17 !PCS - !Reconciliation #1 - 1 processor",
                 "0:18 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=0:17",
-                "0:19 !GET - PStore/root.firstName -> ''",
-                "0:20 !GET - PStore/root.lastName -> 'Simpson'",
-                "0:21 !SET - PStore/root.prettyName = 'Simpson' (prev: 'Homer Simpson')",
-                "0:22 !SET - PStore/root.prettyNameLength = 7 (prev: 13)",
+                "0:19 !GET - PStore/data.firstName -> ''",
+                "0:20 !GET - PStore/data.lastName -> 'Simpson'",
+                "0:21 !SET - PStore/data.prettyName = 'Simpson' (prev: 'Homer Simpson')",
+                "0:22 !SET - PStore/data.prettyNameLength = 7 (prev: 13)",
                 "0:23 !PCE - 0:18",
                 "0:24 !PCE - 0:17",
-                "1:1 !GET - PStore/root.prettyName -> 'Simpson'",
+                "1:1 !GET - PStore/data.prettyName -> 'Simpson'",
                 "1:2 !LOG - A",
-                "1:3 !SET - PStore/root.firstName = 'Bart' (prev: '')",
-                "1:4 !DRT - PStore%PrettyName <- PStore/root.firstName",
-                "1:5 !SET - PStore/root.lastName = 'S' (prev: 'Simpson')",
+                "1:3 !SET - PStore/data.firstName = 'Bart' (prev: '')",
+                "1:4 !DRT - PStore%PrettyName <- PStore/data.firstName",
+                "1:5 !SET - PStore/data.lastName = 'S' (prev: 'Simpson')",
                 "1:6 !PCS - !Reconciliation #2 - 1 processor",
                 "1:7 !PCS - !Compute #3 (PStore%PrettyName) P1 Reconciliation - parentId=1:6",
-                "1:8 !GET - PStore/root.firstName -> 'Bart'",
-                "1:9 !GET - PStore/root.firstName -> 'Bart'",
-                "1:10 !GET - PStore/root.lastName -> 'S'",
-                "1:11 !SET - PStore/root.prettyName = 'Bart S' (prev: 'Simpson')",
-                "1:12 !SET - PStore/root.prettyNameLength = 6 (prev: 7)",
+                "1:8 !GET - PStore/data.firstName -> 'Bart'",
+                "1:9 !GET - PStore/data.firstName -> 'Bart'",
+                "1:10 !GET - PStore/data.lastName -> 'S'",
+                "1:11 !SET - PStore/data.prettyName = 'Bart S' (prev: 'Simpson')",
+                "1:12 !SET - PStore/data.prettyNameLength = 6 (prev: 7)",
                 "1:13 !PCE - 1:7",
                 "1:14 !PCE - 1:6",
-                "2:1 !GET - PStore/root.prettyName -> 'Bart S'",
+                "2:1 !GET - PStore/data.prettyName -> 'Bart S'",
             ]);
         });
 
@@ -495,35 +495,35 @@ describe('Sync Processors', () => {
 
             expect(printLogs(1)).toMatchObject([
                 "1:1 !NEW - O: SimpleFamilyStore/Bart",
-                "1:2 !SET - SimpleFamilyStore/root.child1 = '[TRAX SimpleFamilyStore/Bart]' (prev: undefined)",
+                "1:2 !SET - SimpleFamilyStore/data.child1 = '[TRAX SimpleFamilyStore/Bart]' (prev: undefined)",
                 "1:3 !NEW - O: SimpleFamilyStore/Lisa",
-                "1:4 !SET - SimpleFamilyStore/root.child2 = '[TRAX SimpleFamilyStore/Lisa]' (prev: undefined)",
+                "1:4 !SET - SimpleFamilyStore/data.child2 = '[TRAX SimpleFamilyStore/Lisa]' (prev: undefined)",
                 "1:5 !NEW - P: SimpleFamilyStore%ChildNames",
                 "1:6 !PCS - !Compute #1 (SimpleFamilyStore%ChildNames) P1 Init",
-                "1:7 !GET - SimpleFamilyStore/root.child1 -> '[TRAX SimpleFamilyStore/Bart]'",
+                "1:7 !GET - SimpleFamilyStore/data.child1 -> '[TRAX SimpleFamilyStore/Bart]'",
                 "1:8 !GET - SimpleFamilyStore/Bart.firstName -> 'Bart'",
-                "1:9 !GET - SimpleFamilyStore/root.child2 -> '[TRAX SimpleFamilyStore/Lisa]'",
+                "1:9 !GET - SimpleFamilyStore/data.child2 -> '[TRAX SimpleFamilyStore/Lisa]'",
                 "1:10 !GET - SimpleFamilyStore/Lisa.firstName -> 'Lisa'",
-                "1:11 !GET - SimpleFamilyStore/root.child3 -> undefined",
-                "1:12 !SET - SimpleFamilyStore/root.childNames = 'Bart, Lisa' (prev: undefined)",
+                "1:11 !GET - SimpleFamilyStore/data.child3 -> undefined",
+                "1:12 !SET - SimpleFamilyStore/data.childNames = 'Bart, Lisa' (prev: undefined)",
                 "1:13 !PCE - 1:6",
-                "1:14 !GET - SimpleFamilyStore/root.childNames -> 'Bart, Lisa'",
-                "1:15 !NEW - O: SimpleFamilyStore/root*child3",
-                "1:16 !SET - SimpleFamilyStore/root.child3 = '[TRAX SimpleFamilyStore/root*child3]' (prev: undefined)",
-                "1:17 !DRT - SimpleFamilyStore%ChildNames <- SimpleFamilyStore/root.child3",
-                "1:18 !GET - SimpleFamilyStore/root.childNames -> 'Bart, Lisa'",
+                "1:14 !GET - SimpleFamilyStore/data.childNames -> 'Bart, Lisa'",
+                "1:15 !NEW - O: SimpleFamilyStore/data*child3",
+                "1:16 !SET - SimpleFamilyStore/data.child3 = '[TRAX SimpleFamilyStore/data*child3]' (prev: undefined)",
+                "1:17 !DRT - SimpleFamilyStore%ChildNames <- SimpleFamilyStore/data.child3",
+                "1:18 !GET - SimpleFamilyStore/data.childNames -> 'Bart, Lisa'",
                 "1:19 !PCS - !Reconciliation #1 - 1 processor",
                 "1:20 !PCS - !Compute #2 (SimpleFamilyStore%ChildNames) P1 Reconciliation - parentId=1:19",
-                "1:21 !GET - SimpleFamilyStore/root.child1 -> '[TRAX SimpleFamilyStore/Bart]'",
+                "1:21 !GET - SimpleFamilyStore/data.child1 -> '[TRAX SimpleFamilyStore/Bart]'",
                 "1:22 !GET - SimpleFamilyStore/Bart.firstName -> 'Bart'",
-                "1:23 !GET - SimpleFamilyStore/root.child2 -> '[TRAX SimpleFamilyStore/Lisa]'",
+                "1:23 !GET - SimpleFamilyStore/data.child2 -> '[TRAX SimpleFamilyStore/Lisa]'",
                 "1:24 !GET - SimpleFamilyStore/Lisa.firstName -> 'Lisa'",
-                "1:25 !GET - SimpleFamilyStore/root.child3 -> '[TRAX SimpleFamilyStore/root*child3]'",
-                "1:26 !GET - SimpleFamilyStore/root*child3.firstName -> 'Maggie'",
-                "1:27 !SET - SimpleFamilyStore/root.childNames = 'Bart, Lisa, Maggie' (prev: 'Bart, Lisa')",
+                "1:25 !GET - SimpleFamilyStore/data.child3 -> '[TRAX SimpleFamilyStore/data*child3]'",
+                "1:26 !GET - SimpleFamilyStore/data*child3.firstName -> 'Maggie'",
+                "1:27 !SET - SimpleFamilyStore/data.childNames = 'Bart, Lisa, Maggie' (prev: 'Bart, Lisa')",
                 "1:28 !PCE - 1:20",
                 "1:29 !PCE - 1:19",
-                "2:1 !GET - SimpleFamilyStore/root.childNames -> 'Bart, Lisa, Maggie'",
+                "2:1 !GET - SimpleFamilyStore/data.childNames -> 'Bart, Lisa, Maggie'",
             ]);
         });
 
@@ -606,48 +606,48 @@ describe('Sync Processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
-                "0:4 !NEW - O: PStore/root*v0",
-                "0:5 !GET - PStore/root.v0 -> '[TRAX PStore/root*v0]'",
-                "0:6 !NEW - O: PStore/root*v1",
-                "0:7 !GET - PStore/root.v1 -> '[TRAX PStore/root*v1]'",
-                "0:8 !NEW - O: PStore/root*v2",
-                "0:9 !GET - PStore/root.v2 -> '[TRAX PStore/root*v2]'",
-                "0:10 !NEW - O: PStore/root*v3",
-                "0:11 !GET - PStore/root.v3 -> '[TRAX PStore/root*v3]'",
-                "0:12 !NEW - O: PStore/root*v4",
-                "0:13 !GET - PStore/root.v4 -> '[TRAX PStore/root*v4]'",
-                "0:14 !NEW - O: PStore/root*v5",
-                "0:15 !GET - PStore/root.v5 -> '[TRAX PStore/root*v5]'",
+                "0:3 !NEW - O: PStore/data",
+                "0:4 !NEW - O: PStore/data*v0",
+                "0:5 !GET - PStore/data.v0 -> '[TRAX PStore/data*v0]'",
+                "0:6 !NEW - O: PStore/data*v1",
+                "0:7 !GET - PStore/data.v1 -> '[TRAX PStore/data*v1]'",
+                "0:8 !NEW - O: PStore/data*v2",
+                "0:9 !GET - PStore/data.v2 -> '[TRAX PStore/data*v2]'",
+                "0:10 !NEW - O: PStore/data*v3",
+                "0:11 !GET - PStore/data.v3 -> '[TRAX PStore/data*v3]'",
+                "0:12 !NEW - O: PStore/data*v4",
+                "0:13 !GET - PStore/data.v4 -> '[TRAX PStore/data*v4]'",
+                "0:14 !NEW - O: PStore/data*v5",
+                "0:15 !GET - PStore/data.v5 -> '[TRAX PStore/data*v5]'",
                 "0:16 !NEW - P: PStore%P1",
                 "0:17 !PCS - !Compute #1 (PStore%P1) P1 Init - parentId=0:1",
-                "0:18 !GET - PStore/root*v0.value -> 'v0initValue'",
-                "0:19 !SET - PStore/root*v1.value = 'P1(v0initValue)' (prev: 'v1initValue')",
+                "0:18 !GET - PStore/data*v0.value -> 'v0initValue'",
+                "0:19 !SET - PStore/data*v1.value = 'P1(v0initValue)' (prev: 'v1initValue')",
                 "0:20 !PCE - 0:17",
                 "0:21 !NEW - P: PStore%P2",
                 "0:22 !PCS - !Compute #1 (PStore%P2) P2 Init - parentId=0:1",
-                "0:23 !GET - PStore/root*v0.value -> 'v0initValue'",
-                "0:24 !SET - PStore/root*v2.value = 'P2(v0initValue)' (prev: 'v2initValue')",
+                "0:23 !GET - PStore/data*v0.value -> 'v0initValue'",
+                "0:24 !SET - PStore/data*v2.value = 'P2(v0initValue)' (prev: 'v2initValue')",
                 "0:25 !PCE - 0:22",
                 "0:26 !NEW - P: PStore%P3",
                 "0:27 !PCS - !Compute #1 (PStore%P3) P3 Init - parentId=0:1",
-                "0:28 !GET - PStore/root*v1.value -> 'P1(v0initValue)'",
-                "0:29 !SET - PStore/root*v3.value = 'P3(P1(v0initValue))' (prev: 'v3initValue')",
+                "0:28 !GET - PStore/data*v1.value -> 'P1(v0initValue)'",
+                "0:29 !SET - PStore/data*v3.value = 'P3(P1(v0initValue))' (prev: 'v3initValue')",
                 "0:30 !PCE - 0:27",
                 "0:31 !NEW - P: PStore%P4",
                 "0:32 !PCS - !Compute #1 (PStore%P4) P4 Init - parentId=0:1",
-                "0:33 !GET - PStore/root*v3.value -> 'P3(P1(v0initValue))'",
-                "0:34 !SET - PStore/root*v4.value = 'P4(P3(P1(v0initValue)))' (prev: 'v4initValue')",
+                "0:33 !GET - PStore/data*v3.value -> 'P3(P1(v0initValue))'",
+                "0:34 !SET - PStore/data*v4.value = 'P4(P3(P1(v0initValue)))' (prev: 'v4initValue')",
                 "0:35 !PCE - 0:32",
                 "0:36 !NEW - P: PStore%P5",
                 "0:37 !PCS - !Compute #1 (PStore%P5) P5 Init - parentId=0:1",
-                "0:38 !GET - PStore/root*v4.value -> 'P4(P3(P1(v0initValue)))'",
-                "0:39 !GET - PStore/root*v2.value -> 'P2(v0initValue)'",
-                "0:40 !SET - PStore/root*v5.value = 'P5(P4(P3(P1(v0initValue)))+P2(v0initValue))' (prev: 'v5initValue')",
+                "0:38 !GET - PStore/data*v4.value -> 'P4(P3(P1(v0initValue)))'",
+                "0:39 !GET - PStore/data*v2.value -> 'P2(v0initValue)'",
+                "0:40 !SET - PStore/data*v5.value = 'P5(P4(P3(P1(v0initValue)))+P2(v0initValue))' (prev: 'v5initValue')",
                 "0:41 !PCE - 0:37",
                 "0:42 !PCE - 0:1",
-                "0:43 !GET - PStore/root.v5 -> '[TRAX PStore/root*v5]'",
-                "0:44 !GET - PStore/root*v5.value -> 'P5(P4(P3(P1(v0initValue)))+P2(v0initValue))'",
+                "0:43 !GET - PStore/data.v5 -> '[TRAX PStore/data*v5]'",
+                "0:44 !GET - PStore/data*v5.value -> 'P5(P4(P3(P1(v0initValue)))+P2(v0initValue))'",
             ]);
 
             await trax.reconciliation();
@@ -659,38 +659,38 @@ describe('Sync Processors', () => {
 
             expect(printLogs(1)).toMatchObject([
                 "1:1 !LOG - -----------------",
-                "1:2 !GET - PStore/root.v0 -> '[TRAX PStore/root*v0]'",
-                "1:3 !SET - PStore/root*v0.value = 'NEWV0' (prev: 'v0initValue')",
-                "1:4 !DRT - PStore%P1 <- PStore/root*v0.value",
-                "1:5 !DRT - PStore%P2 <- PStore/root*v0.value",
+                "1:2 !GET - PStore/data.v0 -> '[TRAX PStore/data*v0]'",
+                "1:3 !SET - PStore/data*v0.value = 'NEWV0' (prev: 'v0initValue')",
+                "1:4 !DRT - PStore%P1 <- PStore/data*v0.value",
+                "1:5 !DRT - PStore%P2 <- PStore/data*v0.value",
                 "1:6 !PCS - !Reconciliation #1 - 5 processors",
                 "1:7 !PCS - !Compute #2 (PStore%P1) P1 Reconciliation - parentId=1:6",
-                "1:8 !GET - PStore/root*v0.value -> 'NEWV0'",
-                "1:9 !SET - PStore/root*v1.value = 'P1(NEWV0)' (prev: 'P1(v0initValue)')",
-                "1:10 !DRT - PStore%P3 <- PStore/root*v1.value",
+                "1:8 !GET - PStore/data*v0.value -> 'NEWV0'",
+                "1:9 !SET - PStore/data*v1.value = 'P1(NEWV0)' (prev: 'P1(v0initValue)')",
+                "1:10 !DRT - PStore%P3 <- PStore/data*v1.value",
                 "1:11 !PCE - 1:7",
                 "1:12 !PCS - !Compute #2 (PStore%P2) P2 Reconciliation - parentId=1:6",
-                "1:13 !GET - PStore/root*v0.value -> 'NEWV0'",
-                "1:14 !SET - PStore/root*v2.value = 'P2(NEWV0)' (prev: 'P2(v0initValue)')",
-                "1:15 !DRT - PStore%P5 <- PStore/root*v2.value",
+                "1:13 !GET - PStore/data*v0.value -> 'NEWV0'",
+                "1:14 !SET - PStore/data*v2.value = 'P2(NEWV0)' (prev: 'P2(v0initValue)')",
+                "1:15 !DRT - PStore%P5 <- PStore/data*v2.value",
                 "1:16 !PCE - 1:12",
                 "1:17 !PCS - !Compute #2 (PStore%P3) P3 Reconciliation - parentId=1:6",
-                "1:18 !GET - PStore/root*v1.value -> 'P1(NEWV0)'",
-                "1:19 !SET - PStore/root*v3.value = 'P3(P1(NEWV0))' (prev: 'P3(P1(v0initValue))')",
-                "1:20 !DRT - PStore%P4 <- PStore/root*v3.value",
+                "1:18 !GET - PStore/data*v1.value -> 'P1(NEWV0)'",
+                "1:19 !SET - PStore/data*v3.value = 'P3(P1(NEWV0))' (prev: 'P3(P1(v0initValue))')",
+                "1:20 !DRT - PStore%P4 <- PStore/data*v3.value",
                 "1:21 !PCE - 1:17",
                 "1:22 !PCS - !Compute #2 (PStore%P4) P4 Reconciliation - parentId=1:6",
-                "1:23 !GET - PStore/root*v3.value -> 'P3(P1(NEWV0))'",
-                "1:24 !SET - PStore/root*v4.value = 'P4(P3(P1(NEWV0)))' (prev: 'P4(P3(P1(v0initValue)))')",
+                "1:23 !GET - PStore/data*v3.value -> 'P3(P1(NEWV0))'",
+                "1:24 !SET - PStore/data*v4.value = 'P4(P3(P1(NEWV0)))' (prev: 'P4(P3(P1(v0initValue)))')",
                 "1:25 !PCE - 1:22",
                 "1:26 !PCS - !Compute #2 (PStore%P5) P5 Reconciliation - parentId=1:6",
-                "1:27 !GET - PStore/root*v4.value -> 'P4(P3(P1(NEWV0)))'",
-                "1:28 !GET - PStore/root*v2.value -> 'P2(NEWV0)'",
-                "1:29 !SET - PStore/root*v5.value = 'P5(P4(P3(P1(NEWV0)))+P2(NEWV0))' (prev: 'P5(P4(P3(P1(v0initValue)))+P2(v0initValue))')",
+                "1:27 !GET - PStore/data*v4.value -> 'P4(P3(P1(NEWV0)))'",
+                "1:28 !GET - PStore/data*v2.value -> 'P2(NEWV0)'",
+                "1:29 !SET - PStore/data*v5.value = 'P5(P4(P3(P1(NEWV0)))+P2(NEWV0))' (prev: 'P5(P4(P3(P1(v0initValue)))+P2(v0initValue))')",
                 "1:30 !PCE - 1:26",
                 "1:31 !PCE - 1:6",
-                "2:1 !GET - PStore/root.v5 -> '[TRAX PStore/root*v5]'",
-                "2:2 !GET - PStore/root*v5.value -> 'P5(P4(P3(P1(NEWV0)))+P2(NEWV0))'",
+                "2:1 !GET - PStore/data.v5 -> '[TRAX PStore/data*v5]'",
+                "2:2 !GET - PStore/data*v5.value -> 'P5(P4(P3(P1(NEWV0)))+P2(NEWV0))'",
             ]);
 
             // TODO: dispose store and check that processor count is back to 0
@@ -719,7 +719,7 @@ describe('Sync Processors', () => {
             expect(v.v2).toBe("P1(A)");
             expect(v.v3).toBe("P2(A)");
             expect(p1.dependencies).toMatchObject([
-                "PStore/root.v1",
+                "PStore/data.v1",
             ]);
 
             v.v1 = "X";
@@ -762,20 +762,20 @@ describe('Sync Processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> 'Homer'",
-                "0:7 !GET - PStore/root.firstName -> 'Homer'",
-                "0:8 !GET - PStore/root.lastName -> 'Simpson'",
-                "0:9 !SET - PStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
-                "0:10 !SET - PStore/root.prettyNameLength = 13 (prev: undefined)",
+                "0:6 !GET - PStore/data.firstName -> 'Homer'",
+                "0:7 !GET - PStore/data.firstName -> 'Homer'",
+                "0:8 !GET - PStore/data.lastName -> 'Simpson'",
+                "0:9 !SET - PStore/data.prettyName = 'Homer Simpson' (prev: undefined)",
+                "0:10 !SET - PStore/data.prettyNameLength = 13 (prev: undefined)",
                 "0:11 !PCE - 0:5",
                 "0:12 !PCE - 0:1",
                 "0:13 !NEW - P: PStore%Render",
                 "0:14 !PCS - !Compute #1 (PStore%Render) P2 DirectCall R",
-                "0:15 !GET - PStore/root.firstName -> 'Homer'",
-                "0:16 !GET - PStore/root.lastName -> 'Simpson'",
+                "0:15 !GET - PStore/data.firstName -> 'Homer'",
+                "0:16 !GET - PStore/data.lastName -> 'Simpson'",
                 "0:17 !PCE - 0:14",
             ]);
             expect(output).toBe("Homer Simpson");
@@ -871,13 +871,13 @@ describe('Sync Processors', () => {
             expect(printLogs(1)).toMatchObject([
                 "1:1 !LOG - A",
                 "1:2 !LOG - B",
-                "1:3 !SET - PStore/root.firstName = 'H' (prev: 'Homer')",
-                "1:4 !DRT - PStore%Render <- PStore/root.firstName",
+                "1:3 !SET - PStore/data.firstName = 'H' (prev: 'Homer')",
+                "1:4 !DRT - PStore%Render <- PStore/data.firstName",
                 "1:5 !LOG - C",
                 "1:6 !PCS - !Reconciliation #1 - 1 processor",
                 "1:7 !PCS - !Compute #2 (PStore%Render) P1 Reconciliation - parentId=1:6",
-                "1:8 !GET - PStore/root.firstName -> 'H'",
-                "1:9 !GET - PStore/root.lastName -> 'Simpson'",
+                "1:8 !GET - PStore/data.firstName -> 'H'",
+                "1:9 !GET - PStore/data.lastName -> 'Simpson'",
                 "1:10 !PCE - 1:7",
                 "1:11 !PCE - 1:6",
             ]);
@@ -904,11 +904,11 @@ describe('Sync Processors', () => {
                 output = "VIEW: " + proot.prettyName;
             }, true, true);
 
-            const rootId = "PStore/root";
-            const processorId = "PStore%root[prettyNames]";
+            const rootId = "PStore/data";
+            const processorId = "PStore%data[prettyNames]";
 
             expect(trax.getTraxId(pstore.data)).toBe(rootId);
-            const pr = pstore.getProcessor("root[prettyNames]");
+            const pr = pstore.getProcessor("data[prettyNames]");
             expect(pr).not.toBe(undefined);
             expect(pr!.id).toBe(processorId);
             expect(output).toBe("VIEW: Homer Simpson");
@@ -1026,13 +1026,13 @@ describe('Sync Processors', () => {
             await trax.reconciliation();
 
             expect(printLogs(1)).toMatchObject([
-                "1:1 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "1:1 !GET - FStore/data.father -> '[TRAX FStore/Father]'",
                 "1:2 !GET - FStore/Father.prettyNameLength -> 18",
-                "1:3 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "1:3 !GET - FStore/data.father -> '[TRAX FStore/Father]'",
                 "1:4 !DEL - FStore%Father[pn]",
                 "1:5 !DEL - FStore%Father[pnl]",
                 "1:6 !DEL - FStore/Father",
-                "1:7 !SET - FStore/root.childNames = 'S' (prev: 'SIMS')",
+                "1:7 !SET - FStore/data.childNames = 'S' (prev: 'SIMS')",
                 // no call to FStore%Father[0] or FStore%Father[1]
             ]);
         });
@@ -1063,21 +1063,21 @@ describe('Sync Processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (FStore)",
                 "0:2 !NEW - S: FStore",
-                "0:3 !NEW - O: FStore/root",
+                "0:3 !NEW - O: FStore/data",
                 "0:4 !NEW - O: FStore/Father",
                 "0:5 !NEW - P: FStore%Father[prettyName]",
                 "0:6 !SKP - FStore%Father[prettyName]",
                 "0:7 !NEW - P: FStore%Father[prettyNameLength]",
                 "0:8 !SKP - FStore%Father[prettyNameLength]",
-                "0:9 !SET - FStore/root.father = '[TRAX FStore/Father]' (prev: undefined)",
+                "0:9 !SET - FStore/data.father = '[TRAX FStore/Father]' (prev: undefined)",
                 "0:10 !PCE - 0:1",
                 "0:11 !NEW - P: FStore%Render",
                 "0:12 !PCS - !Compute #1 (FStore%Render) P3 Init R",
-                "0:13 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "0:13 !GET - FStore/data.father -> '[TRAX FStore/Father]'",
                 "0:14 !PCS - !Compute #1 (FStore%Father[prettyName]) P1 TargetRead - parentId=0:12",
                 "0:15 !GET - FStore/Father.firstName -> 'Homer'",
                 "0:16 !GET - FStore/Father.lastName -> 'Simpson'",
-                "0:17 !GET - FStore/root.childNames -> 'S'",
+                "0:17 !GET - FStore/data.childNames -> 'S'",
                 "0:18 !SET - FStore/Father.prettyName = 'Homer/Simpson/S' (prev: undefined)",
                 "0:19 !PCE - 0:14",
                 "0:20 !PCS - !Compute #1 (FStore%Father[prettyNameLength]) P2 TargetRead - parentId=0:12",
@@ -1094,14 +1094,14 @@ describe('Sync Processors', () => {
             await trax.reconciliation();
             expect(output).toBe("VIEW: Homer/SIMPSON/S");
             expect(printLogs(1)).toMatchObject([
-                "1:1 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "1:1 !GET - FStore/data.father -> '[TRAX FStore/Father]'",
                 "1:2 !SET - FStore/Father.lastName = 'SIMPSON' (prev: 'Simpson')",
                 "1:3 !DRT - FStore%Father[prettyName] <- FStore/Father.lastName",
                 "1:4 !PCS - !Reconciliation #1 - 3 processors",
                 "1:5 !PCS - !Compute #2 (FStore%Father[prettyName]) P1 Reconciliation - parentId=1:4", // Compute triggered through reconciliation because we have a listener
                 "1:6 !GET - FStore/Father.firstName -> 'Homer'",
                 "1:7 !GET - FStore/Father.lastName -> 'SIMPSON'",
-                "1:8 !GET - FStore/root.childNames -> 'S'",
+                "1:8 !GET - FStore/data.childNames -> 'S'",
                 "1:9 !SET - FStore/Father.prettyName = 'Homer/SIMPSON/S' (prev: 'Homer/Simpson/S')",
                 "1:10 !DRT - FStore%Render <- FStore/Father.prettyName",
                 "1:11 !DRT - FStore%Father[prettyNameLength] <- FStore/Father.prettyName",
@@ -1110,7 +1110,7 @@ describe('Sync Processors', () => {
                 "1:14 !GET - FStore/Father.prettyName -> 'Homer/SIMPSON/S'",
                 "1:15 !PCE - 1:13",
                 "1:16 !PCS - !Compute #2 (FStore%Render) P3 Reconciliation R - parentId=1:4",
-                "1:17 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "1:17 !GET - FStore/data.father -> '[TRAX FStore/Father]'",
                 "1:18 !GET - FStore/Father.prettyName -> 'Homer/SIMPSON/S'",
                 "1:19 !PCE - 1:16",
                 "1:20 !PCE - 1:4",
@@ -1123,7 +1123,7 @@ describe('Sync Processors', () => {
 
             expect(printLogs(2)).toMatchObject([
                 "2:1 !DEL - FStore%Render",
-                "2:2 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "2:2 !GET - FStore/data.father -> '[TRAX FStore/Father]'",
                 "2:3 !SET - FStore/Father.lastName = 'SimpsonSimpson' (prev: 'SIMPSON')",
                 "2:4 !DRT - FStore%Father[prettyName] <- FStore/Father.lastName",
                 "2:5 !PCS - !Reconciliation #2 - 2 processors",
@@ -1143,11 +1143,11 @@ describe('Sync Processors', () => {
             expect(printLogs(3)).toMatchObject([
                 "3:1 !NEW - P: FStore%Render2",
                 "3:2 !PCS - !Compute #1 (FStore%Render2) P4 Init R",
-                "3:3 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "3:3 !GET - FStore/data.father -> '[TRAX FStore/Father]'",
                 "3:4 !PCS - !Compute #3 (FStore%Father[prettyName]) P1 TargetRead - parentId=3:2",
                 "3:5 !GET - FStore/Father.firstName -> 'Homer'",
                 "3:6 !GET - FStore/Father.lastName -> 'SimpsonSimpson'",
-                "3:7 !GET - FStore/root.childNames -> 'S'",
+                "3:7 !GET - FStore/data.childNames -> 'S'",
                 "3:8 !SET - FStore/Father.prettyName = 'Homer/SimpsonSimpson/S' (prev: 'Homer/SIMPSON/S')",
                 "3:9 !DRT - FStore%Father[prettyNameLength] <- FStore/Father.prettyName",
                 "3:10 !PCE - 3:4",
@@ -1157,7 +1157,7 @@ describe('Sync Processors', () => {
                 "3:14 !PCE - 3:11",
                 "3:15 !GET - FStore/Father.prettyName -> 'Homer/SimpsonSimpson/S'",
                 "3:16 !PCE - 3:2",
-                "3:17 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "3:17 !GET - FStore/data.father -> '[TRAX FStore/Father]'",
                 "3:18 !GET - FStore/Father.prettyNameLength -> 22",
             ]);
 
@@ -1187,7 +1187,7 @@ describe('Sync Processors', () => {
 
             expect(printLogs(5)).toMatchObject([
                 "5:1 !DEL - FStore%Render3",
-                "5:2 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "5:2 !GET - FStore/data.father -> '[TRAX FStore/Father]'",
                 "5:3 !SET - FStore/Father.lastName = 'Sim3' (prev: 'Sim2')",
                 "5:4 !DRT - FStore%Father[prettyName] <- FStore/Father.lastName",
                 "5:5 !PCS - !Reconciliation #5 - 2 processors",
@@ -1226,8 +1226,8 @@ describe('Sync Processors', () => {
             expect(output).toBe("VIEW: Homer Simpson");
             expect(proot.prettyNameLength).toBe(13);
 
-            expect(id1).toBe("PStore%root[prettyName]");
-            expect(id2).toBe("PStore%root[prettyNameLength]");
+            expect(id1).toBe("PStore%data[prettyName]");
+            expect(id2).toBe("PStore%data[prettyNameLength]");
             expect(name1).toBe("prettyName");
             expect(name2).toBe("prettyNameLength");
             await trax.reconciliation();
@@ -1240,8 +1240,8 @@ describe('Sync Processors', () => {
 
             expect(name1).toBe("prettyName");
             expect(name2).toBe("prettyNameLength"); // not PrettyNameLength2
-            expect(id1).toBe("PStore%root[prettyName]");
-            expect(id2).toBe("PStore%root[prettyNameLength]");
+            expect(id1).toBe("PStore%data[prettyName]");
+            expect(id2).toBe("PStore%data[prettyNameLength]");
         });
     });
 
@@ -1294,34 +1294,34 @@ describe('Sync Processors', () => {
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !PCE - 0:1",
                 "0:5 !NEW - P: PStore%Render",
                 "0:6 !PCS - !Compute #1 (PStore%Render) P1 Init",
-                "0:7 !GET - PStore/root.firstName -> 'Homer'",
-                "0:8 !GET - PStore/root.lastName -> 'Simpson'",
+                "0:7 !GET - PStore/data.firstName -> 'Homer'",
+                "0:8 !GET - PStore/data.lastName -> 'Simpson'",
                 "0:9 !PCE - 0:6",
-                "1:1 !SET - PStore/root.firstName = 'Bart' (prev: 'Homer')",
-                "1:2 !DRT - PStore%Render <- PStore/root.firstName",
+                "1:1 !SET - PStore/data.firstName = 'Bart' (prev: 'Homer')",
+                "1:2 !DRT - PStore%Render <- PStore/data.firstName",
                 "1:3 !PCS - !Reconciliation #1 - 1 processor", // 1 active processor
                 "1:4 !PCS - !Compute #2 (PStore%Render) P1 Reconciliation - parentId=1:3",
-                "1:5 !GET - PStore/root.firstName -> 'Bart'",
-                "1:6 !GET - PStore/root.lastName -> 'Simpson'",
+                "1:5 !GET - PStore/data.firstName -> 'Bart'",
+                "1:6 !GET - PStore/data.lastName -> 'Simpson'",
                 "1:7 !PCE - 1:4",
                 "1:8 !PCE - 1:3",
-                "2:1 !SET - PStore/root.firstName = 'Maggie' (prev: 'Bart')",
-                "2:2 !DRT - PStore%Render <- PStore/root.firstName",
+                "2:1 !SET - PStore/data.firstName = 'Maggie' (prev: 'Bart')",
+                "2:2 !DRT - PStore%Render <- PStore/data.firstName",
                 "2:3 !DEL - PStore%Render",
                 "2:4 !LOG - Delete complete",
                 "2:5 !LOG - Before Change",
-                "2:6 !SET - PStore/root.firstName = 'Lisa' (prev: 'Maggie')",
+                "2:6 !SET - PStore/data.firstName = 'Lisa' (prev: 'Maggie')",
                 "2:7 !LOG - After Change",
                 "2:8 !PCS - !Reconciliation #2 - 0 processors", // no more active processor
                 "2:9 !PCE - 2:8",
                 "3:1 !NEW - P: PStore%Render",
                 "3:2 !PCS - !Compute #1 (PStore%Render) P2 Init",
-                "3:3 !GET - PStore/root.firstName -> 'Lisa'",
-                "3:4 !GET - PStore/root.lastName -> 'Simpson'",
+                "3:3 !GET - PStore/data.firstName -> 'Lisa'",
+                "3:4 !GET - PStore/data.lastName -> 'Simpson'",
                 "3:5 !PCE - 3:2",
             ]);
         });
@@ -1399,17 +1399,17 @@ describe('Sync Processors', () => {
                     }
                 });
             });
-            const processorId = "PStore%root[prettyNames]";
+            const processorId = "PStore%data[prettyNames]";
 
             const p = pstore.data;
-            const pr = pstore.getProcessor("root[prettyNames]")!;
+            const pr = pstore.getProcessor("data[prettyNames]")!;
             expect(lastId).toBe(""); // lazy call
             expect(pr.id).toBe(processorId);
             expect(pr.computeCount).toBe(0);
             expect(pr.disposed).toBe(false);
             expect(p.prettyName).toBe("Homer Simpson");
             expect(pr.computeCount).toBe(1); // read triggered compute
-            expect(pstore.getProcessor("root[prettyNames]")).toBe(pr);
+            expect(pstore.getProcessor("data[prettyNames]")).toBe(pr);
             expect(trax.getProcessor(processorId)).toBe(pr);
             expect(lastCount).toBe(1);
 
@@ -1433,7 +1433,7 @@ describe('Sync Processors', () => {
             expect(lastCount).toBe(2);
             expect(pr.disposed).toBe(true);
 
-            expect(pstore.getProcessor("root[prettyNames]")).toBe(undefined);
+            expect(pstore.getProcessor("data[prettyNames]")).toBe(undefined);
             expect(trax.getProcessor(processorId)).toBe(undefined);
             expect(pstore.getProcessor(processorId)).toBe(undefined);
 
@@ -1512,7 +1512,7 @@ describe('Sync Processors', () => {
             expect(printLogs(1)).toMatchObject([
                 "1:1 !NEW - P: PStore%Render",
                 "1:2 !PCS - !Compute #1 (PStore%Render) P1 Init",
-                "1:3 !GET - PStore/root.firstName -> 'Homer'",
+                "1:3 !GET - PStore/data.firstName -> 'Homer'",
                 "1:4 !ERR - [TRAX] (PStore%Render) Compute error: Error: Unexpected error",
                 "1:5 !PCE - 1:2",
             ]);
@@ -1542,12 +1542,12 @@ describe('Sync Processors', () => {
 
             expect(printLogs(1)).toMatchObject([
                 "1:1 !PCS - !Compute #1 (PStore%Render) P1 DirectCall",
-                "1:2 !GET - PStore/root.firstName -> 'Homer'",
-                "1:3 !GET - PStore/root.lastName -> 'Simpson'",
+                "1:2 !GET - PStore/data.firstName -> 'Homer'",
+                "1:3 !GET - PStore/data.lastName -> 'Simpson'",
                 "1:4 !PCE - 1:1",
                 "1:5 !LOG - A",
-                "1:6 !SET - PStore/root.firstName = 'Lisa' (prev: 'Homer')",
-                "1:7 !DRT - PStore%Render <- PStore/root.firstName",
+                "1:6 !SET - PStore/data.firstName = 'Lisa' (prev: 'Homer')",
+                "1:7 !DRT - PStore%Render <- PStore/data.firstName",
                 "1:8 !ERR - [TRAX] (PStore%Render) onDirty callback execution error: Error: [onDirty] Unexpected error",
                 "1:9 !LOG - B",
             ]);
@@ -1566,20 +1566,20 @@ describe('Sync Processors', () => {
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> 'Homer'",
-                "0:7 !GET - PStore/root.firstName -> 'Homer'",
-                "0:8 !GET - PStore/root.lastName -> 'Simpson'",
-                "0:9 !SET - PStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
-                "0:10 !SET - PStore/root.prettyNameLength = 13 (prev: undefined)",
+                "0:6 !GET - PStore/data.firstName -> 'Homer'",
+                "0:7 !GET - PStore/data.firstName -> 'Homer'",
+                "0:8 !GET - PStore/data.lastName -> 'Simpson'",
+                "0:9 !SET - PStore/data.prettyName = 'Homer Simpson' (prev: undefined)",
+                "0:10 !SET - PStore/data.prettyNameLength = 13 (prev: undefined)",
                 "0:11 !PCE - 0:5",
                 "0:12 !PCE - 0:1",
                 "1:1 !NEW - P: PStore%PrettyName2",
                 "1:2 !PCS - !Compute #1 (PStore%PrettyName2) P2 Init",
-                "1:3 !GET - PStore/root.firstName -> 'Homer'",
-                "1:4 !ERR - [TRAX] Computed property conflict: PStore/root.prettyName can only be set by PStore%PrettyName",
+                "1:3 !GET - PStore/data.firstName -> 'Homer'",
+                "1:4 !ERR - [TRAX] Computed property conflict: PStore/data.prettyName can only be set by PStore%PrettyName",
                 "1:5 !PCE - 1:2",
                 "1:6 !LOG - DONE",
 
@@ -1611,39 +1611,39 @@ describe('Sync Processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%P1",
                 "0:5 !PCS - !Compute #1 (PStore%P1) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.v1 -> 'A'",
-                "0:7 !SET - PStore/root.v2 = 'P1(A)' (prev: 'B')",
+                "0:6 !GET - PStore/data.v1 -> 'A'",
+                "0:7 !SET - PStore/data.v2 = 'P1(A)' (prev: 'B')",
                 "0:8 !PCE - 0:5",
                 "0:9 !NEW - P: PStore%P2",
                 "0:10 !PCS - !Compute #1 (PStore%P2) P2 Init - parentId=0:1",
-                "0:11 !GET - PStore/root.v2 -> 'P1(A)'",
-                "0:12 !SET - PStore/root.v3 = 'P2(P1(A))' (prev: 'C')",
+                "0:11 !GET - PStore/data.v2 -> 'P1(A)'",
+                "0:12 !SET - PStore/data.v3 = 'P2(P1(A))' (prev: 'C')",
                 "0:13 !PCE - 0:10",
                 "0:14 !NEW - P: PStore%P3",
                 "0:15 !PCS - !Compute #1 (PStore%P3) P3 Init - parentId=0:1",
-                "0:16 !GET - PStore/root.v3 -> 'P2(P1(A))'",
-                "0:17 !SET - PStore/root.v1 = 'P3(P2(P1(A)))' (prev: 'A')",
-                "0:18 !DRT - PStore%P1 <- PStore/root.v1",
+                "0:16 !GET - PStore/data.v3 -> 'P2(P1(A))'",
+                "0:17 !SET - PStore/data.v1 = 'P3(P2(P1(A)))' (prev: 'A')",
+                "0:18 !DRT - PStore%P1 <- PStore/data.v1",
                 "0:19 !PCE - 0:15",
                 "0:20 !PCE - 0:1",
                 "0:21 !PCS - !Reconciliation #1 - 3 processors",
                 "0:22 !PCS - !Compute #2 (PStore%P1) P1 Reconciliation - parentId=0:21",
-                "0:23 !GET - PStore/root.v1 -> 'P3(P2(P1(A)))'",
-                "0:24 !SET - PStore/root.v2 = 'P1(P3(P2(P1(A))))' (prev: 'P1(A)')",
-                "0:25 !DRT - PStore%P2 <- PStore/root.v2",
+                "0:23 !GET - PStore/data.v1 -> 'P3(P2(P1(A)))'",
+                "0:24 !SET - PStore/data.v2 = 'P1(P3(P2(P1(A))))' (prev: 'P1(A)')",
+                "0:25 !DRT - PStore%P2 <- PStore/data.v2",
                 "0:26 !PCE - 0:22",
                 "0:27 !PCS - !Compute #2 (PStore%P2) P2 Reconciliation - parentId=0:21",
-                "0:28 !GET - PStore/root.v2 -> 'P1(P3(P2(P1(A))))'",
-                "0:29 !SET - PStore/root.v3 = 'P2(P1(P3(P2(P1(A)))))' (prev: 'P2(P1(A))')",
-                "0:30 !DRT - PStore%P3 <- PStore/root.v3",
+                "0:28 !GET - PStore/data.v2 -> 'P1(P3(P2(P1(A))))'",
+                "0:29 !SET - PStore/data.v3 = 'P2(P1(P3(P2(P1(A)))))' (prev: 'P2(P1(A))')",
+                "0:30 !DRT - PStore%P3 <- PStore/data.v3",
                 "0:31 !PCE - 0:27",
                 "0:32 !PCS - !Compute #2 (PStore%P3) P3 Reconciliation - parentId=0:21",
-                "0:33 !GET - PStore/root.v3 -> 'P2(P1(P3(P2(P1(A)))))'",
-                "0:34 !SET - PStore/root.v1 = 'P3(P2(P1(P3(P2(P1(A))))))' (prev: 'P3(P2(P1(A)))')",
-                "0:35 !DRT - PStore%P1 <- PStore/root.v1",
+                "0:33 !GET - PStore/data.v3 -> 'P2(P1(P3(P2(P1(A)))))'",
+                "0:34 !SET - PStore/data.v1 = 'P3(P2(P1(P3(P2(P1(A))))))' (prev: 'P3(P2(P1(A)))')",
+                "0:35 !DRT - PStore%P1 <- PStore/data.v1",
                 "0:36 !PCE - 0:32",
                 "0:37 !ERR - [TRAX] (PStore%P1) Circular reference: Processors cannot run twice during reconciliation",
                 "0:38 !PCE - 0:21",
@@ -1669,11 +1669,11 @@ describe('Sync Processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%P1",
                 "0:5 !PCS - !Compute #1 (PStore%P1) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.v1 -> 'A'",
-                "0:7 !SET - PStore/root.v2 = 'P1(A)' (prev: 'B')",
+                "0:6 !GET - PStore/data.v1 -> 'A'",
+                "0:7 !SET - PStore/data.v2 = 'P1(A)' (prev: 'B')",
                 "0:8 !PCE - 0:5",
                 "0:9 !NEW - P: PStore%P2",
                 "0:10 !PCS - !Compute #1 (PStore%P2) P2 Init - parentId=0:1",

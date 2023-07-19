@@ -133,9 +133,9 @@ const store = trax.createStore("PersonStore", (store: Store<Person>) => {
     });
 });
 
-const p1 = store.getProcessor("root[prettyName]");
+const p1 = store.getProcessor("data[prettyName]");
 
-expect(p1!.id).toBe("PersonStore%root[prettyName]");
+expect(p1!.id).toBe("PersonStore%data[prettyName]");
 expect(p2!.id).toBe("PersonStore%Avatar");
 ```
 
@@ -160,8 +160,8 @@ Get the ids of the processor's current dependencies identified during the last *
 ```typescript
 // following previous example
 expect(p1.dependencies).toMatchObject([
-    "PersonStore/root.firstName",
-    "PersonStore/root.lastName",
+    "PersonStore/data.firstName",
+    "PersonStore/data.lastName",
 ]);
 ```
 

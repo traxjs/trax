@@ -11,7 +11,7 @@ const traxProxyTarget = Symbol("trax.proxy.target");
 /** Symbol used to attach the Object.keys() size to objects used as dictionaries - cf. getObjectKeys() */
 const dictSize = Symbol("trax.dict.size");
 const RX_INVALID_ID = /(\/|\>|\.|\%)/g;
-const ROOT = "root";
+const ROOT = "data";
 /** Separator used to join array id definitions */
 const ID_SEPARATOR1 = ":";
 /** Separator used to create automatic ids while navigating JSON objects */
@@ -805,7 +805,7 @@ export function createTraxEnv(): Trax {
                 return storeId;
             },
             get data() {
-                // root should always be defined if initFunction is correctly implemented
+                // root data should always be defined if initFunction is correctly implemented
                 return data;
             },
             get disposed(): boolean {
@@ -1011,7 +1011,7 @@ export function createTraxEnv(): Trax {
 
         function checkRoot() {
             if (data == undefined) {
-                error(`(${storeId}) createStore init must define a root object - see also: init()`);
+                error(`(${storeId}) createStore init must define a root data object - see also: init()`);
                 data = getOrAdd(ROOT, {}, true);
             }
         }
@@ -1052,7 +1052,7 @@ export function createTraxEnv(): Trax {
 
             if (!acceptRootId) {
                 if (idSuffix === ROOT) {
-                    error("Store.add: Invalid id 'root' (reserved)");
+                    error("Store.add: Invalid id 'data' (reserved)");
                     idSuffix = getRandomId();
                 }
             }

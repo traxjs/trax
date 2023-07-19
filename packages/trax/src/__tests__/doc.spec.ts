@@ -171,8 +171,8 @@ describe('Doc examples', () => {
             active3 = trax.getActiveProcessor()?.id || "";
         });
 
-        expect(processorId1).toBe("PersonStore%root[adult]");
-        expect(active1).toBe("PersonStore%root[adult]");
+        expect(processorId1).toBe("PersonStore%data[adult]");
+        expect(active1).toBe("PersonStore%data[adult]");
         expect(processor2.id).toBe("PersonStore%prettyName");
         expect(trax.getProcessor("PersonStore%prettyName")).toBe(processor2);
         expect(trax.getProcessor(processorId1)!.id).toBe(processorId1);
@@ -221,8 +221,8 @@ describe('Doc examples', () => {
         expect(trax.getTraxId({})).toBe("");
         const testStore = trax.createStore("TestStore", { foo: { bar: "baz" } });
         expect(trax.getTraxId(testStore)).toBe("TestStore");
-        expect(trax.getTraxId(testStore.data)).toBe("TestStore/root");
-        expect(trax.getTraxId(testStore.data.foo)).toBe("TestStore/root*foo");
+        expect(trax.getTraxId(testStore.data)).toBe("TestStore/data");
+        expect(trax.getTraxId(testStore.data.foo)).toBe("TestStore/data*foo");
         expect(trax.getTraxId(testStore.data.foo.bar)).toBe(""); // bar is not an object
     });
 
@@ -236,10 +236,10 @@ describe('Doc examples', () => {
 
     it('should support getData', async () => {
         const testStore = trax.createStore("TestStore", { foo: { bar: [1, 2, 3], baz: "abc" } });
-        expect(trax.getData("TestStore/root")).toBe(testStore.data);
-        expect(trax.getData("TestStore/root*foo*bar")).toBe(undefined); // because testStore.root.foo.bar has never been accessed
+        expect(trax.getData("TestStore/data")).toBe(testStore.data);
+        expect(trax.getData("TestStore/data*foo*bar")).toBe(undefined); // because testStore.root.foo.bar has never been accessed
         const v = testStore.data.foo.bar
-        expect(trax.getData("TestStore/root*foo*bar")).toBe(testStore.data.foo.bar);
+        expect(trax.getData("TestStore/data*foo*bar")).toBe(testStore.data.foo.bar);
         expect(trax.getData("XYZ")).toBe(undefined);
     });
 
@@ -287,7 +287,7 @@ describe('Doc examples', () => {
         // add message outside the addMsg method
         ms.data.messages.push({ id: "M3", text: "Message 3" });
         const m3 = msgStore.data.messages[3];
-        expect(trax.getTraxId(m3)).toBe("MessageStore/root*messages*3"); // generated id
+        expect(trax.getTraxId(m3)).toBe("MessageStore/data*messages*3"); // generated id
         await trax.reconciliation();
 
         expect(ms.get("Message:M0")).toBe(m0);
@@ -331,7 +331,7 @@ describe('Doc examples', () => {
         const subStore = store.createStore("Bar", { anotherValue: "DEF" });
 
         expect(subStore.id).toBe("Foo>Bar");
-        expect(trax.getTraxId(subStore.data)).toBe("Foo>Bar/root");
+        expect(trax.getTraxId(subStore.data)).toBe("Foo>Bar/data");
 
         expect(store.getStore("Bar")).toBe(subStore);
     });
@@ -478,9 +478,9 @@ describe('Doc examples', () => {
             });
         });
 
-        const p1 = store.getProcessor("root[prettyName]")!;
+        const p1 = store.getProcessor("data[prettyName]")!;
 
-        expect(p1.id).toBe("PersonStore%root[prettyName]");
+        expect(p1.id).toBe("PersonStore%data[prettyName]");
         expect(p2!.id).toBe("PersonStore%Avatar");
 
         const person = store.data;
@@ -494,8 +494,8 @@ describe('Doc examples', () => {
         expect(person.prettyName).toBe("Marge Simpson");
 
         expect(p1.dependencies).toMatchObject([
-            "PersonStore/root.firstName",
-            "PersonStore/root.lastName",
+            "PersonStore/data.firstName",
+            "PersonStore/data.lastName",
         ]);
 
         // autocompute

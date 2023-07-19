@@ -42,15 +42,15 @@ Trax unique ids are designed to be human-readable and are built though concatena
     - root stores: **JS_IDENTIFIER** - e.g. *MyStore* or *TodoStore*
     - sub-stores (i.e. stores created in another store): **JS_IDENTIFIER(>JS_IDENTIFIER)+** - e.g. *MyStore>MySubStore>MySubSubStore*
 - Objects and Arrays : **STORE_ID/DATA_PATH** - e.g.
-    - store root object: *MyStore/root*
-    - sub-objects with automatically generated ids (id is genereated from the path used to access the object for the first time): *MyStore/root\*author\*name*
-    - properties: *MyStore/root\*author\*name.firstName* or *MyStore/root\*author.id*
-    - data path built from another object - e.g. *SimpleFamilyStore/root:foo* (created through a id array like with ```myStore.add([fst.root, "foo"], { foo: "bar" });```)
+    - store root data object: *MyStore/data*
+    - sub-objects with automatically generated ids (id is genereated from the path used to access the object for the first time): *MyStore/data\*author\*name*
+    - properties: *MyStore/data\*author\*name.firstName* or *MyStore/data\*author.id*
+    - data path built from another object - e.g. *SimpleFamilyStore/data:foo* (created through a id array like with ```myStore.add([fst.data, "foo"], { foo: "bar" });```)
     - data path build from several variables: *PersonStore/abc:123:def* (built from ```personStore.add(["abc", 123, "def"], { name: "Maggie" })```)
 
 - Processor ids:
     - eager processors: **STORE_ID%PROCESSOR_NAME** - e.g. *PersonStore%prettyName*
-    - lazy processors: **STORE_ID%OBJECT_PATH[PROCESSOR_NAME]** - e.g. *PersonStore%root[adult]*
+    - lazy processors: **STORE_ID%OBJECT_PATH[PROCESSOR_NAME]** - e.g. *PersonStore%data[adult]*
 
 Where
 - JS_IDENTIFIER = valid JS identifier (no "/" or ">" or "%" signs)
@@ -80,8 +80,8 @@ Get the unique id associated to a trax object. Return an empty string if the obj
 expect(trax.getTraxId({})).toBe("");
 const testStore = trax.createStore("TestStore", { foo: { bar: "baz" } });
 expect(trax.getTraxId(testStore)).toBe("TestStore");
-expect(trax.getTraxId(testStore.data)).toBe("TestStore/root");
-expect(trax.getTraxId(testStore.data.foo)).toBe("TestStore/root*foo");
+expect(trax.getTraxId(testStore.data)).toBe("TestStore/data");
+expect(trax.getTraxId(testStore.data.foo)).toBe("TestStore/data*foo");
 expect(trax.getTraxId(testStore.data.foo.bar)).toBe(""); // bar is not an object
 ```
 
@@ -113,10 +113,10 @@ accessed can be returned (otherwise their id is not yet defined)
 
 ```typescript
 const testStore = trax.createStore("TestStore", { foo: { bar: [1, 2, 3], baz: "abc" } });
-expect(trax.getData("TestStore/root")).toBe(testStore.data);
-expect(trax.getData("TestStore/root*foo*bar")).toBe(undefined); // because testStore.root.foo.bar has never been accessed
+expect(trax.getData("TestStore/data")).toBe(testStore.data);
+expect(trax.getData("TestStore/data*foo*bar")).toBe(undefined); // because testStore.data.foo.bar has never been accessed
 const v = testStore.data.foo.bar
-expect(trax.getData("TestStore/root*foo*bar")).toBe(testStore.data.foo.bar);
+expect(trax.getData("TestStore/data*foo*bar")).toBe(testStore.data.foo.bar);
 expect(trax.getData("XYZ")).toBe(undefined);
 ```
 
@@ -223,7 +223,7 @@ expect(gs).toBe(greetingStore);
 
 Get a processor from its (full) trax id. Note trax processors have the following format
 - eager processors: **STORE_ID%PROCESSOR_NAME** - e.g. *PersonStore%prettyName* in the example below
-- lazy processors: **STORE_ID%OBJECT_PATH[PROCESSOR_NAME]** - e.g. *PersonStore%root[adult]* in the following example:
+- lazy processors: **STORE_ID%OBJECT_PATH[PROCESSOR_NAME]** - e.g. *PersonStore%data[adult]* in the following example:
 
 Example:
 ```typescript
@@ -261,7 +261,7 @@ const personStore = trax.createStore("PersonStore", (store: Store<Person>) => {
     active3 = trax.getActiveProcessor()?.id || "";              // active3
 });
 
-expect(processorId1).toBe("PersonStore%root[adult]");
+expect(processorId1).toBe("PersonStore%data[adult]");
 expect(processor2.id).toBe("PersonStore%prettyName");
 expect(trax.getProcessor("PersonStore%prettyName")).toBe(processor2);
 expect(trax.getProcessor(processorId1)!.id).toBe(processorId1);
@@ -274,7 +274,7 @@ Return the processor that is being computing (if getActiveProcessor() is called 
 Example:
 ```typescript
 // cf. previous PersonStore store definition
-expect(active1).toBe("PersonStore%root[adult]");
+expect(active1).toBe("PersonStore%data[adult]");
 expect(active2).toBe("PersonStore%prettyName");
 expect(active3).toBe("");
 ```

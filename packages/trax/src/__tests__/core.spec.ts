@@ -228,12 +228,12 @@ describe('Trax Core', () => {
                 });
                 const data1 = ps.data;
                 const data1Id = trax.getTraxId(data1);
-                expect(data1Id).toBe("PStore/root");
+                expect(data1Id).toBe("PStore/data");
 
                 const data2 = pss.data;
                 const data2Id = trax.getTraxId(data2);
-                expect(data1Id).toBe("PStore/root");
-                expect(data2Id).toBe("PStore>SubStore/root");
+                expect(data1Id).toBe("PStore/data");
+                expect(data2Id).toBe("PStore>SubStore/data");
                 expect(trax.getData(data1Id)).toBe(data1);
                 expect(trax.getData(data2Id)).toBe(data2);
 
@@ -365,20 +365,20 @@ describe('Trax Core', () => {
                 expect(printLogs(1)).toMatchObject([
                     "1:1 !LOG - A",
                     "1:2 !PCS - PStore.updateNameSync()",
-                    "1:3 !GET - PStore/root.firstName -> 'Homer'",
-                    "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
-                    "1:5 !DRT - PStore%PrettyName <- PStore/root.firstName",
-                    "1:6 !GET - PStore/root.lastName -> 'Simpson'",
-                    "1:7 !SET - PStore/root.lastName = 'SimpsonBB' (prev: 'Simpson')",
+                    "1:3 !GET - PStore/data.firstName -> 'Homer'",
+                    "1:4 !SET - PStore/data.firstName = 'HomerA' (prev: 'Homer')",
+                    "1:5 !DRT - PStore%PrettyName <- PStore/data.firstName",
+                    "1:6 !GET - PStore/data.lastName -> 'Simpson'",
+                    "1:7 !SET - PStore/data.lastName = 'SimpsonBB' (prev: 'Simpson')",
                     "1:8 !PCE - 1:2",
                     "1:9 !PCS - !Reconciliation #1 - 1 processor",
                     "1:10 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=1:9",
-                    "1:11 !GET - PStore/root.firstName -> 'HomerA'",
-                    "1:12 !GET - PStore/root.lastName -> 'SimpsonBB'",
-                    "1:13 !SET - PStore/root.prettyName = 'HomerA SimpsonBB' (prev: 'Homer Simpson')",
+                    "1:11 !GET - PStore/data.firstName -> 'HomerA'",
+                    "1:12 !GET - PStore/data.lastName -> 'SimpsonBB'",
+                    "1:13 !SET - PStore/data.prettyName = 'HomerA SimpsonBB' (prev: 'Homer Simpson')",
                     "1:14 !PCE - 1:10",
                     "1:15 !PCE - 1:9",
-                    "1:16 !GET - PStore/root.prettyName -> 'HomerA SimpsonBB'",
+                    "1:16 !GET - PStore/data.prettyName -> 'HomerA SimpsonBB'",
                 ]);
             });
 
@@ -395,19 +395,19 @@ describe('Trax Core', () => {
                 expect(printLogs(1)).toMatchObject([
                     "1:1 !LOG - A",
                     "1:2 !PCS - PStore.updateNameSync()",
-                    "1:3 !GET - PStore/root.firstName -> 'Homer'",
-                    "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
-                    "1:5 !DRT - PStore%PrettyName <- PStore/root.firstName",
+                    "1:3 !GET - PStore/data.firstName -> 'Homer'",
+                    "1:4 !SET - PStore/data.firstName = 'HomerA' (prev: 'Homer')",
+                    "1:5 !DRT - PStore%PrettyName <- PStore/data.firstName",
                     "1:6 !ERR - [TRAX] (PStore.updateNameSync) error: Something bad happened",
                     "1:7 !PCE - 1:2",
                     "1:8 !PCS - !Reconciliation #1 - 1 processor",
                     "1:9 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=1:8",
-                    "1:10 !GET - PStore/root.firstName -> 'HomerA'",
-                    "1:11 !GET - PStore/root.lastName -> 'Simpson'",
-                    "1:12 !SET - PStore/root.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
+                    "1:10 !GET - PStore/data.firstName -> 'HomerA'",
+                    "1:11 !GET - PStore/data.lastName -> 'Simpson'",
+                    "1:12 !SET - PStore/data.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
                     "1:13 !PCE - 1:9",
                     "1:14 !PCE - 1:8",
-                    "1:15 !GET - PStore/root.prettyName -> 'HomerA Simpson'",
+                    "1:15 !GET - PStore/data.prettyName -> 'HomerA Simpson'",
                 ]);
 
 
@@ -427,29 +427,29 @@ describe('Trax Core', () => {
                 expect(printLogs(1)).toMatchObject([
                     "1:1 !LOG - A",
                     "1:2 !PCS - PStore.updateNameAsync()",
-                    "1:3 !GET - PStore/root.firstName -> 'Homer'",
-                    "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
-                    "1:5 !DRT - PStore%PrettyName <- PStore/root.firstName",
+                    "1:3 !GET - PStore/data.firstName -> 'Homer'",
+                    "1:4 !SET - PStore/data.firstName = 'HomerA' (prev: 'Homer')",
+                    "1:5 !DRT - PStore%PrettyName <- PStore/data.firstName",
                     "1:6 !PCE - 1:2",
                     "1:7 !PCS - !Reconciliation #1 - 1 processor",
                     "1:8 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=1:7",
-                    "1:9 !GET - PStore/root.firstName -> 'HomerA'",
-                    "1:10 !GET - PStore/root.lastName -> 'Simpson'",
-                    "1:11 !SET - PStore/root.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
+                    "1:9 !GET - PStore/data.firstName -> 'HomerA'",
+                    "1:10 !GET - PStore/data.lastName -> 'Simpson'",
+                    "1:11 !SET - PStore/data.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
                     "1:12 !PCE - 1:8",
                     "1:13 !PCE - 1:7",
                     "2:1 @traxjs/trax/test/updateNameAsyncDone - NO-DATA",
-                    "2:2 !GET - PStore/root.lastName -> 'Simpson'",
-                    "2:3 !SET - PStore/root.lastName = 'SimpsonBB' (prev: 'Simpson')",
-                    "2:4 !DRT - PStore%PrettyName <- PStore/root.lastName",
+                    "2:2 !GET - PStore/data.lastName -> 'Simpson'",
+                    "2:3 !SET - PStore/data.lastName = 'SimpsonBB' (prev: 'Simpson')",
+                    "2:4 !DRT - PStore%PrettyName <- PStore/data.lastName",
                     "2:5 !PCS - !Reconciliation #2 - 1 processor",
                     "2:6 !PCS - !Compute #3 (PStore%PrettyName) P1 Reconciliation - parentId=2:5",
-                    "2:7 !GET - PStore/root.firstName -> 'HomerA'",
-                    "2:8 !GET - PStore/root.lastName -> 'SimpsonBB'",
-                    "2:9 !SET - PStore/root.prettyName = 'HomerA SimpsonBB' (prev: 'HomerA Simpson')",
+                    "2:7 !GET - PStore/data.firstName -> 'HomerA'",
+                    "2:8 !GET - PStore/data.lastName -> 'SimpsonBB'",
+                    "2:9 !SET - PStore/data.prettyName = 'HomerA SimpsonBB' (prev: 'HomerA Simpson')",
                     "2:10 !PCE - 2:6",
                     "2:11 !PCE - 2:5",
-                    "3:1 !GET - PStore/root.prettyName -> 'HomerA SimpsonBB'",
+                    "3:1 !GET - PStore/data.prettyName -> 'HomerA SimpsonBB'",
                 ]);
             });
 
@@ -468,20 +468,20 @@ describe('Trax Core', () => {
                 expect(printLogs(1)).toMatchObject([
                     "1:1 !LOG - A",
                     "1:2 !PCS - PStore.updateNameAsync()",
-                    "1:3 !GET - PStore/root.firstName -> 'Homer'",
-                    "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
-                    "1:5 !DRT - PStore%PrettyName <- PStore/root.firstName",
+                    "1:3 !GET - PStore/data.firstName -> 'Homer'",
+                    "1:4 !SET - PStore/data.firstName = 'HomerA' (prev: 'Homer')",
+                    "1:5 !DRT - PStore%PrettyName <- PStore/data.firstName",
                     "1:6 !PCE - 1:2",
                     "1:7 !PCS - !Reconciliation #1 - 1 processor",
                     "1:8 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=1:7",
-                    "1:9 !GET - PStore/root.firstName -> 'HomerA'",
-                    "1:10 !GET - PStore/root.lastName -> 'Simpson'",
-                    "1:11 !SET - PStore/root.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
+                    "1:9 !GET - PStore/data.firstName -> 'HomerA'",
+                    "1:10 !GET - PStore/data.lastName -> 'Simpson'",
+                    "1:11 !SET - PStore/data.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
                     "1:12 !PCE - 1:8",
                     "1:13 !PCE - 1:7",
                     "2:1 @traxjs/trax/test/updateNameAsyncDone - NO-DATA",
                     "3:1 !ERR - [TRAX] (PStore.updateNameAsync) error: Something bad happened",
-                    "4:1 !GET - PStore/root.prettyName -> 'HomerA Simpson'",
+                    "4:1 !GET - PStore/data.prettyName -> 'HomerA Simpson'",
                 ]);
             });
 
@@ -499,31 +499,31 @@ describe('Trax Core', () => {
                 expect(printLogs(1)).toMatchObject([
                     "1:1 !LOG - A",
                     "1:2 !PCS - PStore.updateNameAsync2()",
-                    "1:3 !GET - PStore/root.firstName -> 'Homer'",
-                    "1:4 !SET - PStore/root.firstName = 'HomerA' (prev: 'Homer')",
-                    "1:5 !DRT - PStore%PrettyName <- PStore/root.firstName",
+                    "1:3 !GET - PStore/data.firstName -> 'Homer'",
+                    "1:4 !SET - PStore/data.firstName = 'HomerA' (prev: 'Homer')",
+                    "1:5 !DRT - PStore%PrettyName <- PStore/data.firstName",
                     "1:6 !PCP - 1:2",
                     "1:7 !PCS - !Reconciliation #1 - 1 processor",
                     "1:8 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=1:7",
-                    "1:9 !GET - PStore/root.firstName -> 'HomerA'",
-                    "1:10 !GET - PStore/root.lastName -> 'Simpson'",
-                    "1:11 !SET - PStore/root.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
+                    "1:9 !GET - PStore/data.firstName -> 'HomerA'",
+                    "1:10 !GET - PStore/data.lastName -> 'Simpson'",
+                    "1:11 !SET - PStore/data.prettyName = 'HomerA Simpson' (prev: 'Homer Simpson')",
                     "1:12 !PCE - 1:8",
                     "1:13 !PCE - 1:7",
                     "2:1 !PCR - 1:2",
                     "2:2 @traxjs/trax/test/updateNameAsync2Done - NO-DATA",
-                    "2:3 !GET - PStore/root.lastName -> 'Simpson'",
-                    "2:4 !SET - PStore/root.lastName = 'SimpsonBB' (prev: 'Simpson')",
-                    "2:5 !DRT - PStore%PrettyName <- PStore/root.lastName",
+                    "2:3 !GET - PStore/data.lastName -> 'Simpson'",
+                    "2:4 !SET - PStore/data.lastName = 'SimpsonBB' (prev: 'Simpson')",
+                    "2:5 !DRT - PStore%PrettyName <- PStore/data.lastName",
                     "2:6 !PCE - 1:2",
                     "2:7 !PCS - !Reconciliation #2 - 1 processor",
                     "2:8 !PCS - !Compute #3 (PStore%PrettyName) P1 Reconciliation - parentId=2:7",
-                    "2:9 !GET - PStore/root.firstName -> 'HomerA'",
-                    "2:10 !GET - PStore/root.lastName -> 'SimpsonBB'",
-                    "2:11 !SET - PStore/root.prettyName = 'HomerA SimpsonBB' (prev: 'HomerA Simpson')",
+                    "2:9 !GET - PStore/data.firstName -> 'HomerA'",
+                    "2:10 !GET - PStore/data.lastName -> 'SimpsonBB'",
+                    "2:11 !SET - PStore/data.prettyName = 'HomerA SimpsonBB' (prev: 'HomerA Simpson')",
                     "2:12 !PCE - 2:8",
                     "2:13 !PCE - 2:7",
-                    "3:1 !GET - PStore/root.prettyName -> 'HomerA SimpsonBB'",
+                    "3:1 !GET - PStore/data.prettyName -> 'HomerA SimpsonBB'",
                 ]);
             });
 
@@ -573,34 +573,34 @@ describe('Trax Core', () => {
                 expect(printLogs(0)).toMatchObject([
                     "0:1 !PCS - !StoreInit (PStore)",
                     "0:2 !NEW - S: PStore",
-                    "0:3 !NEW - O: PStore/root",
+                    "0:3 !NEW - O: PStore/data",
                     "0:4 !NEW - P: PStore%PrettyName",
                     "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                    "0:6 !GET - PStore/root.firstName -> 'Homer'",
-                    "0:7 !GET - PStore/root.lastName -> 'Simpson'",
-                    "0:8 !SET - PStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
+                    "0:6 !GET - PStore/data.firstName -> 'Homer'",
+                    "0:7 !GET - PStore/data.lastName -> 'Simpson'",
+                    "0:8 !SET - PStore/data.prettyName = 'Homer Simpson' (prev: undefined)",
                     "0:9 !PCE - 0:5",
                     "0:10 !PCS - PStore.Init() - parentId=0:1",
                     "0:11 !PCP - 0:10",
                     "0:12 !PCE - 0:1",
-                    "0:13 !GET - PStore/root.prettyName -> 'Homer Simpson'",
-                    "0:14 !GET - PStore/root.avatar -> undefined",
+                    "0:13 !GET - PStore/data.prettyName -> 'Homer Simpson'",
+                    "0:14 !GET - PStore/data.avatar -> undefined",
                     "1:1 !PCR - 0:10",
-                    "1:2 !SET - PStore/root.avatar = 'AVATAR' (prev: undefined)",
-                    "1:3 !GET - PStore/root.lastName -> 'Simpson'",
-                    "1:4 !SET - PStore/root.lastName = 'Simpson!' (prev: 'Simpson')",
-                    "1:5 !DRT - PStore%PrettyName <- PStore/root.lastName",
+                    "1:2 !SET - PStore/data.avatar = 'AVATAR' (prev: undefined)",
+                    "1:3 !GET - PStore/data.lastName -> 'Simpson'",
+                    "1:4 !SET - PStore/data.lastName = 'Simpson!' (prev: 'Simpson')",
+                    "1:5 !DRT - PStore%PrettyName <- PStore/data.lastName",
                     "1:6 @traxjs/trax/test/core/asyncInitDone - NO-DATA",
                     "1:7 !PCE - 0:10",
                     "1:8 !PCS - !Reconciliation #1 - 1 processor",
                     "1:9 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=1:8",
-                    "1:10 !GET - PStore/root.firstName -> 'Homer'",
-                    "1:11 !GET - PStore/root.lastName -> 'Simpson!'",
-                    "1:12 !SET - PStore/root.prettyName = 'Homer Simpson!' (prev: 'Homer Simpson')",
+                    "1:10 !GET - PStore/data.firstName -> 'Homer'",
+                    "1:11 !GET - PStore/data.lastName -> 'Simpson!'",
+                    "1:12 !SET - PStore/data.prettyName = 'Homer Simpson!' (prev: 'Homer Simpson')",
                     "1:13 !PCE - 1:9",
                     "1:14 !PCE - 1:8",
-                    "2:1 !GET - PStore/root.prettyName -> 'Homer Simpson!'",
-                    "2:2 !GET - PStore/root.avatar -> 'AVATAR'",
+                    "2:1 !GET - PStore/data.prettyName -> 'Homer Simpson!'",
+                    "2:2 !GET - PStore/data.avatar -> 'AVATAR'",
                 ]);
             });
         });
@@ -615,8 +615,8 @@ describe('Trax Core', () => {
                     '0:1 !PCS - !StoreInit (MyStore)',
                     "0:2 !NEW - S: MyStore",
                     '0:3 !NEW - O: MyStore/foo',
-                    '0:4 !ERR - [TRAX] (MyStore) createStore init must define a root object - see also: init()',
-                    '0:5 !NEW - O: MyStore/root',
+                    '0:4 !ERR - [TRAX] (MyStore) createStore init must define a root data object - see also: init()',
+                    '0:5 !NEW - O: MyStore/data',
                     '0:6 !PCE - 0:1',
                 ]);
             });
@@ -630,9 +630,9 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     "0:1 !PCS - !StoreInit (MyStore)",
                     "0:2 !NEW - S: MyStore",
-                    "0:3 !NEW - O: MyStore/root",
+                    "0:3 !NEW - O: MyStore/data",
                     "0:4 !PCE - 0:1",
-                    "0:5 !ERR - [TRAX] (MyStore/root) Root objects cannot be disposed through store.remove()",
+                    "0:5 !ERR - [TRAX] (MyStore/data) Root objects cannot be disposed through store.remove()",
                 ]);
             });
 
@@ -643,14 +643,14 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - !StoreInit (MyStore)',
                     "0:2 !NEW - S: MyStore",
-                    '0:3 !NEW - O: MyStore/root',
+                    '0:3 !NEW - O: MyStore/data',
                     '0:4 !PCE - 0:1',
                 ]);
                 st.init({ msg: "abc" });
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - !StoreInit (MyStore)',
                     "0:2 !NEW - S: MyStore",
-                    '0:3 !NEW - O: MyStore/root',
+                    '0:3 !NEW - O: MyStore/data',
                     '0:4 !PCE - 0:1',
                     '0:5 !ERR - [TRAX] (MyStore) Store.init can only be called during the store init phase',
                 ]);
@@ -664,7 +664,7 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - !StoreInit (MyStore)',
                     "0:2 !NEW - S: MyStore",
-                    '0:3 !NEW - O: MyStore/root',
+                    '0:3 !NEW - O: MyStore/data',
                     '0:4 !ERR - [TRAX] createStore init function must return a valid object (MyStore)',
                     '0:5 !PCE - 0:1',
                 ]);
@@ -678,7 +678,7 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - !StoreInit (MyStore)',
                     "0:2 !NEW - S: MyStore",
-                    '0:3 !NEW - O: MyStore/root',
+                    '0:3 !NEW - O: MyStore/data',
                     '0:4 !ERR - [TRAX] createStore init error (MyStore): Error: Unexpected error',
                     '0:5 !PCE - 0:1',
                 ]);
@@ -697,12 +697,12 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - !StoreInit (MyStore)',
                     "0:2 !NEW - S: MyStore",
-                    '0:3 !NEW - O: MyStore/root',
+                    '0:3 !NEW - O: MyStore/data',
                     '0:4 !PCE - 0:1',
                     "0:5 !PCS - MyStore.dispose()",
                     "0:6 !ERR - [TRAX] (MyStore.dispose) error: Error: Unexpected dispose error",
                     "0:7 !PCE - 0:5",
-                    "0:8 !DEL - MyStore/root",
+                    "0:8 !DEL - MyStore/data",
                     "0:9 !DEL - MyStore",
                 ]);
             });
@@ -717,7 +717,7 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - !StoreInit (MyStore)',
                     "0:2 !NEW - S: MyStore",
-                    '0:3 !NEW - O: MyStore/root',
+                    '0:3 !NEW - O: MyStore/data',
                     '0:4 !ERR - [TRAX] Store id will be overridden and must not be provided by init function (MyStore)',
                     '0:5 !PCE - 0:1'
                 ]);
@@ -732,7 +732,7 @@ describe('Trax Core', () => {
                     '0:1 !ERR - [TRAX] Invalid trax id: My/Store/ABC (changed into MyStoreABC)',
                     '0:2 !PCS - !StoreInit (MyStoreABC)',
                     "0:3 !NEW - S: MyStoreABC",
-                    '0:4 !NEW - O: MyStoreABC/root',
+                    '0:4 !NEW - O: MyStoreABC/data',
                     '0:5 !PCE - 0:2'
                 ]);
 
@@ -758,27 +758,27 @@ describe('Trax Core', () => {
                 expect(printLogs()).toMatchObject([
                     '0:1 !PCS - !StoreInit (MyStore)',
                     "0:2 !NEW - S: MyStore",
-                    '0:3 !NEW - O: MyStore/root',
+                    '0:3 !NEW - O: MyStore/data',
                     '0:4 !ERR - [TRAX] (MyStore) Store.add(abc): Invalid init object parameter: [number]',
                     '0:5 !NEW - O: MyStore/abc',
                     '0:6 !PCE - 0:1'
                 ]);
             });
 
-            it('must be raised if "root" is used as an id for a new object', async () => {
+            it('must be raised if "data" is used as an id for a new object', async () => {
                 const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.init({ msg: "Hello" });
                 });
-                const o = st.add("root", { msg: "abc" });
+                const o = st.add("data", { msg: "abc" });
                 const id = trax.getTraxId(o); // e.g. MyStore/87524
                 expect(id.match(/^MyStore\/\d+$/)).not.toBe(null);
 
                 expect(printLogs()).toMatchObject([
                     "0:1 !PCS - !StoreInit (MyStore)",
                     "0:2 !NEW - S: MyStore",
-                    "0:3 !NEW - O: MyStore/root",
+                    "0:3 !NEW - O: MyStore/data",
                     "0:4 !PCE - 0:1",
-                    "0:5 !ERR - [TRAX] Store.add: Invalid id 'root' (reserved)",
+                    "0:5 !ERR - [TRAX] Store.add: Invalid id 'data' (reserved)",
                     "0:6 !NEW - O: " + id,
                 ]);
             });
@@ -794,7 +794,7 @@ describe('Trax Core', () => {
                 const o = ps.add("Foo", { bar: 123 });
 
                 expect(printLogs(1)).toMatchObject([
-                    "1:1 !DEL - PStore/root",
+                    "1:1 !DEL - PStore/data",
                     "1:2 !DEL - PStore",
                     "1:3 !ERR - [TRAX] (PStore) Stores cannot be used after being disposed",
                 ]);
@@ -874,25 +874,25 @@ describe('Trax Core', () => {
                 "0:0 !CS - 0",
                 "0:1 !PCS - !StoreInit (MyStore)",
                 "0:2 !NEW - S: MyStore",
-                "0:3 !NEW - O: MyStore/root",
+                "0:3 !NEW - O: MyStore/data",
                 "0:4 !NEW - P: MyStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (MyStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - MyStore/root.firstName -> 'Homer'",
-                "0:7 !GET - MyStore/root.lastName -> 'Simpson'",
-                "0:8 !SET - MyStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
-                "0:9 !SET - MyStore/root.prettyNameLength = 13 (prev: undefined)",
+                "0:6 !GET - MyStore/data.firstName -> 'Homer'",
+                "0:7 !GET - MyStore/data.lastName -> 'Simpson'",
+                "0:8 !SET - MyStore/data.prettyName = 'Homer Simpson' (prev: undefined)",
+                "0:9 !SET - MyStore/data.prettyNameLength = 13 (prev: undefined)",
                 "0:10 !PCE - 0:5",
                 "0:11 !PCE - 0:1",
                 "0:12 !LOG - A",
                 "0:13 !LOG - B",
-                "0:14 !SET - MyStore/root.lastName = 'SIMPSON' (prev: 'Simpson')",
-                "0:15 !DRT - MyStore%PrettyName <- MyStore/root.lastName",
+                "0:14 !SET - MyStore/data.lastName = 'SIMPSON' (prev: 'Simpson')",
+                "0:15 !DRT - MyStore%PrettyName <- MyStore/data.lastName",
                 "0:16 !LOG - C",
                 "0:17 !PCS - !Reconciliation #1 - 1 processor",
                 "0:18 !PCS - !Compute #2 (MyStore%PrettyName) P1 Reconciliation - parentId=0:17",
-                "0:19 !GET - MyStore/root.firstName -> 'Homer'",
-                "0:20 !GET - MyStore/root.lastName -> 'SIMPSON'",
-                "0:21 !SET - MyStore/root.prettyName = 'Homer SIMPSON' (prev: 'Homer Simpson')",
+                "0:19 !GET - MyStore/data.firstName -> 'Homer'",
+                "0:20 !GET - MyStore/data.lastName -> 'SIMPSON'",
+                "0:21 !SET - MyStore/data.prettyName = 'Homer SIMPSON' (prev: 'Homer Simpson')",
                 "0:22 !PCE - 0:18",
                 "0:23 !PCE - 0:17",
                 "0:24 !LOG - D",
@@ -935,43 +935,43 @@ describe('Trax Core', () => {
                 "0:0 !CS - 0",
                 "0:1 !PCS - !StoreInit (MyStore)",
                 "0:2 !NEW - S: MyStore",
-                "0:3 !NEW - O: MyStore/root",
+                "0:3 !NEW - O: MyStore/data",
                 "0:4 !NEW - P: MyStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (MyStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - MyStore/root.firstName -> 'Homer'",
-                "0:7 !GET - MyStore/root.lastName -> 'Simpson'",
-                "0:8 !SET - MyStore/root.prettyName = 'Homer Simpson' (prev: undefined)",
-                "0:9 !SET - MyStore/root.prettyNameLength = 13 (prev: undefined)",
+                "0:6 !GET - MyStore/data.firstName -> 'Homer'",
+                "0:7 !GET - MyStore/data.lastName -> 'Simpson'",
+                "0:8 !SET - MyStore/data.prettyName = 'Homer Simpson' (prev: undefined)",
+                "0:9 !SET - MyStore/data.prettyNameLength = 13 (prev: undefined)",
                 "0:10 !PCE - 0:5",
                 "0:11 !PCE - 0:1",
                 "0:12 !LOG - A",
-                "0:13 !SET - MyStore/root.lastName = 'SIMPSON' (prev: 'Simpson')",
-                "0:14 !DRT - MyStore%PrettyName <- MyStore/root.lastName",
+                "0:13 !SET - MyStore/data.lastName = 'SIMPSON' (prev: 'Simpson')",
+                "0:14 !DRT - MyStore%PrettyName <- MyStore/data.lastName",
                 "0:15 !LOG - B",
                 "0:16 !PCS - !Reconciliation #1 - 1 processor",
                 "0:17 !PCS - !Compute #2 (MyStore%PrettyName) P1 Reconciliation - parentId=0:16",
-                "0:18 !GET - MyStore/root.firstName -> 'Homer'",
-                "0:19 !GET - MyStore/root.lastName -> 'SIMPSON'",
-                "0:20 !SET - MyStore/root.prettyName = 'Homer SIMPSON' (prev: 'Homer Simpson')",
+                "0:18 !GET - MyStore/data.firstName -> 'Homer'",
+                "0:19 !GET - MyStore/data.lastName -> 'SIMPSON'",
+                "0:20 !SET - MyStore/data.prettyName = 'Homer SIMPSON' (prev: 'Homer Simpson')",
                 "0:21 !PCE - 0:17",
                 "0:22 !PCE - 0:16",
                 "0:23 !CC - 0",
                 "1:0 !CS - 0",
                 "1:1 !LOG - C",
-                "1:2 !SET - MyStore/root.firstName = 'Bart' (prev: 'Homer')",
-                "1:3 !DRT - MyStore%PrettyName <- MyStore/root.firstName",
-                "1:4 !SET - MyStore/root.lastName = 'Simpson' (prev: 'SIMPSON')",
+                "1:2 !SET - MyStore/data.firstName = 'Bart' (prev: 'Homer')",
+                "1:3 !DRT - MyStore%PrettyName <- MyStore/data.firstName",
+                "1:4 !SET - MyStore/data.lastName = 'Simpson' (prev: 'SIMPSON')",
                 "1:5 !PCS - !Reconciliation #2 - 1 processor",
                 "1:6 !PCS - !Compute #3 (MyStore%PrettyName) P1 Reconciliation - parentId=1:5",
-                "1:7 !GET - MyStore/root.firstName -> 'Bart'",
-                "1:8 !GET - MyStore/root.lastName -> 'Simpson'",
-                "1:9 !SET - MyStore/root.prettyName = 'Bart Simpson' (prev: 'Homer SIMPSON')",
-                "1:10 !SET - MyStore/root.prettyNameLength = 12 (prev: 13)",
+                "1:7 !GET - MyStore/data.firstName -> 'Bart'",
+                "1:8 !GET - MyStore/data.lastName -> 'Simpson'",
+                "1:9 !SET - MyStore/data.prettyName = 'Bart Simpson' (prev: 'Homer SIMPSON')",
+                "1:10 !SET - MyStore/data.prettyNameLength = 12 (prev: 13)",
                 "1:11 !PCE - 1:6",
                 "1:12 !PCE - 1:5",
                 "1:13 !CC - 0",
                 "2:0 !CS - 0",
-                "2:1 !GET - MyStore/root.prettyName -> 'Bart Simpson'",
+                "2:1 !GET - MyStore/data.prettyName -> 'Bart Simpson'",
             ]);
 
         });

@@ -66,22 +66,22 @@ describe('Async processors', () => {
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> ''",
-                "0:7 !GET - PStore/root.lastName -> 'Simpson'",
-                "0:8 !SET - PStore/root.prettyName = 'Simpson' (prev: undefined)",
-                "0:9 !SET - PStore/root.prettyNameLength = 7 (prev: undefined)",
+                "0:6 !GET - PStore/data.firstName -> ''",
+                "0:7 !GET - PStore/data.lastName -> 'Simpson'",
+                "0:8 !SET - PStore/data.prettyName = 'Simpson' (prev: undefined)",
+                "0:9 !SET - PStore/data.prettyNameLength = 7 (prev: undefined)",
                 "0:10 !PCE - 0:5",
                 "0:11 !PCE - 0:1",
-                "0:12 !GET - PStore/root.prettyName -> 'Simpson'",
-                "0:13 !GET - PStore/root.prettyNameLength -> 7",
+                "0:12 !GET - PStore/data.prettyName -> 'Simpson'",
+                "0:13 !GET - PStore/data.prettyNameLength -> 7",
             ]);
 
             expect(pr.dependencies).toMatchObject([
-                "PStore/root.firstName",
-                "PStore/root.lastName"
+                "PStore/data.firstName",
+                "PStore/data.lastName"
             ]);
         });
 
@@ -94,7 +94,7 @@ describe('Async processors', () => {
             expect(p.prettyName).toBe(undefined); // not processed yet
             expect(p.prettyNameLength).toBe(undefined);
             expect(pr.dependencies).toMatchObject([
-                "PStore/root.firstName"
+                "PStore/data.firstName"
             ]);
 
             await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME);
@@ -106,27 +106,27 @@ describe('Async processors', () => {
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> 'Homer'",
+                "0:6 !GET - PStore/data.firstName -> 'Homer'",
                 "0:7 !PCP - 0:5", // Pause
                 "0:8 !PCE - 0:1",
-                "0:9 !GET - PStore/root.prettyName -> undefined",
-                "0:10 !GET - PStore/root.prettyNameLength -> undefined",
+                "0:9 !GET - PStore/data.prettyName -> undefined",
+                "0:10 !GET - PStore/data.prettyNameLength -> undefined",
                 "1:1 GetFriendlyName - NO-DATA",
                 "2:1 !PCR - 0:5", // Resume
-                "2:2 !GET - PStore/root.lastName -> 'Simpson'",
-                "2:3 !SET - PStore/root.prettyName = 'Friendly(Homer) Simpson' (prev: undefined)",
-                "2:4 !SET - PStore/root.prettyNameLength = 23 (prev: undefined)",
+                "2:2 !GET - PStore/data.lastName -> 'Simpson'",
+                "2:3 !SET - PStore/data.prettyName = 'Friendly(Homer) Simpson' (prev: undefined)",
+                "2:4 !SET - PStore/data.prettyNameLength = 23 (prev: undefined)",
                 "2:5 !PCE - 0:5",
-                "3:1 !GET - PStore/root.prettyName -> 'Friendly(Homer) Simpson'",
-                "3:2 !GET - PStore/root.prettyNameLength -> 23",
+                "3:1 !GET - PStore/data.prettyName -> 'Friendly(Homer) Simpson'",
+                "3:2 !GET - PStore/data.prettyNameLength -> 23",
             ]);
 
             expect(pr.dependencies).toMatchObject([
-                "PStore/root.firstName",
-                "PStore/root.lastName"
+                "PStore/data.firstName",
+                "PStore/data.lastName"
             ]);
 
             await trax.reconciliation(); // to move to next cycle
@@ -142,21 +142,21 @@ describe('Async processors', () => {
             expect(p.prettyName).toBe("Friendly(Bart) Simpson");
 
             expect(printLogs(4)).toMatchObject([
-                "4:1 !SET - PStore/root.firstName = 'Bart' (prev: 'Homer')",
-                "4:2 !DRT - PStore%PrettyName <- PStore/root.firstName",
-                "4:3 !GET - PStore/root.prettyName -> 'Friendly(Homer) Simpson'",
+                "4:1 !SET - PStore/data.firstName = 'Bart' (prev: 'Homer')",
+                "4:2 !DRT - PStore%PrettyName <- PStore/data.firstName",
+                "4:3 !GET - PStore/data.prettyName -> 'Friendly(Homer) Simpson'",
                 "4:4 !PCS - !Reconciliation #1 - 1 processor",
                 "4:5 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=4:4",
-                "4:6 !GET - PStore/root.firstName -> 'Bart'",
+                "4:6 !GET - PStore/data.firstName -> 'Bart'",
                 "4:7 !PCP - 4:5",
                 "4:8 !PCE - 4:4",
                 "5:1 GetFriendlyName - NO-DATA",
                 "6:1 !PCR - 4:5",
-                "6:2 !GET - PStore/root.lastName -> 'Simpson'",
-                "6:3 !SET - PStore/root.prettyName = 'Friendly(Bart) Simpson' (prev: 'Friendly(Homer) Simpson')",
-                "6:4 !SET - PStore/root.prettyNameLength = 22 (prev: 23)",
+                "6:2 !GET - PStore/data.lastName -> 'Simpson'",
+                "6:3 !SET - PStore/data.prettyName = 'Friendly(Bart) Simpson' (prev: 'Friendly(Homer) Simpson')",
+                "6:4 !SET - PStore/data.prettyNameLength = 22 (prev: 23)",
                 "6:5 !PCE - 4:5",
-                "7:1 !GET - PStore/root.prettyName -> 'Friendly(Bart) Simpson'",
+                "7:1 !GET - PStore/data.prettyName -> 'Friendly(Bart) Simpson'",
             ]);
 
             pr.dispose();
@@ -183,26 +183,26 @@ describe('Async processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> 'Bart'",
+                "0:6 !GET - PStore/data.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5", // Pause
                 "0:8 !PCE - 0:1",
-                "0:9 !GET - PStore/root.avatar -> undefined",
+                "0:9 !GET - PStore/data.avatar -> undefined",
                 "1:1 GetFriendlyName - NO-DATA",
                 "2:1 !PCR - 0:5", // Resume
-                "2:2 !GET - PStore/root.lastName -> 'Simpson'",
-                "2:3 !SET - PStore/root.prettyName = 'Friendly(Bart) Simpson' (prev: undefined)",
-                "2:4 !SET - PStore/root.prettyNameLength = 22 (prev: undefined)",
+                "2:2 !GET - PStore/data.lastName -> 'Simpson'",
+                "2:3 !SET - PStore/data.prettyName = 'Friendly(Bart) Simpson' (prev: undefined)",
+                "2:4 !SET - PStore/data.prettyNameLength = 22 (prev: undefined)",
                 "2:5 !PCP - 0:5", // Pause
                 "3:1 GetAvatar - NO-DATA",
                 "4:1 !PCR - 0:5", // Resume
-                "4:2 !SET - PStore/root.avatar = 'Avatar(Bart)' (prev: undefined)",
+                "4:2 !SET - PStore/data.avatar = 'Avatar(Bart)' (prev: undefined)",
                 "4:3 !PCE - 0:5", // End
-                "5:1 !GET - PStore/root.prettyName -> 'Friendly(Bart) Simpson'",
-                "5:2 !GET - PStore/root.prettyNameLength -> 22",
-                "5:3 !GET - PStore/root.avatar -> 'Avatar(Bart)'",
+                "5:1 !GET - PStore/data.prettyName -> 'Friendly(Bart) Simpson'",
+                "5:2 !GET - PStore/data.prettyNameLength -> 22",
+                "5:3 !GET - PStore/data.avatar -> 'Avatar(Bart)'",
             ]);
 
             await trax.reconciliation(); // next cycle
@@ -212,28 +212,28 @@ describe('Async processors', () => {
             expect(p.avatar).toBe("Avatar(Bart)");
 
             expect(printLogs(6)).toMatchObject([
-                "6:1 !SET - PStore/root.lastName = 'SIM' (prev: 'Simpson')",
-                "6:2 !DRT - PStore%PrettyName <- PStore/root.lastName",
+                "6:1 !SET - PStore/data.lastName = 'SIM' (prev: 'Simpson')",
+                "6:2 !DRT - PStore%PrettyName <- PStore/data.lastName",
                 "6:3 !PCS - !Reconciliation #1 - 1 processor",
                 "6:4 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=6:3",
-                "6:5 !GET - PStore/root.firstName -> 'Bart'",
+                "6:5 !GET - PStore/data.firstName -> 'Bart'",
                 "6:6 !PCP - 6:4", // Pause
                 "6:7 !PCE - 6:3",
                 "7:1 GetFriendlyName - NO-DATA",
                 "8:1 !PCR - 6:4", // Resume
-                "8:2 !GET - PStore/root.lastName -> 'SIM'",
-                "8:3 !SET - PStore/root.prettyName = 'Friendly(Bart) SIM' (prev: 'Friendly(Bart) Simpson')",
-                "8:4 !SET - PStore/root.prettyNameLength = 18 (prev: 22)",
+                "8:2 !GET - PStore/data.lastName -> 'SIM'",
+                "8:3 !SET - PStore/data.prettyName = 'Friendly(Bart) SIM' (prev: 'Friendly(Bart) Simpson')",
+                "8:4 !SET - PStore/data.prettyNameLength = 18 (prev: 22)",
                 "8:5 !PCP - 6:4", // Pause
                 "9:1 GetAvatar - NO-DATA",
                 "10:1 !PCR - 6:4", // Resume (no changes after that)
                 "10:2 !PCE - 6:4", // End
-                "10:3 !GET - PStore/root.avatar -> 'Avatar(Bart)'",
+                "10:3 !GET - PStore/data.avatar -> 'Avatar(Bart)'",
             ]);
 
             expect(pr.dependencies).toMatchObject([
-                "PStore/root.firstName",
-                "PStore/root.lastName"
+                "PStore/data.firstName",
+                "PStore/data.lastName"
             ]);
         });
 
@@ -245,7 +245,7 @@ describe('Async processors', () => {
             expect(p.avatar).toBe(undefined);
 
             expect(pr.dependencies).toMatchObject([
-                "PStore/root.firstName",
+                "PStore/data.firstName",
             ]);
             p.firstName = "Lisa";
 
@@ -258,33 +258,33 @@ describe('Async processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> 'Bart'",
+                "0:6 !GET - PStore/data.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5", // Pause
                 "0:8 !PCE - 0:1",
-                "0:9 !GET - PStore/root.avatar -> undefined",
-                "0:10 !SET - PStore/root.firstName = 'Lisa' (prev: 'Bart')",
-                "0:11 !DRT - PStore%PrettyName <- PStore/root.firstName",
+                "0:9 !GET - PStore/data.avatar -> undefined",
+                "0:10 !SET - PStore/data.firstName = 'Lisa' (prev: 'Bart')",
+                "0:11 !DRT - PStore%PrettyName <- PStore/data.firstName",
                 "0:12 !PCS - !Reconciliation #1 - 1 processor",
                 "0:13 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parentId=0:12",
-                "0:14 !GET - PStore/root.firstName -> 'Lisa'",
+                "0:14 !GET - PStore/data.firstName -> 'Lisa'",
                 "0:15 !PCP - 0:13", // Pause
                 "0:16 !PCE - 0:12",
                 "1:1 GetFriendlyName - NO-DATA", // First promise, discarded
                 "2:1 GetFriendlyName - NO-DATA", // Second promise
                 "3:1 !PCR - 0:13", // Resume
-                "3:2 !GET - PStore/root.lastName -> 'Simpson'",
-                "3:3 !SET - PStore/root.prettyName = 'Friendly(Lisa) Simpson' (prev: undefined)",
-                "3:4 !SET - PStore/root.prettyNameLength = 22 (prev: undefined)",
+                "3:2 !GET - PStore/data.lastName -> 'Simpson'",
+                "3:3 !SET - PStore/data.prettyName = 'Friendly(Lisa) Simpson' (prev: undefined)",
+                "3:4 !SET - PStore/data.prettyNameLength = 22 (prev: undefined)",
                 "3:5 !PCP - 0:13",
                 "4:1 GetAvatar - NO-DATA",
                 "5:1 !PCR - 0:13",
-                "5:2 !SET - PStore/root.avatar = 'Avatar(Lisa)' (prev: undefined)",
+                "5:2 !SET - PStore/data.avatar = 'Avatar(Lisa)' (prev: undefined)",
                 "5:3 !PCE - 0:13",
-                "6:1 !GET - PStore/root.prettyName -> 'Friendly(Lisa) Simpson'",
-                "6:2 !GET - PStore/root.avatar -> 'Avatar(Lisa)'",
+                "6:1 !GET - PStore/data.prettyName -> 'Friendly(Lisa) Simpson'",
+                "6:2 !GET - PStore/data.avatar -> 'Avatar(Lisa)'",
             ]);
         });
 
@@ -296,7 +296,7 @@ describe('Async processors', () => {
             expect(p.avatar).toBe(undefined);
 
             expect(pr.dependencies).toMatchObject([
-                "PStore/root.firstName",
+                "PStore/data.firstName",
             ]);
             pr.dispose();
 
@@ -307,13 +307,13 @@ describe('Async processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> 'Bart'",
+                "0:6 !GET - PStore/data.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5",
                 "0:8 !PCE - 0:1",
-                "0:9 !GET - PStore/root.avatar -> undefined",
+                "0:9 !GET - PStore/data.avatar -> undefined",
                 "0:10 !DEL - PStore%PrettyName",
                 "1:1 GetFriendlyName - NO-DATA",
             ]);
@@ -343,19 +343,19 @@ describe('Async processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> 'Bart'",
+                "0:6 !GET - PStore/data.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5",
                 "0:8 !PCE - 0:1",
-                "0:9 !GET - PStore/root.prettyName -> undefined",
+                "0:9 !GET - PStore/data.prettyName -> undefined",
                 "1:1 !PCR - 0:5",
-                "1:2 !GET - PStore/root.lastName -> 'Simpson'",
-                "1:3 !SET - PStore/root.prettyName = 'Friendly(Bart) Simpson' (prev: undefined)",
+                "1:2 !GET - PStore/data.lastName -> 'Simpson'",
+                "1:3 !SET - PStore/data.prettyName = 'Friendly(Bart) Simpson' (prev: undefined)",
                 "1:4 Done - NO-DATA",
                 "1:5 !PCE - 0:5",
-                "2:1 !GET - PStore/root.prettyName -> 'Friendly(Bart) Simpson'",
+                "2:1 !GET - PStore/data.prettyName -> 'Friendly(Bart) Simpson'",
             ]);
         });
 
@@ -379,15 +379,15 @@ describe('Async processors', () => {
 
             expect(ps.data.prettyName).toBe(undefined);
             expect(pr.dependencies).toMatchObject([
-                "PStore/root.firstName",
+                "PStore/data.firstName",
             ]);
 
             await trax.log.awaitEvent("PrettyNameSet");
 
             expect(pr.dependencies).toMatchObject([
-                "Misc/root.text",
-                "PStore/root.firstName",
-                "PStore/root.lastName",
+                "Misc/data.text",
+                "PStore/data.firstName",
+                "PStore/data.lastName",
             ]);
 
             expect(ps.data.prettyName).toBe("Friendly(Homer) Simpson Some Text");
@@ -422,34 +422,34 @@ describe('Async processors', () => {
                 expect(logs.slice(0)).toMatchObject([
                     "0:1 !PCS - !StoreInit (PStore)",
                     "0:2 !NEW - S: PStore",
-                    "0:3 !NEW - O: PStore/root",
+                    "0:3 !NEW - O: PStore/data",
                     "0:4 !NEW - P: PStore%PrettyName",
                     "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parent:0:1",
-                    "0:6 !GET - PStore/root.firstName -> 'Bart'",
+                    "0:6 !GET - PStore/data.firstName -> 'Bart'",
                     "0:7 !PCP - 0:5",
                     "0:8 !PCE - 0:1",
                     "1:1 GetFriendlyName",
                     "2:1 !PCR - 0:5",
-                    "2:2 !GET - PStore/root.lastName -> 'Simpson'",
-                    "2:3 !SET - PStore/root.prettyName = 'Friendly(Bart) Simpson' (prev: undefined)",
-                    "2:4 !SET - PStore/root.prettyNameLength = 22 (prev: undefined)",
+                    "2:2 !GET - PStore/data.lastName -> 'Simpson'",
+                    "2:3 !SET - PStore/data.prettyName = 'Friendly(Bart) Simpson' (prev: undefined)",
+                    "2:4 !SET - PStore/data.prettyNameLength = 22 (prev: undefined)",
                     "2:5 !PCP - 0:5",
                     "3:1 GetAvatar",
                     "4:1 !PCR - 0:5",
-                    "4:2 !SET - PStore/root.avatar = 'Avatar(Bart)' (prev: undefined)",
+                    "4:2 !SET - PStore/data.avatar = 'Avatar(Bart)' (prev: undefined)",
                     "4:3 !PCE - 0:5",
-                    "5:1 !SET - PStore/root.lastName = 'SIM' (prev: 'Simpson')",
-                    "5:2 !DRT - PStore%PrettyName <- PStore/root.lastName",
+                    "5:1 !SET - PStore/data.lastName = 'SIM' (prev: 'Simpson')",
+                    "5:2 !DRT - PStore%PrettyName <- PStore/data.lastName",
                     "5:3 !PCS - !Reconciliation #1 - 1 processor",
                     "5:4 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parent:5:3",
-                    "5:5 !GET - PStore/root.firstName -> 'Bart'",
+                    "5:5 !GET - PStore/data.firstName -> 'Bart'",
                     "5:6 !PCP - 5:4",
                     "5:7 !PCE - 5:3",
                     "6:1 GetFriendlyName",
                     "7:1 !PCR - 5:4",
-                    "7:2 !GET - PStore/root.lastName -> 'SIM'",
-                    "7:3 !SET - PStore/root.prettyName = 'Friendly(Bart) SIM' (prev: 'Friendly(Bart) Simpson')",
-                    "7:4 !SET - PStore/root.prettyNameLength = 18 (prev: 22)",
+                    "7:2 !GET - PStore/data.lastName -> 'SIM'",
+                    "7:3 !SET - PStore/data.prettyName = 'Friendly(Bart) SIM' (prev: 'Friendly(Bart) Simpson')",
+                    "7:4 !SET - PStore/data.prettyNameLength = 18 (prev: 22)",
                     "7:5 !PCP - 5:4",
                     "8:1 GetAvatar",
                     "9:1 !PCR - 5:4",
@@ -472,30 +472,30 @@ describe('Async processors', () => {
                 expect(logs.slice(0)).toMatchObject([
                     "0:1 !PCS - !StoreInit (PStore)",
                     "0:2 !NEW - S: PStore",
-                    "0:3 !NEW - O: PStore/root",
+                    "0:3 !NEW - O: PStore/data",
                     "0:4 !NEW - P: PStore%PrettyName",
                     "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parent:0:1",
                     "0:7 !PCP - 0:5",
                     "0:8 !PCE - 0:1",
                     "1:1 GetFriendlyName",
                     "2:1 !PCR - 0:5",
-                    "2:3 !SET - PStore/root.prettyName = 'Friendly(Bart) Simpson' (prev: undefined)",
-                    "2:4 !SET - PStore/root.prettyNameLength = 22 (prev: undefined)",
+                    "2:3 !SET - PStore/data.prettyName = 'Friendly(Bart) Simpson' (prev: undefined)",
+                    "2:4 !SET - PStore/data.prettyNameLength = 22 (prev: undefined)",
                     "2:5 !PCP - 0:5",
                     "3:1 GetAvatar",
                     "4:1 !PCR - 0:5",
-                    "4:2 !SET - PStore/root.avatar = 'Avatar(Bart)' (prev: undefined)",
+                    "4:2 !SET - PStore/data.avatar = 'Avatar(Bart)' (prev: undefined)",
                     "4:3 !PCE - 0:5",
-                    "5:1 !SET - PStore/root.lastName = 'SIM' (prev: 'Simpson')",
-                    "5:2 !DRT - PStore%PrettyName <- PStore/root.lastName",
+                    "5:1 !SET - PStore/data.lastName = 'SIM' (prev: 'Simpson')",
+                    "5:2 !DRT - PStore%PrettyName <- PStore/data.lastName",
                     "5:3 !PCS - !Reconciliation #1 - 1 processor",
                     "5:4 !PCS - !Compute #2 (PStore%PrettyName) P1 Reconciliation - parent:5:3",
                     "5:6 !PCP - 5:4",
                     "5:7 !PCE - 5:3",
                     "6:1 GetFriendlyName",
                     "7:1 !PCR - 5:4",
-                    "7:3 !SET - PStore/root.prettyName = 'Friendly(Bart) SIM' (prev: 'Friendly(Bart) Simpson')",
-                    "7:4 !SET - PStore/root.prettyNameLength = 18 (prev: 22)",
+                    "7:3 !SET - PStore/data.prettyName = 'Friendly(Bart) SIM' (prev: 'Friendly(Bart) Simpson')",
+                    "7:4 !SET - PStore/data.prettyNameLength = 18 (prev: 22)",
                     "7:5 !PCP - 5:4",
                     "8:1 GetAvatar",
                     "9:1 !PCR - 5:4",
@@ -527,11 +527,11 @@ describe('Async processors', () => {
                 output = "VIEW: " + (proot.prettyName || "[empty]");
             }, true, true);
 
-            const rootId = "PStore/root";
-            const processorId = "PStore%root[prettyName]";
+            const rootId = "PStore/data";
+            const processorId = "PStore%data[prettyName]";
 
             expect(trax.getTraxId(pstore.data)).toBe(rootId);
-            const pr = pstore.getProcessor("root[prettyName]");
+            const pr = pstore.getProcessor("data[prettyName]");
             expect(pr).not.toBe(undefined);
             expect(pr!.id).toBe(processorId);
             expect(output).toBe("VIEW: [empty]");
@@ -596,14 +596,14 @@ describe('Async processors', () => {
             await trax.reconciliation();
             expect(printLogs(6)).toMatchObject([
                 "6:1 !LOG - A",
-                "6:2 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "6:2 !GET - FStore/data.father -> '[TRAX FStore/Father]'",
                 "6:3 !GET - FStore/Father.prettyNameLength -> 11",
-                "6:4 !GET - FStore/root.father -> '[TRAX FStore/Father]'",
+                "6:4 !GET - FStore/data.father -> '[TRAX FStore/Father]'",
                 "6:5 !DEL - FStore%Father[pn]",
                 "6:6 !DEL - FStore%Father[pnLength]",
                 "6:7 !DEL - FStore/Father",
-                "6:8 !GET - FStore/root.father -> {\"firstName\":\"H\",\"lastName\":\"Simpson\",\"prettyNameLength\":11,\"prettyName\":\"Friendly(H)\"}",
-                "6:9 !GET - FStore/root.father -> {\"firstName\":\"HOMER\",\"lastName\":\"Simpson\",\"prettyNameLength\":11,\"prettyName\":\"Friendly(H)\"}",
+                "6:8 !GET - FStore/data.father -> {\"firstName\":\"H\",\"lastName\":\"Simpson\",\"prettyNameLength\":11,\"prettyName\":\"Friendly(H)\"}",
+                "6:9 !GET - FStore/data.father -> {\"firstName\":\"HOMER\",\"lastName\":\"Simpson\",\"prettyNameLength\":11,\"prettyName\":\"Friendly(H)\"}",
             ]);
         });
     });
@@ -702,16 +702,16 @@ describe('Async processors', () => {
                 });
             });
 
-            const processorId = "PStore%root[prettyNames]";
+            const processorId = "PStore%data[prettyNames]";
             const p = pstore.data;
-            const pr = pstore.getProcessor("root[prettyNames]")!;
+            const pr = pstore.getProcessor("data[prettyNames]")!;
             expect(lastIds).toMatchObject([]); // lazy
             expect(pr.id).toBe(processorId);
             expect(pr.computeCount).toBe(0); // lazy
             expect(pr.disposed).toBe(false);
             expect(lastCounts).toMatchObject([]); // lazy
             expect(p.prettyName).toBe(undefined); // triggers the processor
-            expect(pstore.getProcessor("root[prettyNames]")).toBe(pr);
+            expect(pstore.getProcessor("data[prettyNames]")).toBe(pr);
             expect(trax.getProcessor(processorId)).toBe(pr);
             expect(lastCounts).toMatchObject([1]);
 
@@ -776,14 +776,14 @@ describe('Async processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
                 "0:6 !ERR - [TRAX] (PStore%PrettyName) Compute error: Error: Error 1",
                 "0:7 !PCE - 0:5",
                 "0:8 !ERR - [TRAX] (PStore%PrettyName) No dependencies found: processor will never be re-executed",
                 "0:9 !PCE - 0:1",
-                "0:10 !GET - PStore/root.prettyName -> undefined",
+                "0:10 !GET - PStore/data.prettyName -> undefined",
             ]);
 
             expect(pr.dependencies).toMatchObject([]);
@@ -806,19 +806,19 @@ describe('Async processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> 'Bart'",
+                "0:6 !GET - PStore/data.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5",
                 "0:8 !PCE - 0:1",
-                "0:9 !GET - PStore/root.prettyName -> undefined",
+                "0:9 !GET - PStore/data.prettyName -> undefined",
                 "1:1 GetFriendlyName - NO-DATA",
                 "2:1 !ERR - [TRAX] (PStore%PrettyName) Compute error: Error: Friendly Name Error",
             ]);
 
             expect(pr.dependencies).toMatchObject([
-                "PStore/root.firstName",
+                "PStore/data.firstName",
             ]);
         });
 
@@ -839,22 +839,22 @@ describe('Async processors', () => {
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
                 "0:2 !NEW - S: PStore",
-                "0:3 !NEW - O: PStore/root",
+                "0:3 !NEW - O: PStore/data",
                 "0:4 !NEW - P: PStore%PrettyName",
                 "0:5 !PCS - !Compute #1 (PStore%PrettyName) P1 Init - parentId=0:1",
-                "0:6 !GET - PStore/root.firstName -> 'Bart'",
+                "0:6 !GET - PStore/data.firstName -> 'Bart'",
                 "0:7 !PCP - 0:5",
                 "0:8 !PCE - 0:1",
-                "0:9 !GET - PStore/root.prettyName -> undefined",
+                "0:9 !GET - PStore/data.prettyName -> undefined",
                 "1:1 GetFriendlyName - NO-DATA",
                 "2:1 !PCR - 0:5",
-                "2:2 !SET - PStore/root.prettyName = 'Friendly(Bart)' (prev: undefined)",
+                "2:2 !SET - PStore/data.prettyName = 'Friendly(Bart)' (prev: undefined)",
                 "2:3 !ERR - [TRAX] (PStore%PrettyName) Compute error: Error: Error 2",
                 "2:4 !PCE - 0:5",
             ]);
 
             expect(pr.dependencies).toMatchObject([
-                "PStore/root.firstName",
+                "PStore/data.firstName",
             ]);
         });
     });

@@ -26,25 +26,25 @@ describe('Trax Objects', () => {
 
     describe('Basics', () => {
         it('must get the root object and wrap sub-objects', async () => {
-            const r1 = fst.get<SimpleFamilyStore>("root")!;
+            const r1 = fst.get<SimpleFamilyStore>("data")!;
             expect(r1.father!.firstName).toBe("Homer");
 
-            const r2 = fst.get<SimpleFamilyStore>("root")!;
+            const r2 = fst.get<SimpleFamilyStore>("data")!;
             expect(r1).toBe(r2);
             expect(r2.childNames).toBe("");
 
-            expect(trax.getTraxId(r1)).toBe("SimpleFamilyStore/root");
+            expect(trax.getTraxId(r1)).toBe("SimpleFamilyStore/data");
 
             expect(printLogs(true, 0)).toMatchObject([
                 '0:1 !PCS - !StoreInit (SimpleFamilyStore)',
                 '0:2 !NEW - S: SimpleFamilyStore',
-                '0:3 !NEW - O: SimpleFamilyStore/root',
+                '0:3 !NEW - O: SimpleFamilyStore/data',
                 '0:4 !PCE - 0:1',
                 // Note: the following logs are on cycle 1 because the store was initialised in beforeEach
-                "1:1 !NEW - O: SimpleFamilyStore/root*father",
-                "1:2 !GET - SimpleFamilyStore/root.father -> '[TRAX SimpleFamilyStore/root*father]'",
-                "1:3 !GET - SimpleFamilyStore/root*father.firstName -> 'Homer'",
-                "1:4 !GET - SimpleFamilyStore/root.childNames -> ''",
+                "1:1 !NEW - O: SimpleFamilyStore/data*father",
+                "1:2 !GET - SimpleFamilyStore/data.father -> '[TRAX SimpleFamilyStore/data*father]'",
+                "1:3 !GET - SimpleFamilyStore/data*father.firstName -> 'Homer'",
+                "1:4 !GET - SimpleFamilyStore/data.childNames -> ''",
             ]);
         });
 
@@ -67,7 +67,7 @@ describe('Trax Objects', () => {
 
         it('must support using other trax objects to build advance ids (same store)', async () => {
             let o1 = fst.add([fst.data, "foo"], { foo: "bar" });
-            expect(trax.getTraxId(o1)).toBe("SimpleFamilyStore/root:foo");
+            expect(trax.getTraxId(o1)).toBe("SimpleFamilyStore/data:foo");
 
             // this will generate an error
             let o2 = fst.add([{ blah: "blah" }, "foo"], { foo: "bar" });
@@ -76,7 +76,7 @@ describe('Trax Objects', () => {
             expect(m).not.toBe(null);
 
             expect(printLogs()).toMatchObject([
-                "1:1 !NEW - O: SimpleFamilyStore/root:foo",
+                "1:1 !NEW - O: SimpleFamilyStore/data:foo",
                 "1:2 !ERR - [TRAX] Invalid id param: not a trax object",
                 "1:3 !NEW - O: " + id
             ]);
@@ -88,14 +88,14 @@ describe('Trax Objects', () => {
             })
 
             let o = fst.add([st.data, "foo"], { foo: "bar" });
-            expect(trax.getTraxId(o)).toBe("SimpleFamilyStore/AnotherStore-root:foo");
+            expect(trax.getTraxId(o)).toBe("SimpleFamilyStore/AnotherStore-data:foo");
 
             expect(printLogs()).toMatchObject([
                 "1:1 !PCS - !StoreInit (AnotherStore)",
                 "1:2 !NEW - S: AnotherStore",
-                "1:3 !NEW - O: AnotherStore/root",
+                "1:3 !NEW - O: AnotherStore/data",
                 "1:4 !PCE - 1:1",
-                "1:5 !NEW - O: SimpleFamilyStore/AnotherStore-root:foo",
+                "1:5 !NEW - O: SimpleFamilyStore/AnotherStore-data:foo",
             ]);
         });
 

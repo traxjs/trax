@@ -39,9 +39,9 @@ export interface Trax {
     /**
      * Create a root store
      * @param id the store id
-     * @param root the root object to initialize the store
+     * @param data the root object to initialize the store
      */
-    createStore<T extends Object>(id: TraxIdDef, root: T): Store<T>;
+    createStore<T extends Object>(id: TraxIdDef, data: T): Store<T>;
     /**
      * The trax event logs
      */
@@ -149,13 +149,13 @@ export interface Store<T> {
      * All objects, arrays and dictionaries that are not reachable through this object will be
      * automatically garbage-collected
      */
-    readonly root: T,
+    readonly data: T,
     /**
-     * Initialize the root object - must be only called in the store init function
+     * Initialize the root data object - must be only called in the store init function
      * @param lazyProcessors optional compute functions associated to the root object. The processor associated to these functions will follow the object life cycle.
-     * @param root
+     * @param data
      */
-    init(root: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T;
+    init(data: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T;
     /**
      * Tell if the store is disposed and should be ignored
      */
@@ -164,7 +164,7 @@ export interface Store<T> {
      * Create a sub-store
      * @param id the store id
      * @param initFunction the function that will be called to initialize the store. This function must
-     * define the store "root" object otherwise an error will be generated
+     * define the store "root" data object otherwise an error will be generated
      */
     createStore<T extends Object, R>(
         id: TraxIdDef,
@@ -173,9 +173,9 @@ export interface Store<T> {
     /**
      * Create a sub-store
      * @param id the store id
-     * @param root the root object to initialize the store
+     * @param data the root data object to initialize the store
      */
-    createStore<T extends Object>(id: TraxIdDef, root: T): Store<T>;
+    createStore<T extends Object>(id: TraxIdDef, data: T): Store<T>;
     /**
      * Retrieve a sub-store
      * @param id
@@ -191,7 +191,7 @@ export interface Store<T> {
     /**
      * Retrieve a data object/array/dictionary that has been previously created
      * (Doesn't work for processors or stores)
-     * Note: if this object is not indirectly referenced by the root object, it may habe been garbage collected
+     * Note: if this object is not indirectly referenced by the root data object, it may habe been garbage collected
      * @returns the tracked object or undefined if not found
      */
     get<T extends Object>(id: TraxIdDef): T | void;

@@ -57,7 +57,7 @@ describe('Async processors', () => {
     describe('Compute', () => {
         it('should support 0 step generators', async () => {
             const ps = createPStore("");
-            const p = ps.root;
+            const p = ps.data;
             const pr = ps.getProcessor("PrettyName")!;
 
             expect(p.prettyName).toBe("Simpson");
@@ -87,7 +87,7 @@ describe('Async processors', () => {
 
         it('should support 1 step generators', async () => {
             const ps = createPStore();
-            const p = ps.root;
+            const p = ps.data;
             const pr = ps.getProcessor("PrettyName")!;
 
             expect(pr.dirty).toBe(false); // because the compute process has been launched
@@ -168,7 +168,7 @@ describe('Async processors', () => {
 
         it('should support 2+ steps generators', async () => {
             const ps = createPStore("Bart", true);
-            const p = ps.root;
+            const p = ps.data;
             const pr = ps.getProcessor("PrettyName")!;
 
             expect(p.avatar).toBe(undefined);
@@ -239,7 +239,7 @@ describe('Async processors', () => {
 
         it('should cancel and restart compute if dependencies change during compute', async () => {
             const ps = createPStore("Bart", true);
-            const p = ps.root;
+            const p = ps.data;
             const pr = ps.getProcessor("PrettyName")!;
 
             expect(p.avatar).toBe(undefined);
@@ -290,7 +290,7 @@ describe('Async processors', () => {
 
         it('should cancel compute when processor gets disposed', async () => {
             const ps = createPStore("Bart", true);
-            const p = ps.root;
+            const p = ps.data;
             const pr = ps.getProcessor("PrettyName")!;
 
             expect(p.avatar).toBe(undefined);
@@ -336,9 +336,9 @@ describe('Async processors', () => {
                 });
             });
 
-            expect(ps.root.prettyName).toBe(undefined);
+            expect(ps.data.prettyName).toBe(undefined);
             await trax.log.awaitEvent("Done");
-            expect(ps.root.prettyName).toBe("Friendly(Bart) Simpson");
+            expect(ps.data.prettyName).toBe("Friendly(Bart) Simpson");
 
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
@@ -370,14 +370,14 @@ describe('Async processors', () => {
                 store.compute("PrettyName", function* () {
                     let fn = p.firstName, nm = "";
                     const ffn: string = yield getFriendlyName(fn);
-                    nm = ffn + " " + p.lastName + " " + miscStore.root.text;
+                    nm = ffn + " " + p.lastName + " " + miscStore.data.text;
                     p.prettyName = nm;
                     trax.log.event("PrettyNameSet");
                 });
             });
             const pr = ps.getProcessor("PrettyName")!;
 
-            expect(ps.root.prettyName).toBe(undefined);
+            expect(ps.data.prettyName).toBe(undefined);
             expect(pr.dependencies).toMatchObject([
                 "PStore/root.firstName",
             ]);
@@ -390,14 +390,14 @@ describe('Async processors', () => {
                 "PStore/root.lastName",
             ]);
 
-            expect(ps.root.prettyName).toBe("Friendly(Homer) Simpson Some Text");
+            expect(ps.data.prettyName).toBe("Friendly(Homer) Simpson Some Text");
 
-            miscStore.root.text = "Blahblah";
+            miscStore.data.text = "Blahblah";
 
             await trax.reconciliation();
-            expect(ps.root.prettyName).toBe("Friendly(Homer) Simpson Some Text"); // unchanged yet
+            expect(ps.data.prettyName).toBe("Friendly(Homer) Simpson Some Text"); // unchanged yet
             await trax.log.awaitEvent("PrettyNameSet");
-            expect(ps.root.prettyName).toBe("Friendly(Homer) Simpson Blahblah");
+            expect(ps.data.prettyName).toBe("Friendly(Homer) Simpson Blahblah");
         });
 
         describe('Console output', () => {
@@ -411,7 +411,7 @@ describe('Async processors', () => {
 
                 trax.log.consoleOutput = "All";
                 const ps = createPStore("Bart", true);
-                const p = ps.root;
+                const p = ps.data;
 
 
                 await trax.log.awaitEvent("GetAvatar");
@@ -462,7 +462,7 @@ describe('Async processors', () => {
 
                 trax.log.consoleOutput = "AllButGet";
                 const ps = createPStore("Bart", true);
-                const p = ps.root;
+                const p = ps.data;
 
                 await trax.log.awaitEvent("GetAvatar");
                 await trax.reconciliation();
@@ -521,7 +521,7 @@ describe('Async processors', () => {
                     }
                 });
             });
-            const proot = pstore.root;
+            const proot = pstore.data;
             let output = "";
             pstore.compute("Render", () => {
                 output = "VIEW: " + (proot.prettyName || "[empty]");
@@ -530,7 +530,7 @@ describe('Async processors', () => {
             const rootId = "PStore/root";
             const processorId = "PStore%root[prettyName]";
 
-            expect(trax.getTraxId(pstore.root)).toBe(rootId);
+            expect(trax.getTraxId(pstore.data)).toBe(rootId);
             const pr = pstore.getProcessor("root[prettyName]");
             expect(pr).not.toBe(undefined);
             expect(pr!.id).toBe(processorId);
@@ -567,7 +567,7 @@ describe('Async processors', () => {
                 });
                 root.father = f;
             });
-            const proot = fstore.root;
+            const proot = fstore.data;
             let output = "";
             fstore.compute("Render", () => {
                 output = "VIEW: " + (proot.father!.prettyName || "[empty]");
@@ -629,7 +629,7 @@ describe('Async processors', () => {
             });
 
             const processorId = "PStore%PrettyName";
-            const p = pstore.root;
+            const p = pstore.data;
             const pr = pstore.getProcessor("PrettyName")!;
             expect(lastId).toMatchObject([processorId]);
             expect(pr.id).toBe(processorId);
@@ -651,7 +651,7 @@ describe('Async processors', () => {
             expect(lastCount).toMatchObject([1, 1]);
 
 
-            pstore.root.firstName = "HOMER";
+            pstore.data.firstName = "HOMER";
 
             await trax.reconciliation();
             expect(lastId).toMatchObject([processorId, processorId, processorId]);
@@ -668,7 +668,7 @@ describe('Async processors', () => {
             expect(trax.getProcessor(processorId)).toBe(undefined);
 
 
-            pstore.root.firstName = "MARGE";
+            pstore.data.firstName = "MARGE";
 
             await trax.reconciliation();
             expect(pr.disposed).toBe(true);
@@ -703,7 +703,7 @@ describe('Async processors', () => {
             });
 
             const processorId = "PStore%root[prettyNames]";
-            const p = pstore.root;
+            const p = pstore.data;
             const pr = pstore.getProcessor("root[prettyNames]")!;
             expect(lastIds).toMatchObject([]); // lazy
             expect(pr.id).toBe(processorId);
@@ -724,7 +724,7 @@ describe('Async processors', () => {
             expect(lastIds).toMatchObject([processorId, processorId]);
             expect(lastCounts).toMatchObject([1, 1]);
 
-            pstore.root.firstName = "HOMER";
+            pstore.data.firstName = "HOMER";
             await trax.reconciliation();
 
             // Before lazy read
@@ -747,7 +747,7 @@ describe('Async processors', () => {
             expect(p.prettyName).toBe("Friendly(HOMER) Simpson");
             expect(trax.getProcessor(processorId)).toBe(undefined);
 
-            pstore.root.firstName = "MARGE";
+            pstore.data.firstName = "MARGE";
 
             await trax.reconciliation();
             expect(pr.disposed).toBe(true);
@@ -771,7 +771,7 @@ describe('Async processors', () => {
             });
             const pr = ps.getProcessor("PrettyName")!;
 
-            expect(ps.root.prettyName).toBe(undefined);
+            expect(ps.data.prettyName).toBe(undefined);
             await trax.reconciliation();
             expect(printLogs(0)).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
@@ -800,7 +800,7 @@ describe('Async processors', () => {
             });
             const pr = ps.getProcessor("PrettyName")!;
 
-            expect(ps.root.prettyName).toBe(undefined);
+            expect(ps.data.prettyName).toBe(undefined);
             await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME);
             await trax.reconciliation();
             expect(printLogs(0)).toMatchObject([
@@ -833,7 +833,7 @@ describe('Async processors', () => {
             });
             const pr = ps.getProcessor("PrettyName")!;
 
-            expect(ps.root.prettyName).toBe(undefined);
+            expect(ps.data.prettyName).toBe(undefined);
             await trax.log.awaitEvent(EVT_GET_FRIENDLY_NAME);
             await trax.reconciliation();
             expect(printLogs(0)).toMatchObject([

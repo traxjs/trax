@@ -4,10 +4,10 @@
 <!-- Table of content -->
 * [Store properties](#store-properties)
     + [readonly **id**: string](#readonly-id-string)
-    + [readonly **root**: T](#readonly-root-t)
+    + [readonly **data**: T](#readonly-data-t)
     + [readonly **disposed**: boolean](#disposed)
 * [Store Life Cycle](#store-life-cycle)
-    + [**init**(root: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T](#initroot-t-lazyprocessors-traxlazycomputedescriptort-t)
+    + [**init**(data: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T](#initroot-t-lazyprocessors-traxlazycomputedescriptort-t)
     + [**dispose**(): boolean](#dispose-boolean)
 * [Store data](#store-data)
     + [**add**<T extends Object | Object[]>(id: TraxIdDef, initValue: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T](#addt-extends-object--objectid-traxiddef-initvalue-t-lazyprocessors-traxlazycomputedescriptort-t)
@@ -47,13 +47,13 @@ expect(greetingStore.id).toBe("Greeting");
 const subGreetingStore = greetingStore.createStore("Misc", { miscInfo: "Blah blah"});
 expect(subGreetingStore.id).toBe("Greeting>Misc");
 ```
-### ```readonly root: T```
+### ```readonly data: T```
 
 Store root data object. **All objects, arrays and dictionaries that are not reachable** through this object will be **automatically garbage-collected**.
 
 ```typescript
 const greetingStore = trax.createStore("Greeting", { message: "Hellow World" });
-expect(greetingStore.root.message).toBe("Hellow World");
+expect(greetingStore.data.message).toBe("Hellow World");
 ```
 
 ### ```disposed```
@@ -70,11 +70,11 @@ expect(greetingStore.disposed).toBe(true);
 
 Store must be created with an initial data graph that must either be passed as [trax.createStore()][tcs] argument or that must be defined through the init() method:
 
-### ```init(root: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T```
+### ```init(data: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T```
 
-Initialize the root object - must be only called in the store init function. Accepts 2 parameters:
-- **root**: the initial data graph value (JSON object)
-- **lazyProcessors**: optional compute functions associated to the root object. The processor associated to these functions will follow the object life cycle and will be automatically disposed when the store is disposed
+Initialize the root data object - must be only called in the store init function. Accepts 2 parameters:
+- **data**: the initial data graph value (JSON object)
+- **lazyProcessors**: optional compute functions associated to the root data object. The processor associated to these functions will follow the object life cycle and will be automatically disposed when the store is disposed
 
 Note: ```store.init(x)``` is equivalent to ```store.add("root", x)``` (but init cannot be done with *add()* as *root* is a reserved id).
 
@@ -106,7 +106,7 @@ const todoStore = trax.createStore("TodoStore", (store: Store<TodoData>) => {
     })
 });
 
-const data = todoStore.root;
+const data = todoStore.data;
 data.todos.push({
     description: "Do something",
     completed: false
@@ -185,7 +185,7 @@ expect(trax.getData("MessageStore/Message:M0")).toBe(m0);
 
 const ms = trax.getStore<MessageData>("MessageStore")!;
 // add message outside the addMsg method
-ms.root.messages.push({ id: "M3", text: "Message 3" }); // message added without store.add()
+ms.data.messages.push({ id: "M3", text: "Message 3" }); // message added without store.add()
 const m3 = msgStore.data.messages[3];
 expect(trax.getTraxId(m3)).toBe("MessageStore/root*messages*3"); // generated id -> message cannot be easily retrieved by id as its id cannot be easily guessed
 ```
@@ -212,12 +212,12 @@ Note: objects that are disconnected from the root data graph will automatically 
 ```typescript
 // following previous MessageStore example
 const ms = trax.getStore<MessageData>("MessageStore")!;
-expect(ms.root.unread).toBe(3); // M0, M1, M3
-ms.root.messages.shift(); // remove first array element
+expect(ms.data.unread).toBe(3); // M0, M1, M3
+ms.data.messages.shift(); // remove first array element
 const ok = ms.remove(m0);
 expect(ok).toBe(true);
 await trax.reconciliation();
-expect(ms.root.unread).toBe(2); // M1, M3
+expect(ms.data.unread).toBe(2); // M1, M3
 ```
 
 ## Store processors
@@ -245,13 +245,13 @@ const store = trax.createStore("UserStore", {
 let output = "";
 const r = store.compute("Output", () => {
     // Note: we could update the DOM instead of processin a string
-    const usr = store.root;
+    const usr = store.data;
     output = `User: ${usr.firstName} ${usr.lastName}`;
 });
 
 expect(output).toBe("User: Bart Simpson");
 
-store.root.firstName = "Homer";
+store.data.firstName = "Homer";
 await trax.reconciliation();
 expect(output).toBe("User: Homer Simpson");
 ```
@@ -273,7 +273,7 @@ Create a sub-store. Similar to [trax.createStore](./trax.md#createstore).
 const store = trax.createStore("Foo", { value: "ABC" });
 const subStore = store.createStore("Bar", { anotherValue: "DEF" })
 expect(subStore.id).toBe("Foo>Bar");
-expect(trax.getTraxId(subStore.root)).toBe("Foo>Bar/root");
+expect(trax.getTraxId(subStore.data)).toBe("Foo>Bar/root");
 ```
 
 ### ```getStore<T>(id: TraxIdDef): Store<T> | void```

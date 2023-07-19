@@ -107,7 +107,7 @@ describe('Trax Core', () => {
                 firstName: "Homer",
                 lastName: "Simpson"
             });
-            expect(ps.root.firstName).toBe("Homer");
+            expect(ps.data.firstName).toBe("Homer");
         });
 
         it('should be able to define a custom dispose behaviour', async () => {
@@ -159,10 +159,10 @@ describe('Trax Core', () => {
             });
             const o1 = ps.add("O1", { value: "o1" });
             const o2 = ps.add("O2", { value: "o2" });
-            const rootId = trax.getTraxId(ps.root);
+            const rootId = trax.getTraxId(ps.data);
             const id1 = trax.getTraxId(o1);
             const id2 = trax.getTraxId(o2);
-            expect(trax.getData(rootId)).toBe(ps.root);
+            expect(trax.getData(rootId)).toBe(ps.data);
             expect(trax.getData(id1)).toBe(o1);
             expect(trax.getData(id2)).toBe(o2);
 
@@ -184,10 +184,10 @@ describe('Trax Core', () => {
                     const root = store.init({ msg: "" });
 
                     store.compute("Msg", () => {
-                        root.msg = ps.root.firstName + "!";
+                        root.msg = ps.data.firstName + "!";
                     });
                 });
-                const data = pss.root;
+                const data = pss.data;
 
                 const pssId = pss.id;
                 expect(pssId).toBe("PStore>SubStore");
@@ -198,7 +198,7 @@ describe('Trax Core', () => {
                 expect(data.msg).toBe("Homer!");
 
                 await trax.reconciliation();
-                ps.root.firstName = "Bart";
+                ps.data.firstName = "Bart";
                 await trax.reconciliation();
                 expect(data.msg).toBe("Bart!");
 
@@ -208,7 +208,7 @@ describe('Trax Core', () => {
                 expect(pss.dispose()).toBe(false); // already disposed
 
                 await trax.reconciliation();
-                ps.root.firstName = "Lisa";
+                ps.data.firstName = "Lisa";
                 await trax.reconciliation();
                 expect(data.msg).toBe("Bart!"); // no changes
             });
@@ -223,14 +223,14 @@ describe('Trax Core', () => {
                     const root = store.init({ msg: "" });
 
                     store.compute("Msg", () => {
-                        root.msg = ps.root.firstName + "!";
+                        root.msg = ps.data.firstName + "!";
                     });
                 });
-                const data1 = ps.root;
+                const data1 = ps.data;
                 const data1Id = trax.getTraxId(data1);
                 expect(data1Id).toBe("PStore/root");
 
-                const data2 = pss.root;
+                const data2 = pss.data;
                 const data2Id = trax.getTraxId(data2);
                 expect(data1Id).toBe("PStore/root");
                 expect(data2Id).toBe("PStore>SubStore/root");
@@ -267,7 +267,7 @@ describe('Trax Core', () => {
                     const root = store.init({ msg: "" });
 
                     store.compute("Msg", () => {
-                        root.msg = ps.root.firstName + "!";
+                        root.msg = ps.data.firstName + "!";
                     });
 
                     store.createStore("SubSubStore", (sst: Store<{ info: string }>) => {
@@ -282,7 +282,7 @@ describe('Trax Core', () => {
                 expect(output).toBe("<Homer!>");
 
                 await trax.reconciliation();
-                ps.root.firstName = "Bart";
+                ps.data.firstName = "Bart";
 
                 await trax.reconciliation();
                 expect(output).toBe("<Bart!>");
@@ -298,12 +298,12 @@ describe('Trax Core', () => {
                 expect(pss.getStore("SubSubStore")).toBe(undefined);
 
                 await trax.reconciliation();
-                ps.root.firstName = "Lisa";
+                ps.data.firstName = "Lisa";
 
                 await trax.reconciliation();
                 expect(output).toBe("<Bart!>"); // unchanged
 
-                expect(pss.root.msg).toBe("Lisa!"); // not disposed
+                expect(pss.data.msg).toBe("Lisa!"); // not disposed
             });
         });
 
@@ -625,8 +625,8 @@ describe('Trax Core', () => {
                 const st = trax.createStore("MyStore", (store: Store<any>) => {
                     store.init({ msg: "Hello Ford" });
                 });
-                st.remove(st.root);
-                expect(trax.isTraxObject(st.root)).toBe(true);
+                st.remove(st.data);
+                expect(trax.isTraxObject(st.data)).toBe(true);
                 expect(printLogs()).toMatchObject([
                     "0:1 !PCS - !StoreInit (MyStore)",
                     "0:2 !NEW - S: MyStore",
@@ -810,7 +810,7 @@ describe('Trax Core', () => {
                     const root = store.init({ msg: "" });
 
                     store.compute("Msg", () => {
-                        root.msg = ps.root.firstName + "!";
+                        root.msg = ps.data.firstName + "!";
                     });
                 });
 
@@ -830,7 +830,7 @@ describe('Trax Core', () => {
                 });
 
                 const pr = ps.compute("Misc", () => {
-                    const root = ps.root;
+                    const root = ps.data;
                     root.misc = root.firstName + " " + root.lastName;
                 })
 
@@ -860,7 +860,7 @@ describe('Trax Core', () => {
             trax.processChanges(); // no effect (no changes)
             trax.log.info("B");
 
-            st.root.lastName = "SIMPSON";
+            st.data.lastName = "SIMPSON";
             trax.log.info("C");
             expect(trax.pendingChanges).toBe(true);
             trax.processChanges();
@@ -911,7 +911,7 @@ describe('Trax Core', () => {
                 });
             });
 
-            const p = st.root;
+            const p = st.data;
 
             trax.log.info("A");
             expect(trax.pendingChanges).toBe(false);

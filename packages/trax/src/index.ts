@@ -28,7 +28,10 @@ export type {
     TraxLogPropSet,
     TraxComputeTrigger,
     TraxLogMsg,
-    TraxLogEvent
+    TraxLogProcessCompute,
+    TraxLogProcSkipped,
+    TraxLogEvent,
+    JSONValue
 } from "./types";
 
 export {

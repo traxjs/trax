@@ -66,7 +66,7 @@ describe('Trax Objects', () => {
         });
 
         it('must support using other trax objects to build advance ids (same store)', async () => {
-            let o1 = fst.add([fst.root, "foo"], { foo: "bar" });
+            let o1 = fst.add([fst.data, "foo"], { foo: "bar" });
             expect(trax.getTraxId(o1)).toBe("SimpleFamilyStore/root:foo");
 
             // this will generate an error
@@ -87,7 +87,7 @@ describe('Trax Objects', () => {
                 store.init({ msg: "Hello World" })
             })
 
-            let o = fst.add([st.root, "foo"], { foo: "bar" });
+            let o = fst.add([st.data, "foo"], { foo: "bar" });
             expect(trax.getTraxId(o)).toBe("SimpleFamilyStore/AnotherStore-root:foo");
 
             expect(printLogs()).toMatchObject([

@@ -47,7 +47,7 @@ export const ConditionalList = component("Test:ConditionalList", (props: { conte
  */
 export const CptWithUseStoreArgs = component("Test:CptWithUseStoreArgs", (props: { text: string }) => {
     const store = useStore(createStoreWithArgs, props, 42);
-    const data = store.root;
+    const data = store.data;
 
     return <div className='cpt-with-useStore-args'>
         {data.value1}/{data.value2}

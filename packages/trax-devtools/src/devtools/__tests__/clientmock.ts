@@ -1,5 +1,5 @@
 import { createTraxEnv } from '@traxjs/trax/lib/core';
-import { StreamEvent, Trax, traxEvents } from '@traxjs/trax/lib/types';
+import { StreamEvent, Trax, traxEvents } from '@traxjs/trax';
 import { DtClientAPI, DtEventGroup } from '../types';
 
 
@@ -36,7 +36,7 @@ export function createClientEnv() {
                         bufferListener && bufferListener({ cycleId: bufferCycle, events: buffer });
                         buffer = [];
                     }
-                    // reset 
+                    // reset
                     bufferCycle = -1;
                 } else {
                     buffer.push(e);

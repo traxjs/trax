@@ -83,11 +83,11 @@ Log a custom event that can be awaited thanks to [awaitEvent()]. Parameters:
 ```typescript
 // sample store API method
 async function updateName(value1: string, value2: string) {
-    root.firstName += value1;
+    data.firstName += value1;
     await pause(1);
     // custom event used to synchronize tests (cf. awaitEvent)
     trax.log.event("@traxjs/trax/test/updateNameAsyncDone");
-    root.lastName += value2;
+    data.lastName += value2;
 }
 ```
 ### ```startProcessingContext(data: ProcessingContextData, src?: any): ProcessingContext```
@@ -265,6 +265,6 @@ export const traxEvents = Object.freeze({
 });
 ```
 
-Note: all trax event data structures are full typed (cf. [TraxLogEvent definition]).
+Note: all trax event data structures are fully typed (cf. [TraxLogEvent definition]).
 
 [TraxLogEvent definition]: https://github.com/traxjs/trax/blob/main/packages/trax/src/types.ts

@@ -42,7 +42,7 @@ describe('Sync Processors', () => {
     describe('Eager Compute', () => {
         it('should be able to output non trax values', async () => {
             const ps = createPStore(false);
-            const p = ps.root;
+            const p = ps.data;
 
             let output = "";
 
@@ -97,7 +97,7 @@ describe('Sync Processors', () => {
 
         it('should support to be forced event if processor is not dirty', async () => {
             const ps = createPStore(false);
-            const p = ps.root;
+            const p = ps.data;
 
             let output = "";
             const pr = ps.compute("Render", () => {
@@ -141,7 +141,7 @@ describe('Sync Processors', () => {
         it('should return processors that have already been created', async () => {
             const ps = createPStore();
             const pr = ps.compute("PrettyName", () => {
-                const p = ps.root;
+                const p = ps.data;
                 const nm = p.firstName + " " + p.lastName;
                 p.prettyName = nm;
                 p.prettyNameLength = nm.length;
@@ -150,9 +150,9 @@ describe('Sync Processors', () => {
             expect(typeof pr.compute).toBe("function");
             expect(ps.getProcessor("PrettyName")).toBe(pr);
 
-            ps.root.firstName = "Bart";
+            ps.data.firstName = "Bart";
             await trax.reconciliation();
-            expect(ps.root.prettyName).toBe("Bart Simpson");
+            expect(ps.data.prettyName).toBe("Bart Simpson");
 
             expect(printLogs()).toMatchObject([
                 "0:1 !PCS - !StoreInit (PStore)",
@@ -183,7 +183,7 @@ describe('Sync Processors', () => {
 
         it('should support manual compute and onDirty callbacks', async () => {
             const ps = createPStore(false);
-            const p = ps.root;
+            const p = ps.data;
 
             let output = "", onDirtyCount = 0;
 
@@ -256,7 +256,7 @@ describe('Sync Processors', () => {
 
         it('should support auto compute and onDirty callbacks', async () => {
             const ps = createPStore(false);
-            const p = ps.root;
+            const p = ps.data;
 
             let output = "", onDirtyCount = 0;
 
@@ -335,7 +335,7 @@ describe('Sync Processors', () => {
 
         it('should support conditional processing', async () => {
             const ps = createPStore();
-            const p = ps.root;
+            const p = ps.data;
 
             expect(p.prettyName).toBe("Homer Simpson");
             p.firstName = "";
@@ -417,7 +417,7 @@ describe('Sync Processors', () => {
                 });
             });
 
-            const data = fs.root;
+            const data = fs.data;
             const members = data.members;
             const namesPr = fs.getProcessor("Names")!;
             expect(data.names).toBe("Homer");
@@ -455,16 +455,16 @@ describe('Sync Processors', () => {
                     }
                 });
             });
-            const family = fst.root;
+            const family = fst.data;
 
             await trax.reconciliation(); // skip first cycle
 
-            fst.root.child1 = fst.add<Person>("Bart", {
+            fst.data.child1 = fst.add<Person>("Bart", {
                 firstName: "Bart",
                 lastName: "Simpson"
             });
 
-            fst.root.child2 = fst.add<Person>("Lisa", {
+            fst.data.child2 = fst.add<Person>("Lisa", {
                 firstName: "Lisa",
                 lastName: "Simpson"
             });
@@ -529,7 +529,7 @@ describe('Sync Processors', () => {
 
         it('should create processors that can be retrieved throug store.get()', async () => {
             const ps = createPStore(false);
-            const p = ps.root;
+            const p = ps.data;
 
             let output = "";
 
@@ -599,7 +599,7 @@ describe('Sync Processors', () => {
                 });
             });
 
-            const v = st.root;
+            const v = st.data;
 
             expect(v.v5.value).toBe("P5(P4(P3(P1(v0initValue)))+P2(v0initValue))");
 
@@ -711,7 +711,7 @@ describe('Sync Processors', () => {
                     v.v3 = "P2(" + v.v1 + ")";
                 });
             });
-            const v = st.root;
+            const v = st.data;
             const p1 = st.getProcessor("P1")!;
             const p2 = st.getProcessor("P2")!;
 
@@ -745,7 +745,7 @@ describe('Sync Processors', () => {
 
         it('should allow to create renderer processors', async () => {
             const ps = createPStore();
-            const p = ps.root;
+            const p = ps.data;
 
             let output = "";
             const r = ps.compute("Render", () => {
@@ -785,7 +785,7 @@ describe('Sync Processors', () => {
             const ps = trax.createStore("PStore", (s: Store<Person>) => {
                 s.init({ firstName: "Homer", lastName: "Simpson" });
             });
-            const main = ps.root;
+            const main = ps.data;
 
             const fs = trax.createStore("FStore", (s: Store<ArrayFamilyStore>) => {
                 const data = s.init({
@@ -805,7 +805,7 @@ describe('Sync Processors', () => {
                 });
             });
 
-            const data = fs.root;
+            const data = fs.data;
             const namesPr = fs.getProcessor("Names")!;
 
             expect(data.names).toBe("MAIN, Marge");
@@ -846,7 +846,7 @@ describe('Sync Processors', () => {
 
         it('should update compute function when a processor is retrieved', async () => {
             const ps = createPStore(false);
-            const p = ps.root;
+            const p = ps.data;
 
             let output = "";
             const pr = ps.compute("Render", () => {
@@ -898,7 +898,7 @@ describe('Sync Processors', () => {
                     }
                 });
             });
-            const proot = pstore.root;
+            const proot = pstore.data;
             let output = "";
             pstore.compute("Render", () => {
                 output = "VIEW: " + proot.prettyName;
@@ -907,7 +907,7 @@ describe('Sync Processors', () => {
             const rootId = "PStore/root";
             const processorId = "PStore%root[prettyNames]";
 
-            expect(trax.getTraxId(pstore.root)).toBe(rootId);
+            expect(trax.getTraxId(pstore.data)).toBe(rootId);
             const pr = pstore.getProcessor("root[prettyNames]");
             expect(pr).not.toBe(undefined);
             expect(pr!.id).toBe(processorId);
@@ -938,7 +938,7 @@ describe('Sync Processors', () => {
                     }
                 });
             });
-            const proot = pstore.root;
+            const proot = pstore.data;
             let output = "";
             expect(count1).toBe(0);
             expect(count2).toBe(0);
@@ -998,7 +998,7 @@ describe('Sync Processors', () => {
                 });
                 root.father = f;
             });
-            const fam = fstore.root;
+            const fam = fstore.data;
             let output = "";
             fstore.compute("Render", () => {
                 output = "VIEW: " + fam.father!.prettyName;
@@ -1053,7 +1053,7 @@ describe('Sync Processors', () => {
                 });
                 root.father = f;
             });
-            const fam = fstore.root;
+            const fam = fstore.data;
             let output = "";
             const render1 = fstore.compute("Render", () => {
                 output = "VIEW: " + fam.father!.prettyName;
@@ -1217,7 +1217,7 @@ describe('Sync Processors', () => {
                     }
                 });
             });
-            const proot = pstore.root;
+            const proot = pstore.data;
             let output = "";
             pstore.compute("Render", () => {
                 output = "VIEW: " + proot.prettyName;
@@ -1248,7 +1248,7 @@ describe('Sync Processors', () => {
     describe('Dispose', () => {
         it('should support deletion through dispose()', async () => {
             const ps = createPStore(false);
-            const p = ps.root;
+            const p = ps.data;
 
             let output = "";
             let pr = ps.compute("Render", () => {
@@ -1342,7 +1342,7 @@ describe('Sync Processors', () => {
                 });
             });
 
-            const p = pstore.root;
+            const p = pstore.data;
             const pr = pstore.getProcessor("PrettyName")!;
             expect(lastId).toBe("PStore%PrettyName");
             expect(pr.id).toBe("PStore%PrettyName");
@@ -1356,7 +1356,7 @@ describe('Sync Processors', () => {
             await trax.reconciliation();
             lastId = "";
             lastCount = 0;
-            pstore.root.firstName = "HOMER";
+            pstore.data.firstName = "HOMER";
 
             await trax.reconciliation();
 
@@ -1371,7 +1371,7 @@ describe('Sync Processors', () => {
 
             lastId = "";
             lastCount = 0;
-            pstore.root.firstName = "MARGE";
+            pstore.data.firstName = "MARGE";
 
             await trax.reconciliation();
 
@@ -1401,7 +1401,7 @@ describe('Sync Processors', () => {
             });
             const processorId = "PStore%root[prettyNames]";
 
-            const p = pstore.root;
+            const p = pstore.data;
             const pr = pstore.getProcessor("root[prettyNames]")!;
             expect(lastId).toBe(""); // lazy call
             expect(pr.id).toBe(processorId);
@@ -1416,7 +1416,7 @@ describe('Sync Processors', () => {
             await trax.reconciliation();
             lastId = "";
             lastCount = 0;
-            pstore.root.firstName = "HOMER";
+            pstore.data.firstName = "HOMER";
 
             await trax.reconciliation();
             // Before lazy read
@@ -1439,7 +1439,7 @@ describe('Sync Processors', () => {
 
             lastId = "";
             lastCount = 0;
-            pstore.root.firstName = "MARGE";
+            pstore.data.firstName = "MARGE";
 
             await trax.reconciliation();
 
@@ -1472,7 +1472,7 @@ describe('Sync Processors', () => {
 
             const processorId = "FStore%Father[prettyName]";
             const pr = trax.getProcessor(processorId);
-            const f = fstore.root.father!;
+            const f = fstore.data.father!;
             expect(f.prettyName).toBe("Homer/Simpson/S");
             expect(lastIds).toMatchObject([processorId]);
             expect(lastCounts).toMatchObject([1]);
@@ -1501,7 +1501,7 @@ describe('Sync Processors', () => {
     describe('Errors', () => {
         it('should raise an error in case of compute error', async () => {
             const ps = createPStore(false);
-            const p = ps.root;
+            const p = ps.data;
             await trax.reconciliation();
 
             let pr = ps.compute("Render", () => {
@@ -1520,7 +1520,7 @@ describe('Sync Processors', () => {
 
         it('should raise an error in case of onDirty callback error', async () => {
             const ps = createPStore(false);
-            const p = ps.root;
+            const p = ps.data;
 
             let output = "";
             const pr = ps.compute("Render", () => {
@@ -1558,7 +1558,7 @@ describe('Sync Processors', () => {
 
             await trax.reconciliation();
             ps.compute("PrettyName2", () => {
-                const p = ps.root;
+                const p = ps.data;
                 p.prettyName = p.firstName;
             });
             trax.log.info("DONE");

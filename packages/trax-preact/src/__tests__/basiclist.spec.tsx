@@ -160,7 +160,7 @@ describe('Simple List', () => {
             const ctxtStore = trax.createStore("TestContext", {
                 showList: true
             });
-            const context = ctxtStore.root
+            const context = ctxtStore.data;
 
             const container = render(<div>
                 <ConditionalList context={context} />

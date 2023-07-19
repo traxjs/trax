@@ -792,7 +792,7 @@ export function createTraxEnv(): Trax {
         onDispose?: (id: string) => void
     ): R extends void ? Store<T> : R & StoreWrapper {
         const storeId = buildStoreId(idPrefix, parentStoreId, true);
-        let root: any;
+        let data: any;
         let initPhase = true;
         let disposed = false;
         const storeInit = startProcessingContext({ type: "!PCS", name: "!StoreInit", storeId: storeId });
@@ -804,9 +804,9 @@ export function createTraxEnv(): Trax {
             get id() {
                 return storeId;
             },
-            get root() {
+            get data() {
                 // root should always be defined if initFunction is correctly implemented
-                return root;
+                return data;
             },
             get disposed(): boolean {
                 return disposed;
@@ -821,11 +821,11 @@ export function createTraxEnv(): Trax {
             },
             init(r: T, lazyProcessors?: TraxLazyComputeDescriptor<T>) {
                 if (initPhase) {
-                    root = getOrAdd(ROOT, r, true, lazyProcessors);
+                    data = getOrAdd(ROOT, r, true, lazyProcessors);
                 } else {
                     error(`(${storeId}) Store.init can only be called during the store init phase`);
                 }
-                return root;
+                return data;
             },
             add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T {
                 return getOrAdd(id, initValue, false, lazyProcessors);
@@ -1010,9 +1010,9 @@ export function createTraxEnv(): Trax {
         return res;
 
         function checkRoot() {
-            if (root == undefined) {
+            if (data == undefined) {
                 error(`(${storeId}) createStore init must define a root object - see also: init()`);
-                root = getOrAdd(ROOT, {}, true);
+                data = getOrAdd(ROOT, {}, true);
             }
         }
 

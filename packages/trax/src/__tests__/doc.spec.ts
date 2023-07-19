@@ -14,7 +14,7 @@ describe('Doc examples', () => {
         // trax.log.consoleOutput = "All";
         const greetingStore = trax.createStore("Greeting", { message: "Hellow World" });
 
-        expect(greetingStore.root.message).toBe("Hellow World");
+        expect(greetingStore.data.message).toBe("Hellow World");
         expect(greetingStore.id).toBe("Greeting");
 
         const gs = trax.getStore("Greeting");
@@ -123,7 +123,7 @@ describe('Doc examples', () => {
             })
         });
 
-        const data = todoStore.root;
+        const data = todoStore.data;
         data.todos.push({
             description: "Do something",
             completed: false
@@ -180,7 +180,7 @@ describe('Doc examples', () => {
         expect(active3).toBe("");
 
 
-        const data = personStore.root;
+        const data = personStore.data;
         expect(data.prettyName).toBe("Homer Simpson");
         data.firstName = "Marge";
         expect(data.prettyName).toBe("Homer Simpson"); // change not yet propagated
@@ -214,32 +214,32 @@ describe('Doc examples', () => {
         expect(trax.isTraxObject(123)).toBe(false);
         const testStore = trax.createStore("TestStore", { foo: "bar" });
         expect(trax.isTraxObject(testStore)).toBe(true);
-        expect(trax.isTraxObject(testStore.root)).toBe(true);
+        expect(trax.isTraxObject(testStore.data)).toBe(true);
     });
 
     it('should support get TraxId', async () => {
         expect(trax.getTraxId({})).toBe("");
         const testStore = trax.createStore("TestStore", { foo: { bar: "baz" } });
         expect(trax.getTraxId(testStore)).toBe("TestStore");
-        expect(trax.getTraxId(testStore.root)).toBe("TestStore/root");
-        expect(trax.getTraxId(testStore.root.foo)).toBe("TestStore/root*foo");
-        expect(trax.getTraxId(testStore.root.foo.bar)).toBe(""); // bar is not an object
+        expect(trax.getTraxId(testStore.data)).toBe("TestStore/root");
+        expect(trax.getTraxId(testStore.data.foo)).toBe("TestStore/root*foo");
+        expect(trax.getTraxId(testStore.data.foo.bar)).toBe(""); // bar is not an object
     });
 
     it('should support trax object type', async () => {
         expect(trax.getTraxObjectType({})).toBe(""); // TraxObjectType.NotATraxObject
         const testStore = trax.createStore("TestStore", { foo: { bar: [1, 2, 3], baz: "abc" } });
         expect(trax.getTraxObjectType(testStore)).toBe("S"); // TraxObjectType.Store
-        expect(trax.getTraxObjectType(testStore.root.foo)).toBe("O"); // TraxObjectType.Object
-        expect(trax.getTraxObjectType(testStore.root.foo.bar)).toBe("A"); // TraxObjectType.Array
+        expect(trax.getTraxObjectType(testStore.data.foo)).toBe("O"); // TraxObjectType.Object
+        expect(trax.getTraxObjectType(testStore.data.foo.bar)).toBe("A"); // TraxObjectType.Array
     });
 
     it('should support getData', async () => {
         const testStore = trax.createStore("TestStore", { foo: { bar: [1, 2, 3], baz: "abc" } });
-        expect(trax.getData("TestStore/root")).toBe(testStore.root);
+        expect(trax.getData("TestStore/root")).toBe(testStore.data);
         expect(trax.getData("TestStore/root*foo*bar")).toBe(undefined); // because testStore.root.foo.bar has never been accessed
-        const v = testStore.root.foo.bar
-        expect(trax.getData("TestStore/root*foo*bar")).toBe(testStore.root.foo.bar);
+        const v = testStore.data.foo.bar
+        expect(trax.getData("TestStore/root*foo*bar")).toBe(testStore.data.foo.bar);
         expect(trax.getData("XYZ")).toBe(undefined);
     });
 
@@ -285,7 +285,7 @@ describe('Doc examples', () => {
 
         const ms = trax.getStore<MessageData>("MessageStore")!;
         // add message outside the addMsg method
-        ms.root.messages.push({ id: "M3", text: "Message 3" });
+        ms.data.messages.push({ id: "M3", text: "Message 3" });
         const m3 = msgStore.data.messages[3];
         expect(trax.getTraxId(m3)).toBe("MessageStore/root*messages*3"); // generated id
         await trax.reconciliation();
@@ -293,12 +293,12 @@ describe('Doc examples', () => {
         expect(ms.get("Message:M0")).toBe(m0);
         expect(ms.get(["Message", "M0"])).toBe(m0);
 
-        expect(ms.root.unread).toBe(3)
-        ms.root.messages.shift(); // remove first array element
+        expect(ms.data.unread).toBe(3)
+        ms.data.messages.shift(); // remove first array element
         const ok = ms.remove(m0);
         expect(ok).toBe(true);
         await trax.reconciliation();
-        expect(ms.root.unread).toBe(2);
+        expect(ms.data.unread).toBe(2);
     });
 
     it('should support store.compute', async () => {
@@ -312,13 +312,13 @@ describe('Doc examples', () => {
         let output = "";
         const r = store.compute("Output", () => {
             // Note: we could update the DOM instead of processin a string
-            const usr = store.root;
+            const usr = store.data;
             output = `User: ${usr.firstName} ${usr.lastName}`;
         });
 
         expect(output).toBe("User: Bart Simpson");
 
-        store.root.firstName = "Homer";
+        store.data.firstName = "Homer";
         await trax.reconciliation();
         expect(output).toBe("User: Homer Simpson");
 
@@ -331,7 +331,7 @@ describe('Doc examples', () => {
         const subStore = store.createStore("Bar", { anotherValue: "DEF" });
 
         expect(subStore.id).toBe("Foo>Bar");
-        expect(trax.getTraxId(subStore.root)).toBe("Foo>Bar/root");
+        expect(trax.getTraxId(subStore.data)).toBe("Foo>Bar/root");
 
         expect(store.getStore("Bar")).toBe(subStore);
     });
@@ -411,7 +411,7 @@ describe('Doc examples', () => {
             });
         });
 
-        const person1 = store1.root;
+        const person1 = store1.data;
 
         expect(person1.prettyName).toBe("Homer Simpson"); // processed because we accessed person
         expect(person1.avatar).toBe(undefined); // being retrieved
@@ -433,7 +433,7 @@ describe('Doc examples', () => {
             });
         });
 
-        const person2 = store2.root;
+        const person2 = store2.data;
 
         expect(person2.prettyName).toBe("Homer Simpson");
         expect(person2.avatar).toBe(undefined); // being retrieved
@@ -483,7 +483,7 @@ describe('Doc examples', () => {
         expect(p1.id).toBe("PersonStore%root[prettyName]");
         expect(p2!.id).toBe("PersonStore%Avatar");
 
-        const person = store.root;
+        const person = store.data;
         expect(p1.dirty).toBe(false);
         expect(person.prettyName).toBe("Homer Simpson");
         person.firstName = "Marge";

@@ -42,7 +42,7 @@ describe('Arrays', () => {
                         }]
                     });
                 }
-                let family = store.root;
+                let family = store.data;
                 store.compute("Size", () => {
                     family.size = family.members.length;
                 });
@@ -54,7 +54,7 @@ describe('Arrays', () => {
 
         it('should support creation as JSON + push updates (empty)', async () => {
             const fs = createFamilyStore(true);
-            const f = fs.root;
+            const f = fs.data;
 
             expect(f.members.length).toBe(0);
             expect(f.size).toBe(0);
@@ -142,7 +142,7 @@ describe('Arrays', () => {
 
         it('should support creation as JSON + push updates (non empty)', async () => {
             const fs = createFamilyStore(false);
-            const f = fs.root;
+            const f = fs.data;
 
             expect(f.size).toBe(2);
             expect(f.names).toBe("Homer, Marge");
@@ -236,7 +236,7 @@ describe('Arrays', () => {
 
         it('should support creation as JSON + manual updates (empty)', async () => {
             const fs = createFamilyStore(true);
-            const f = fs.root;
+            const f = fs.data;
 
             expect(f.members.length).toBe(0);
             expect(f.size).toBe(0);
@@ -286,7 +286,7 @@ describe('Arrays', () => {
 
         it('should support splice', async () => {
             const fs = createFamilyStore(false);
-            const f = fs.root;
+            const f = fs.data;
             const members = f.members;
             members.push({ firstName: "Bart", lastName: "Simpson" });
             members.push({ firstName: "Lisa", lastName: "Simpson" });
@@ -314,7 +314,7 @@ describe('Arrays', () => {
 
         it('should support creation through add() - empty array', async () => {
             const fs = createFamilyStore(false);
-            const f = fs.root;
+            const f = fs.data;
 
             let output = "";
             const pr = fs.compute("Summary", () => {
@@ -381,7 +381,7 @@ describe('Arrays', () => {
 
         it('should support creation through add() - non empty array', async () => {
             const fs = createFamilyStore(false);
-            const f = fs.root;
+            const f = fs.data;
 
             let output = "";
             const pr = fs.compute("Summary", () => {
@@ -422,7 +422,7 @@ describe('Arrays', () => {
 
         it('should not autowrap values when accessing an out-of-bound value', async () => {
             const fs = createFamilyStore(false);
-            const f = fs.root;
+            const f = fs.data;
 
             expect(f.members.length).toBe(2);
             f.members.push({ firstName: "Bart", lastName: "Simpson" });
@@ -449,7 +449,7 @@ describe('Arrays', () => {
                         }
                     });
                 });
-                const f = fs.root;
+                const f = fs.data;
 
                 await trax.reconciliation();
 
@@ -540,7 +540,7 @@ describe('Arrays', () => {
                         }
                     });
                 });
-                const f = fs.root;
+                const f = fs.data;
 
                 expect(output).toBe("AAA;BBB/CCC;DDD")
 
@@ -568,7 +568,7 @@ describe('Arrays', () => {
                         }
                     });
                 });
-                const f = fs.root;
+                const f = fs.data;
 
                 await trax.reconciliation();
 
@@ -607,7 +607,7 @@ describe('Arrays', () => {
                         }]
                     });
                 }
-                let family = store.root;
+                let family = store.data;
                 store.compute("Desc", () => {
                     // Compute Misc content from members
                     let infos = family.infos;
@@ -633,7 +633,7 @@ describe('Arrays', () => {
 
         it('should compute array from another one (empty start)', async () => {
             const fs = createFamilyStore(true);
-            const family = fs.root;
+            const family = fs.data;
             const members = family.members;
 
             expect(family.infos?.length).toBe(0);
@@ -831,7 +831,7 @@ describe('Arrays', () => {
 
         it('should compute array from another one (non empty start)', async () => {
             const fs = createFamilyStore(false);
-            const family = fs.root;
+            const family = fs.data;
             const members = family.members;
             const infos = family.infos;
 
@@ -964,7 +964,7 @@ describe('Arrays', () => {
                         familyName: "Simpson",
                         members: []
                     });
-                    let family = store.root;
+                    let family = store.data;
                     store.compute("Desc", () => {
                         // Compute Misc content from members
                         let infos = family.infos;
@@ -1008,7 +1008,7 @@ describe('Arrays', () => {
                             firstName: "Bart", lastName: "Simpson"
                         }]
                     });
-                    let family = store.root;
+                    let family = store.data;
                     store.compute("Infos", () => {
                         // Compute Misc content from members
                         let infos = family.infos;
@@ -1024,7 +1024,7 @@ describe('Arrays', () => {
                         trax.updateArray(infos, content);
                     });
                 });
-                const family = fs.root;
+                const family = fs.data;
                 const members = family.members;
                 const infos = family.infos;
 
@@ -1060,7 +1060,7 @@ describe('Arrays', () => {
                             firstName: "Bart", lastName: "Simpson"
                         }]
                     });
-                    let family = store.root;
+                    let family = store.data;
                     store.compute("Infos", () => {
                         // Compute Misc content from members
                         let infos = family.infos;
@@ -1076,7 +1076,7 @@ describe('Arrays', () => {
                         trax.updateArray(infos, content);
                     });
                 });
-                const family = familyStore.root;
+                const family = familyStore.data;
                 const members = family.members;
                 const infos = family.infos;
 

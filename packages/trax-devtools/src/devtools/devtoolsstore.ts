@@ -1,5 +1,4 @@
-import { Store, StreamEvent, trax, traxEvents } from "@traxjs/trax"
-import { TraxLogProcessCompute } from "@traxjs/trax/lib/types";
+import { Store, StreamEvent, trax, traxEvents, TraxLogProcessCompute } from "@traxjs/trax";
 import { APP_EVENT_TYPE, DtClientAPI, DtDevToolsData, DtEventGroup, DtLogCycle, DtLogEvent, PCG_NAME_COMPUTE, PCG_NAME_RECONCILIATION, PROCESSING_GROUP_END, PROCESSING_GROUP_TYPE } from "./types";
 
 export type DevToolsStore = ReturnType<typeof createDevToolsStore>;
@@ -109,7 +108,7 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
         last++;
     }
 
-    const data = store.root;
+    const data = store.data;
     const logs = data.logs;
     const len = logs.length;
     if (len > 0 && data.lastCycleId > -1) {
@@ -149,7 +148,7 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
             },
             filter: (logCycle) => {
                 // decorate events according to logFilters
-                const filter = store.root.logFilters;
+                const filter = store.data.logFilters;
 
                 // process the filter for this filter key
                 const sz = filterEvents(logCycle.events, filter);

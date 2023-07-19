@@ -55,7 +55,7 @@ describe('Memo', () => {
 
     it('should properly memoize components', async () => {
         const store = trax.createStore<Data>("TestStore", { title: "Greetings", showMessage: false });
-        const data = store.root;
+        const data = store.data;
         renderCpt(data);
 
         expect(host.innerHTML).toBe('<div><div class="maincpt">Greetings<div class="subcpt"></div></div></div>');

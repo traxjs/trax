@@ -1,10 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { Store, Trax, trax, traxEvents } from '@traxjs/trax';
+import { Store, Trax, trax, traxEvents, JSONValue } from '@traxjs/trax';
 import { createClientEnv } from './clientmock';
 import { createDevToolsStore, DevToolsStore } from '../devtoolsstore';
 import { APP_EVENT_TYPE, DtDevToolsData, DtLogCycle, DtLogEvent, DtTraxPgCollectionUpdate, DtTraxPgCompute, DtTraxPgStoreInit, PROCESSING_GROUP_END, PROCESSING_GROUP_TYPE } from '../types';
 import { createPStore, EVENT_GET_AVATAR_COMPLETE } from './utils';
-import { JSONValue } from '@traxjs/trax/lib/types';
 
 describe('Logs', () => {
     let ce: ReturnType<typeof createClientEnv>, dts: DevToolsStore, output = "", logFilters: DtDevToolsData["logFilters"];

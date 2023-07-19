@@ -56,7 +56,7 @@ describe('Ref Props', () => {
                 mother: "Marge"
             }
         });
-        const p = ps.root;
+        const p = ps.data;
 
         let output = "";
         ps.compute("Render", () => {
@@ -116,7 +116,7 @@ describe('Ref Props', () => {
                 { name: "Marge" },
             ]
         });
-        const p = ps.root;
+        const p = ps.data;
 
         let output = "";
         ps.compute("Render", () => {
@@ -177,7 +177,7 @@ describe('Ref Props', () => {
                 { name: "Marge" },
             ]
         });
-        const p = ps.root;
+        const p = ps.data;
 
         let output = "";
         ps.compute("Render", () => {
@@ -216,7 +216,7 @@ describe('Ref Props', () => {
             ]
         });
 
-        const p = ps.root;
+        const p = ps.data;
 
         let output = "";
         ps.compute("Render", () => {
@@ -268,7 +268,7 @@ describe('Ref Props', () => {
             ]
         });
 
-        const p = ps.root;
+        const p = ps.data;
 
         let output = "";
         ps.compute("Render", () => {

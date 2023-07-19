@@ -32,7 +32,7 @@ describe('Dictionaries', () => {
                         }
                     });
                 }
-                let family = store.root;
+                let family = store.data;
                 store.compute("Size", () => {
                     family.size = trax.getObjectKeys(family.members).length;
                 });
@@ -45,7 +45,7 @@ describe('Dictionaries', () => {
 
         it('should support creation as JSON + updates (empty)', async () => {
             const fs = createFamilyStore(true);
-            const f = fs.root;
+            const f = fs.data;
             const members = f.members;
 
             expect(f.size).toBe(0);
@@ -147,7 +147,7 @@ describe('Dictionaries', () => {
 
         it('should support creation as JSON + updates (not empty)', async () => {
             const fs = createFamilyStore(false);
-            const f = fs.root;
+            const f = fs.data;
             const members = f.members;
 
             expect(f.size).toBe(2);
@@ -243,7 +243,7 @@ describe('Dictionaries', () => {
                         }
                     });
                 }
-                const family = store.root;
+                const family = store.data;
 
                 store.compute("Infos", () => {
                     let infos = family.infos;
@@ -282,7 +282,7 @@ describe('Dictionaries', () => {
 
         it('should compute a dictionary from another one (empty start)', async () => {
             const fs = createFamilyStore(true);
-            const family = fs.root;
+            const family = fs.data;
             const members = family.members;
 
             expect(printLogs(0)).toMatchObject([
@@ -394,7 +394,7 @@ describe('Dictionaries', () => {
 
         it('should compute a dictionary from another one (non empty start)', async () => {
             const fs = createFamilyStore(false);
-            const family = fs.root;
+            const family = fs.data;
             const members = family.members;
 
             expect(printLogs(0)).toMatchObject([
@@ -473,7 +473,7 @@ describe('Dictionaries', () => {
                         familyName: "Simpson",
                         members: {}
                     });
-                    const family = store.root;
+                    const family = store.data;
 
                     store.compute("Infos", () => {
                         let infos = family.infos;
@@ -520,7 +520,7 @@ describe('Dictionaries', () => {
                             m1: { firstName: "Homer", lastName: "Simpson" }
                         }
                     });
-                    const family = store.root;
+                    const family = store.data;
 
                     store.compute("Infos", () => {
                         let infos = family.infos;
@@ -541,7 +541,7 @@ describe('Dictionaries', () => {
                     });
                 });
 
-                const infos = fs.root.infos;
+                const infos = fs.data.infos;
                 expect(printInfos(infos)).toBe("m1:Homer Simpson");
 
                 await trax.reconciliation();
@@ -562,7 +562,7 @@ describe('Dictionaries', () => {
                             m1: { firstName: "Homer", lastName: "Simpson" }
                         }
                     });
-                    const family = store.root;
+                    const family = store.data;
 
                     store.compute("Infos", () => {
                         let infos = family.infos;
@@ -583,7 +583,7 @@ describe('Dictionaries', () => {
                     });
                 });
 
-                const infos = fs.root.infos;
+                const infos = fs.data.infos;
                 expect(printInfos(infos)).toBe("m1:Homer Simpson");
 
                 await trax.reconciliation();
@@ -610,7 +610,7 @@ describe('Dictionaries', () => {
                             m1: { firstName: "Homer", lastName: "Simpson" }
                         }
                     });
-                    const family = store.root;
+                    const family = store.data;
 
                     store.compute("Infos", () => {
                         let infos = family.infos;
@@ -631,7 +631,7 @@ describe('Dictionaries', () => {
                     });
                 });
 
-                const infos = fs.root.infos;
+                const infos = fs.data.infos;
                 expect(printInfos(infos)).toBe("m1:Homer Simpson");
 
                 await trax.reconciliation();
@@ -652,7 +652,7 @@ describe('Dictionaries', () => {
                     "1:9 !PCE - 1:3",
                 ]);
             });
-            
+
         });
     });
 

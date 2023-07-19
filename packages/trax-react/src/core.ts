@@ -162,5 +162,5 @@ export function useTraxState<T extends Object>(state: T): T {
         const name = "State[" + componentId().replace(/(^[^\/\%]+(\/|\%))|(%)/g, "") + "]";
         return trax.createStore(name, state);
     });
-    return store.root as T;
+    return store.data as T;
 }

@@ -1,5 +1,5 @@
-import { StreamEvent, TraxComputeTrigger, TraxLogMsg, TraxLogObjectLifeCycle, TraxLogProcDirty, TraxLogPropGet, TraxLogPropSet, TraxObjectType } from "@traxjs/trax";
-import { JSONValue, TraxLogProcSkipped } from "@traxjs/trax/lib/types";
+
+import { StreamEvent, TraxComputeTrigger, TraxLogMsg, TraxLogObjectLifeCycle, TraxLogProcDirty, TraxLogPropGet, TraxLogPropSet, TraxObjectType, JSONValue, TraxLogProcSkipped } from "@traxjs/trax";
 
 /** Root data structure holding all dev tools data */
 export interface DtDevToolsData {
@@ -54,7 +54,7 @@ export interface DtDevToolsData {
  * API used by the DevTools to retrieve data from the trax instance
  * running in the client application
  * Note: this API is composed of 2 types of functions
- * - Actions: sync function with no return values 
+ * - Actions: sync function with no return values
  * - Calls: async functions with a return value
  */
 export interface DtClientAPI {
@@ -212,7 +212,7 @@ export interface DtTraxPgReconciliation extends DtProcessingGroup {
 
 /**
  * Property value that can be read in a data object
- * When the value is another object (cf. refId), it may not be provided and has to be retrieved 
+ * When the value is another object (cf. refId), it may not be provided and has to be retrieved
  * from the client API (if not in cache)
  */
 interface DtDataProperty {

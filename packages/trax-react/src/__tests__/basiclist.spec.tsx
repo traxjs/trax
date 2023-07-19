@@ -164,7 +164,7 @@ describe('Simple List', () => {
             const ctxtStore = trax.createStore("TestContext", {
                 showList: true
             });
-            const context = ctxtStore.root
+            const context = ctxtStore.data
 
             act(() => {
                 const root = ReactDOM.createRoot(host);

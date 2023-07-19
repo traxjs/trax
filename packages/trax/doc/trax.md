@@ -69,7 +69,7 @@ expect(trax.isTraxObject({})).toBe(false);
 expect(trax.isTraxObject(123)).toBe(false);
 const testStore = trax.createStore("TestStore", {foo: "bar"});
 expect(trax.isTraxObject(testStore)).toBe(true);
-expect(trax.isTraxObject(testStore.root)).toBe(true);
+expect(trax.isTraxObject(testStore.data)).toBe(true);
 ```
 
 ### ```getTraxId(obj: any): string```
@@ -80,9 +80,9 @@ Get the unique id associated to a trax object. Return an empty string if the obj
 expect(trax.getTraxId({})).toBe("");
 const testStore = trax.createStore("TestStore", { foo: { bar: "baz" } });
 expect(trax.getTraxId(testStore)).toBe("TestStore");
-expect(trax.getTraxId(testStore.root)).toBe("TestStore/root");
-expect(trax.getTraxId(testStore.root.foo)).toBe("TestStore/root*foo");
-expect(trax.getTraxId(testStore.root.foo.bar)).toBe(""); // bar is not an object
+expect(trax.getTraxId(testStore.data)).toBe("TestStore/root");
+expect(trax.getTraxId(testStore.data.foo)).toBe("TestStore/root*foo");
+expect(trax.getTraxId(testStore.data.foo.bar)).toBe(""); // bar is not an object
 ```
 
 ### ```getTraxObjectType(obj: any): TraxObjectType```
@@ -102,8 +102,8 @@ export enum TraxObjectType {
 expect(trax.getTraxObjectType({})).toBe(""); // TraxObjectType.NotATraxObject
 const testStore = trax.createStore("TestStore", { foo: { bar: [1, 2, 3], baz: "abc" } });
 expect(trax.getTraxObjectType(testStore)).toBe("S"); // TraxObjectType.Store
-expect(trax.getTraxObjectType(testStore.root.foo)).toBe("O"); // TraxObjectType.Object
-expect(trax.getTraxObjectType(testStore.root.foo.bar)).toBe("A"); // TraxObjectType.Array
+expect(trax.getTraxObjectType(testStore.data.foo)).toBe("O"); // TraxObjectType.Object
+expect(trax.getTraxObjectType(testStore.data.foo.bar)).toBe("A"); // TraxObjectType.Array
 ```
 
 ### ```getData<T>(id: string): T | void```
@@ -113,10 +113,10 @@ accessed can be returned (otherwise their id is not yet defined)
 
 ```typescript
 const testStore = trax.createStore("TestStore", { foo: { bar: [1, 2, 3], baz: "abc" } });
-expect(trax.getData("TestStore/root")).toBe(testStore.root);
+expect(trax.getData("TestStore/root")).toBe(testStore.data);
 expect(trax.getData("TestStore/root*foo*bar")).toBe(undefined); // because testStore.root.foo.bar has never been accessed
-const v = testStore.root.foo.bar
-expect(trax.getData("TestStore/root*foo*bar")).toBe(testStore.root.foo.bar);
+const v = testStore.data.foo.bar
+expect(trax.getData("TestStore/root*foo*bar")).toBe(testStore.data.foo.bar);
 expect(trax.getData("XYZ")).toBe(undefined);
 ```
 
@@ -134,7 +134,7 @@ Trax objects cannot be created outside data stores, this is why the **first oper
 ### ```createStore(...)```
 
 ```typescript
-createStore<T extends Object>(id: TraxIdDef, root: T): Store<T>;
+createStore<T extends Object>(id: TraxIdDef, data: T): Store<T>;
 
 createStore<T extends Object, R>( id: TraxIdDef, initFunction: (store: Store<T>) => R): R extends void ? Store<T> : R & StoreWrapper;
 ````
@@ -147,7 +147,7 @@ Example #1: *Basic data store*
 ```typescript
 const greetingStore = trax.createStore("Greeting", { message: "Hellow World" });
 
-expect(greetingStore.root.message).toBe("Hellow World");    // root is the root element of the data graph
+expect(greetingStore.data.message).toBe("Hellow World");    // data is the root element of the data graph
 expect(greetingStore.id).toBe("Greeting");                  // store id is "Greeting"
 ```
 
@@ -291,7 +291,7 @@ If there is no update cycle on-going, the promise will be immediately fulfilled
 Example:
 ```typescript
 // cf. previous PersonStore store definition
-const data = personStore.root;
+const data = personStore.data;
 expect(data.prettyName).toBe("Homer Simpson");
 data.firstName = "Marge";
 expect(data.prettyName).toBe("Homer Simpson"); // change not yet propagated

@@ -899,7 +899,7 @@ describe('Event Stream', () => {
             });
 
             it('should support console output', async () => {
-                expect(log.consoleOutput).toBe("None");
+                expect(log.consoleOutput).toBe("");
                 const logs = mockGlobalConsole();
                 log.consoleOutput = "All";
                 expect(log.consoleOutput).toBe("All");
@@ -917,20 +917,20 @@ describe('Event Stream', () => {
                 log.event("MyEvent", null);
 
                 expect(log.consoleOutput).toBe("All");
-                log.consoleOutput = "None";
-                expect(log.consoleOutput).toBe("None");
+                log.consoleOutput = "";
+                expect(log.consoleOutput).toBe("");
 
                 expect(logs).toMatchObject([
-                    "0:1 !LOG - A",
-                    "0:2 !PCS - MyAction",
-                    "0:3 !WRN - B",
-                    "0:4 !PCS - SubAction - parent:0:2",
-                    "0:5 !ERR - C",
-                    "0:6 !PCP - 0:4",
-                    "0:7 !LOG - D",
-                    "0:8 !PCE - 0:2",
-                    "0:9 !LOG - E",
-                    "0:10 MyEvent - null",
+                    "%cTRX %c0:1 %c!LOG%c - %cA",
+                    "%cTRX %c0:2 %c!PCS%c - %cMyAction",
+                    "%cTRX %c0:3 %c!WRN%c - %cB",
+                    "%cTRX %c0:4 %c!PCS%c - %cSubAction - parent:%c0:2",
+                    "%cTRX %c0:5 %c!ERR%c - %cC",
+                    "%cTRX %c0:6 %c!PCP%c - 0:4",
+                    "%cTRX %c0:7 %c!LOG%c - %cD",
+                    "%cTRX %c0:8 %c!PCE%c - 0:2",
+                    "%cTRX %c0:9 %c!LOG%c - %cE",
+                    "%cTRX %c0:10 %cMyEvent%c - null",
                 ]);
                 resetGlobalConsole();
             });
@@ -951,6 +951,19 @@ describe('Event Stream', () => {
                     '0:4 !LOG - B',
                     '0:5 !ERR - [trax/processing context] Only started or resumed contexts can be paused: 0:1',
                 ]);
+            });
+
+            it('should tell when an invalid consoleOutput is set', async () => {
+                const logs = mockGlobalConsole();
+
+                log.consoleOutput = "All"; // Valid
+                expect(logs).toMatchObject([]);
+                log.consoleOutput = "XXX" as any; // Invalid
+                expect(logs).toMatchObject([
+                    '%cTRX %cInvalid consoleOutput value - should be either %c"" or "AllButGet" or "All"'
+                ]);
+
+                resetGlobalConsole();
             });
 
             it('should be raised if end() is done after end()', async () => {

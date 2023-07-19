@@ -1,6 +1,6 @@
 import { tmd } from "./core";
 import { LinkedList } from "./linkedlist";
-import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, TraxLogTraxProcessingCtxt, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet, TraxLogObjectCreate, TraxLogObjectDispose, TraxLogProcSkipped } from "./types";
+import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, TraxLogTraxProcessingCtxt, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet, TraxLogObjectCreate, TraxLogObjectDispose, TraxLogProcSkipped, ConsoleOutput } from "./types";
 
 /**
  * Resolve function used in the await map
@@ -9,6 +9,12 @@ import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, Pro
  * Otherwise it will return false and keep the promis unfullfiled
  */
 type awaitResolve = (e: StreamEvent) => boolean;
+
+const CONSOLE_OUTPUT_VALUES = new Set<ConsoleOutput>(["", "AllButGet", "All"]);
+const STL_TRX = "color: #65abff";
+const STL_NONE = 'color: ';
+const STL_DATA = "color: #ffc700;font-weight:bold";
+const STL_EVT_TYPE = "color: #00ff00;font-weight:bold"; // green
 
 /**
  * Create an event stream
@@ -23,7 +29,7 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
     let tail: StreamListEvent | undefined;
     const awaitMap = new Map<string, awaitResolve[]>();
     const consumers: ((e: StreamEvent) => void)[] = [];
-    let consoleOutput: "None" | "All" | "AllButGet" = "None";
+    let consoleOutput: ConsoleOutput = "";
 
     // ----------------------------------------------
     // cycle id managment
@@ -169,16 +175,29 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
             }
             resolveAwaitPromises(evt.type, evt);
         }
-        if (consoleOutput !== "None") {
+        if (consoleOutput) {
             // output the event on the console (debug mode)
             const etp = evt.type;
-            if (etp !== traxEvents.CycleStart && etp !== traxEvents.CycleComplete && (etp !== traxEvents.Get || consoleOutput === "All")) {
-                let data = formatEventData(evt.type, evt.data);
+            let ok = false;
+            if (consoleOutput === "All") {
+                ok = true;
+            } else if (consoleOutput === "AllButGet") {
+                ok = etp !== traxEvents.Get;
+            }
+            if (ok && etp !== traxEvents.CycleStart && etp !== traxEvents.CycleComplete) {
+                let data = formatEventData(evt.type, evt.data, true);
                 let pid = "";
                 if (evt.parentId) {
-                    pid = " - parent:" + evt.parentId;
+                    pid = " - parent:%c" + evt.parentId;
                 }
-                console.log(`${evt.id} ${evt.type}${data ? " - " + data : ""}${pid}`);
+                const msg = `%cTRX %c${evt.id} %c${evt.type}${data ? "%c - " + data : ""}${pid}`;
+                const msgNoStyle = msg.replaceAll("%c", "");
+                const count = Math.floor((msg.length - msgNoStyle.length) / 2);
+                const args: any[] = [msg, STL_TRX, STL_NONE, STL_EVT_TYPE];
+                for (let i = 3; count > i; i++) {
+                    args.push(i % 2 ? STL_NONE : STL_DATA);
+                }
+                console.log.apply(console, args);
             }
         }
         return evt;
@@ -203,8 +222,13 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
         get consoleOutput() {
             return consoleOutput
         },
-        set consoleOutput(v: "None" | "All" | "AllButGet") {
-            consoleOutput = v;
+        set consoleOutput(v: ConsoleOutput) {
+            if (CONSOLE_OUTPUT_VALUES.has(v)) {
+                consoleOutput = v;
+            } else {
+                const values = `"${[...CONSOLE_OUTPUT_VALUES].join('" or "')}"`;
+                console.log(`%cTRX %cInvalid consoleOutput value - should be either %c${values}`, STL_TRX, 'color: ', STL_DATA);
+            }
         },
         event(type: string, data?: LogData, src?: any) {
             logEvent(type, data, src);
@@ -409,17 +433,18 @@ function format(internalSrcKey: any, entry: StreamListEvent, type: string, dataS
     }
 }
 
-export function formatEventData(eventType: string, data?: any) {
+export function formatEventData(eventType: string, data?: any, styleDelimiter = false) {
     if (!data || !eventType || eventType.charAt(0) !== "!") return data;
+    const c = styleDelimiter ? "%c" : "";
     try {
         const sd = JSON.parse("" + data);
 
         if (eventType === traxEvents.CycleStart || eventType === traxEvents.CycleComplete) {
-            return `0`; // 0 = elapsedTime
+            return `${c}0`; // 0 = elapsedTime
         } else if (eventType === traxEvents.Info
             || eventType === traxEvents.Warning
             || eventType === traxEvents.Error) {
-            return `${data.replace(/"/g, "")}`;
+            return `${c}${data.replace(/"/g, "")}`;
         } else if (eventType === traxEvents.ProcessingPause
             || eventType === traxEvents.ProcessingResume
             || eventType === traxEvents.ProcessingEnd) {
@@ -428,37 +453,37 @@ export function formatEventData(eventType: string, data?: any) {
         } else if (eventType === traxEvents.ProcessingStart) {
             const d = sd as TraxLogTraxProcessingCtxt;
             if (d.name === "!StoreInit") {
-                return `${d.name} (${d.storeId})`;
+                return `${d.name} (${c}${d.storeId}${c})`;
             } else if (d.name === "!Compute") {
                 const R = d.isRenderer ? " R" : "";
-                return `${d.name} #${d.computeCount} (${d.processorId}) P${d.processorPriority} ${d.trigger}${R}`;
+                return `${d.name} #${d.computeCount} (${c}${d.processorId}${c}) P${d.processorPriority} ${d.trigger}${R}`;
             } else if (d.name === "!Reconciliation") {
                 return `${d.name} #${d.index} - ${d.processorCount} processor${d.processorCount !== 1 ? "s" : ""}`;
             } else if (d.name === "!ArrayUpdate") {
-                return `${d.name} (${d.objectId})`;
+                return `${d.name} (${c}${d.objectId}${c})`;
             } else {
-                return `${(d as any).name}`;
+                return `${c}${(d as any).name}`;
             }
         } else if (eventType === traxEvents.New) {
             const d = sd as TraxLogObjectCreate;
             if (d.objectId === undefined) return data;
-            return `${d.objectType}: ${d.objectId}`;
+            return `${d.objectType}: ${c}${d.objectId}`;
         } else if (eventType === traxEvents.Dispose) {
             const d = sd as TraxLogObjectDispose;
             if (d.objectId === undefined) return data;
-            return `${d.objectId}`;
+            return `${c}${d.objectId}`;
         } else if (eventType === traxEvents.Get) {
             const d = sd as TraxLogPropGet;
-            return `${d.objectId}.${d.propName} -> ${stringify(d.propValue)}`;
+            return `${c}${d.objectId}.${d.propName}${c} -> ${c}${stringify(d.propValue)}`;
         } else if (eventType === traxEvents.Set) {
             const d = sd as TraxLogPropSet;
-            return `${d.objectId}.${d.propName} = ${stringify(d.toValue)} (prev: ${stringify(d.fromValue)})`;
+            return `${c}${d.objectId}.${d.propName}${c} = ${c}${stringify(d.toValue)}${c} (prev: ${stringify(d.fromValue)})`;
         } else if (eventType === traxEvents.ProcessorDirty) {
             const d = sd as TraxLogProcDirty;
-            return `${d.processorId} <- ${d.objectId}.${d.propName}`;
+            return `${c}${d.processorId}${c} <- ${c}${d.objectId}.${d.propName}`;
         } else if (eventType === traxEvents.ProcessorSkipped) {
             const d = sd as TraxLogProcSkipped;
-            return `${d.processorId}`;
+            return `${c}${d.processorId}`;
         }
     } catch (ex) { }
     return data;

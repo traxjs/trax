@@ -27,7 +27,7 @@ describe('Doc examples', () => {
         expect(greetingStore.disposed).toBe(false);
         greetingStore.dispose();
         expect(greetingStore.disposed).toBe(true);
-        // trax.log.consoleOutput = "None";
+        // trax.log.consoleOutput = "";
         expect(trax.log.maxSize).toBe(1000); // default value
         trax.log.maxSize = 5000; // increase log buffer size
     });

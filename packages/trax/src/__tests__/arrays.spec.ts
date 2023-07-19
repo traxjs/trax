@@ -511,7 +511,7 @@ describe('Arrays', () => {
                     "1:35 !GET - FStore/data*misc*1.1 -> '[TRAX FStore/data*misc*1*1]'",
                     "1:36 !GET - FStore/data*misc*1*1.desc -> 'DDD'",
                     "1:37 !PCE - 1:14",
-                    "1:38 !PCE - 1:13",
+                    "1:38 !PCE - 1:13"
                 ]);
 
                 f.misc!.push([{ desc: "EEE" }]);

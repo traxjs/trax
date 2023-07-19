@@ -541,6 +541,16 @@ export type ProcessingContextData = { name: string, id?: string } & { [key: stri
 
 export type SubscriptionId = Object;
 
+/**
+* Tell how logs should be logged on the console.
+* Useful in jest/vitest environments where dev tools are not available
+* Possible values:
+* - "": no output
+* - "All": log all events except Cycle Start/End
+* - "AllButGet": log all events except Cycle Start/End and Property Getters
+*/
+export type ConsoleOutput = "" | "All" | "AllButGet";
+
 export interface EventStream {
     /**
      * Log an event
@@ -585,13 +595,8 @@ export interface EventStream {
     maxSize: number;
     /**
      * Tell if logs should be logged on the console.
-     * Useful in jest/vitest environments where dev tools are not available
-     * Possible values:
-     * - None: no output
-     * - All: log all events except Cycle Start/End
-     * - AllButGet: log all events except Cycle Start/End and Property Getters
      */
-    consoleOutput: "None" | "All" | "AllButGet";
+    consoleOutput: ConsoleOutput;
     /**
      * Scan all current entries in the log stream
      * (oldest to newest)

@@ -5,7 +5,7 @@
 * [Properties](#properties)
     + [**size**: number](#size-number)
     + [**maxSize**: number](#maxsize-number)
-    + [**consoleOutput**: "" | "All" | "AllButGet"](#consoleoutput-none--all--allbutget)
+    + [**consoleOutput**: ConsoleOutput](#consoleoutput-consoleoutput)
 * [Logging events](#logging-events)
     + [**info**(...data: LogData[]): void](#infodata-logdata-void)
     + [**warn**(...data: LogData[]): void](#warndata-logdata-void)
@@ -38,14 +38,17 @@ Default: 1000.
 expect(trax.log.maxSize).toBe(1000);  // default value
 trax.log.maxSize = 5000;              // increase log buffer size
 ```
-### ```consoleOutput: "" | "All" | "AllButGet"```
+### ```consoleOutput: ConsoleOutput```
 Tell if logs should be logged on the console. Useful in jest/vitest environments where dev tools are not available
 Possible values:
 - **""**: no output
-- **"All"**: log all events except Cycle Start/End
+- **"Main"**: most significant logs (writes + explicit logs + dirty changes + re-processing + non trax events)
 - **"AllButGet"**: log all events except Cycle Start/End and Property Getters
+- **"All"**: log all events except Cycle Start/End
 
 ```typescript
+type ConsoleOutput = "" | "Main" | "AllButGet" | "All";
+
 // start console log
 trax.log.consoleOutput = "All";
 

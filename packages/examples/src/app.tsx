@@ -6,7 +6,7 @@ import './app.css';
 
 async function main() {
     render(<div>
-        <Counter />
+        {/* <Counter /> */}
         <hr/>
         <RcPlayground />
         <hr/>

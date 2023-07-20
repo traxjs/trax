@@ -960,7 +960,7 @@ describe('Event Stream', () => {
                 expect(logs).toMatchObject([]);
                 log.consoleOutput = "XXX" as any; // Invalid
                 expect(logs).toMatchObject([
-                    '%cTRX %cInvalid consoleOutput value - should be either %c"" or "AllButGet" or "All"'
+                    '%cTRX %cInvalid consoleOutput value - should be either %c"" or "Main" or "AllButGet" or "All"'
                 ]);
 
                 resetGlobalConsole();

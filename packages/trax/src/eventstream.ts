@@ -1,6 +1,6 @@
 import { tmd } from "./core";
 import { LinkedList } from "./linkedlist";
-import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, TraxLogTraxProcessingCtxt, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet, TraxLogObjectCreate, TraxLogObjectDispose, TraxLogProcSkipped, ConsoleOutput } from "./types";
+import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, ProcessingContext, traxEvents, ProcessingContextData, TraxLogTraxProcessingCtxt, TraxLogPropGet, TraxLogProcDirty, TraxLogPropSet, TraxLogObjectCreate, TraxLogObjectDispose, TraxLogProcSkipped, ConsoleOutput, traxEventTypes } from "./types";
 
 /**
  * Resolve function used in the await map
@@ -10,10 +10,10 @@ import { LogData, StreamListEvent, StreamEvent, EventStream, SubscriptionId, Pro
  */
 type awaitResolve = (e: StreamEvent) => boolean;
 
-const CONSOLE_OUTPUT_VALUES = new Set<ConsoleOutput>(["", "AllButGet", "All"]);
+const CONSOLE_OUTPUT_VALUES = new Set<ConsoleOutput>(["", "Main", "AllButGet", "All"]);
 const STL_TRX = "color: #65abff";
 const STL_NONE = 'color: ';
-const STL_DATA = "color: #ffc700;font-weight:bold";
+const STL_DATA = "color: #e08d00;font-weight:bold"; // orange
 const STL_EVT_TYPE = "color: #00ff00;font-weight:bold"; // green
 
 /**
@@ -183,6 +183,20 @@ export function createEventStream(internalSrcKey: any, dataStringifier?: (data: 
                 ok = true;
             } else if (consoleOutput === "AllButGet") {
                 ok = etp !== traxEvents.Get;
+            } else if (consoleOutput === "Main") {
+                if (!traxEventTypes.has(etp)) {
+                    ok = true; // custom event
+                } else {
+                    ok = (etp === traxEvents.Error
+                        || etp === traxEvents.Info
+                        || etp === traxEvents.Warning
+                        || etp === traxEvents.ProcessingResume
+                        || etp === traxEvents.ProcessorDirty
+                        || etp === traxEvents.ProcessorSkipped
+                        || etp === traxEvents.Set
+                        || etp === traxEvents.ProcessingStart
+                    );
+                }
             }
             if (ok && etp !== traxEvents.CycleStart && etp !== traxEvents.CycleComplete) {
                 let data = formatEventData(evt.type, evt.data, true);

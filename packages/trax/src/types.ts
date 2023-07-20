@@ -384,6 +384,11 @@ export const traxEvents = Object.freeze({
     "ProcessingEnd": "!PCE"
 });
 
+export const traxEventTypes = new Set<string>();
+Object.getOwnPropertyNames(traxEvents).forEach((name) => {
+    traxEventTypes.add((traxEvents as any)[name]);
+});
+
 export type TraxEvent = TraxLogMsg | TraxLogObjectLifeCycle | TraxLogPropGet | TraxLogPropSet | TraxLogProcDirty | TraxLogProcSkipped;
 
 /** Reason that triggered a call to a processor's compute function */
@@ -546,10 +551,11 @@ export type SubscriptionId = Object;
 * Useful in jest/vitest environments where dev tools are not available
 * Possible values:
 * - "": no output
-* - "All": log all events except Cycle Start/End
+* - "Main": most significant events (writes + explicit logs + dirty changes + re-processing)
 * - "AllButGet": log all events except Cycle Start/End and Property Getters
+* - "All": log all events except Cycle Start/End
 */
-export type ConsoleOutput = "" | "All" | "AllButGet";
+export type ConsoleOutput = "" | "Main" | "AllButGet" | "All";
 
 export interface EventStream {
     /**

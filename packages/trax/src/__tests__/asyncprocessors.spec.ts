@@ -457,6 +457,57 @@ describe('Async processors', () => {
                 ]);
             });
 
+            it.only('should support console output (Main)', async () => {
+                const logs = mockGlobalConsole();
+
+                trax.log.consoleOutput = "Main";
+                const ps = createPStore("Bart", true);
+                const p = ps.data;
+
+                await trax.log.awaitEvent("GetAvatar");
+                await trax.reconciliation();
+                p.lastName = "SIM";
+                await trax.log.awaitEvent("GetAvatar");
+
+                expect(logs.slice(0)).toMatchObject([
+                    "%cTRX %c0:1 %c!PCS%c - !StoreInit (%cPStore%c)",
+                    // "%cTRX %c0:2 %c!NEW%c - S: %cPStore",
+                    // "%cTRX %c0:3 %c!NEW%c - O: %cPStore/data",
+                    // "%cTRX %c0:4 %c!NEW%c - P: %cPStore%PrettyName",
+                    "%cTRX %c0:5 %c!PCS%c - !Compute #1 (%cPStore%PrettyName%c) P1 Init - parent:%c0:1",
+                    // "%cTRX %c0:6 %c!GET%c - %cPStore/data.firstName%c -> %c'Bart'",
+                    // "%cTRX %c0:7 %c!PCP%c - 0:5",
+                    // "%cTRX %c0:8 %c!PCE%c - 0:1",
+                    "%cTRX %c1:1 %cGetFriendlyName",
+                    "%cTRX %c2:1 %c!PCR%c - 0:5",
+                    // "%cTRX %c2:2 %c!GET%c - %cPStore/data.lastName%c -> %c'Simpson'",
+                    "%cTRX %c2:3 %c!SET%c - %cPStore/data.prettyName%c = %c'Friendly(Bart) Simpson'%c (prev: undefined)",
+                    "%cTRX %c2:4 %c!SET%c - %cPStore/data.prettyNameLength%c = %c22%c (prev: undefined)",
+                    // "%cTRX %c2:5 %c!PCP%c - 0:5",
+                    "%cTRX %c3:1 %cGetAvatar",
+                    "%cTRX %c4:1 %c!PCR%c - 0:5",
+                    "%cTRX %c4:2 %c!SET%c - %cPStore/data.avatar%c = %c'Avatar(Bart)'%c (prev: undefined)",
+                    // "%cTRX %c4:3 %c!PCE%c - 0:5",
+                    "%cTRX %c5:1 %c!SET%c - %cPStore/data.lastName%c = %c'SIM'%c (prev: 'Simpson')",
+                    "%cTRX %c5:2 %c!DRT%c - %cPStore%PrettyName%c <- %cPStore/data.lastName",
+                    "%cTRX %c5:3 %c!PCS%c - !Reconciliation #1 - 1 processor",
+                    "%cTRX %c5:4 %c!PCS%c - !Compute #2 (%cPStore%PrettyName%c) P1 Reconciliation - parent:%c5:3",
+                    // "%cTRX %c5:5 %c!GET%c - %cPStore/data.firstName%c -> %c'Bart'",
+                    // "%cTRX %c5:6 %c!PCP%c - 5:4",
+                    // "%cTRX %c5:7 %c!PCE%c - 5:3",
+                    "%cTRX %c6:1 %cGetFriendlyName",
+                    "%cTRX %c7:1 %c!PCR%c - 5:4",
+                    // "%cTRX %c7:2 %c!GET%c - %cPStore/data.lastName%c -> %c'SIM'",
+                    "%cTRX %c7:3 %c!SET%c - %cPStore/data.prettyName%c = %c'Friendly(Bart) SIM'%c (prev: 'Friendly(Bart) Simpson')",
+                    "%cTRX %c7:4 %c!SET%c - %cPStore/data.prettyNameLength%c = %c18%c (prev: 22)",
+                    // "%cTRX %c7:5 %c!PCP%c - 5:4",
+                    "%cTRX %c8:1 %cGetAvatar",
+                    "%cTRX %c9:1 %c!PCR%c - 5:4",
+                    // "%cTRX %c9:2 %c!PCE%c - 5:4",
+                ]);
+
+            });
+
             it('should support console output (AllButGet)', async () => {
                 const logs = mockGlobalConsole();
 

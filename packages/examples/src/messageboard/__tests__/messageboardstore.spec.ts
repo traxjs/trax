@@ -9,7 +9,7 @@ describe('MessageBoard Store', () => {
         data: MessageBoardStore["data"],
         msgStore: MessageStore,
         usrStore: UserStore,
-        count = 0;
+        content = [] as string[];
     const rs = trax.createStore("Render", {});
     let ps: TraxProcessor;
 
@@ -19,9 +19,17 @@ describe('MessageBoard Store', () => {
         store = createMessageBoardStore(msgStore, usrStore);
         data = store.data;
 
-        ps = rs.compute("Count", () => {
+        ps = rs.compute("PrintContent", () => {
             // this processor will force the message board store lazy processors to run
-            count = store.data.groups.length;
+            const r: string[] = [];
+            data.loading && r.push('[loading...]');
+            for (const g of data.groups) {
+                r.push(`#${g.authorId}/${g.authorStatus}/${g.authorAvatar} - ${g.authorName}`);
+                for (const m of g.messages) {
+                    r.push(`- ${m.id}/${m.authorId}/${m.timeStamp} ${m.text}`);
+                }
+            }
+            content = r;
         });
     });
 
@@ -29,21 +37,9 @@ describe('MessageBoard Store', () => {
         ps!.dispose();
     })
 
-    function printContent() {
-        const r: string[] = [];
-        data.loading && r.push('[loading...]');
-        for (const g of data.groups) {
-            r.push(`#${g.authorId}/${g.authorStatus}/${g.authorAvatar} - ${g.authorName}`);
-            for (const m of g.messages) {
-                r.push(`- ${m.id}/${m.authorId}/${m.timeStamp} ${m.text}`);
-            }
-        }
-        return r;
-    }
-
     it('should load properly', async () => {
         expect(data.loading).toBe(true);
-        expect(printContent()).toMatchObject([
+        expect(content).toMatchObject([
             "[loading...]",
         ]);
         await trax.log.awaitEvent(LOG_MESSAGE_STORE_INITIALIZED, { src: msgStore.id });
@@ -52,7 +48,7 @@ describe('MessageBoard Store', () => {
         expect(data.loading).toBe(false);
 
         // User info pending:
-        expect(printContent()).toMatchObject([
+        expect(content).toMatchObject([
             "#U1/Unknown/ - ",
             "- M1/U1/1674839000000 Trying is the first step towards failure.",
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",
@@ -69,7 +65,9 @@ describe('MessageBoard Store', () => {
 
         // User info received:
         await trax.log.awaitEvent(LOG_USER_STORE_USERS_RECEIVED, { src: usrStore.id });
-        expect(printContent()).toMatchObject([
+        await trax.reconciliation();
+
+        expect(content).toMatchObject([
             "#U1/Away/homer.png - Homer Simpson",
             "- M1/U1/1674839000000 Trying is the first step towards failure.",
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",
@@ -97,7 +95,7 @@ describe('MessageBoard Store', () => {
         })
 
         await trax.reconciliation();
-        expect(printContent()).toMatchObject([
+        expect(content).toMatchObject([
             "#U1/Away/homer.png - Homer Simpson",
             "- M1/U1/1674839000000 Trying is the first step towards failure.",
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",
@@ -123,7 +121,7 @@ describe('MessageBoard Store', () => {
         });
 
         await trax.reconciliation();
-        expect(printContent()).toMatchObject([
+        expect(content).toMatchObject([
             "#U2/Online/marge.png - Marge Simpson",
             "- X2/U2/1674838000000 First Message",
             "#U1/Away/homer.png - Homer Simpson",
@@ -150,7 +148,7 @@ describe('MessageBoard Store', () => {
             text: "Hello World!"
         });
         await trax.reconciliation();
-        expect(printContent()).toMatchObject([
+        expect(content).toMatchObject([
             "#U2/Online/marge.png - Marge Simpson",
             "- X2/U2/1674838000000 First Message",
             "#U1/Away/homer.png - Homer Simpson",
@@ -173,7 +171,7 @@ describe('MessageBoard Store', () => {
 
         await trax.log.awaitEvent(LOG_USER_STORE_USERS_RECEIVED, { src: usrStore.id });
         await trax.reconciliation();
-        expect(printContent()).toMatchObject([
+        expect(content).toMatchObject([
             "#U2/Online/marge.png - Marge Simpson",
             "- X2/U2/1674838000000 First Message",
             "#U1/Away/homer.png - Homer Simpson",
@@ -201,7 +199,7 @@ describe('MessageBoard Store', () => {
 
         msgStore.syncMessageDelete("M5");
         await trax.reconciliation();
-        expect(printContent()).toMatchObject([
+        expect(content).toMatchObject([
             "#U1/Away/homer.png - Homer Simpson",
             "- M1/U1/1674839000000 Trying is the first step towards failure.",
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",
@@ -218,7 +216,7 @@ describe('MessageBoard Store', () => {
         // collapse 2nd group
         msgStore.syncMessageDelete("M6");
         await trax.reconciliation();
-        expect(printContent()).toMatchObject([
+        expect(content).toMatchObject([
             "#U1/Away/homer.png - Homer Simpson",
             "- M1/U1/1674839000000 Trying is the first step towards failure.",
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",
@@ -231,7 +229,7 @@ describe('MessageBoard Store', () => {
 
         msgStore.syncMessageDelete("M4");
         await trax.reconciliation();
-        expect(printContent()).toMatchObject([
+        expect(content).toMatchObject([
             "#U1/Away/homer.png - Homer Simpson",
             "- M1/U1/1674839000000 Trying is the first step towards failure.",
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",
@@ -243,7 +241,8 @@ describe('MessageBoard Store', () => {
 
     it('should react to user info update', async () => {
         await trax.log.awaitEvent(LOG_USER_STORE_USERS_RECEIVED, { src: usrStore.id });
-        expect(printContent()).toMatchObject([
+        await trax.reconciliation();
+        expect(content).toMatchObject([
             "#U1/Away/homer.png - Homer Simpson",
             "- M1/U1/1674839000000 Trying is the first step towards failure.",
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",
@@ -261,7 +260,7 @@ describe('MessageBoard Store', () => {
         usrStore.updateUser({ id: "U1", name: "HOMER", status: "Online" });
 
         await trax.reconciliation();
-        expect(printContent()).toMatchObject([
+        expect(content).toMatchObject([
             "#U1/Online/homer.png - HOMER", // change
             "- M1/U1/1674839000000 Trying is the first step towards failure.",
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",
@@ -284,7 +283,7 @@ describe('MessageBoard Store', () => {
             text: "NEW TEXT"
         });
         await trax.reconciliation();
-        expect(printContent()).toMatchObject([
+        expect(content).toMatchObject([
             "#U1/Away/homer.png - Homer Simpson",
             "- M1/U1/1674839000000 Trying is the first step towards failure.",
             "- M2/U1/1674839001000 If he's so smart, how come he's dead?",

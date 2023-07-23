@@ -171,12 +171,12 @@ describe('Doc examples', () => {
             active3 = trax.getActiveProcessor()?.id || "";
         });
 
-        expect(processorId1).toBe("PersonStore%data[adult]");
-        expect(active1).toBe("PersonStore%data[adult]");
-        expect(processor2.id).toBe("PersonStore%prettyName");
-        expect(trax.getProcessor("PersonStore%prettyName")).toBe(processor2);
+        expect(processorId1).toBe("PersonStore#data[adult]");
+        expect(active1).toBe("PersonStore#data[adult]");
+        expect(processor2.id).toBe("PersonStore#prettyName");
+        expect(trax.getProcessor("PersonStore#prettyName")).toBe(processor2);
         expect(trax.getProcessor(processorId1)!.id).toBe(processorId1);
-        expect(active2).toBe("PersonStore%prettyName");
+        expect(active2).toBe("PersonStore#prettyName");
         expect(active3).toBe("");
 
 
@@ -480,8 +480,8 @@ describe('Doc examples', () => {
 
         const p1 = store.getProcessor("data[prettyName]")!;
 
-        expect(p1.id).toBe("PersonStore%data[prettyName]");
-        expect(p2!.id).toBe("PersonStore%Avatar");
+        expect(p1.id).toBe("PersonStore#data[prettyName]");
+        expect(p2!.id).toBe("PersonStore#Avatar");
 
         const person = store.data;
         expect(p1.dirty).toBe(false);

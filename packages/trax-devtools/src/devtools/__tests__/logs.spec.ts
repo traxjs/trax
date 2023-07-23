@@ -111,7 +111,7 @@ describe('Logs', () => {
     }
 
     function logComputeCount(cycleId: number) {
-        const pr = trax.getProcessor(dts.id + "%LogCycle:" + cycleId + "[filter]");
+        const pr = trax.getProcessor(dts.id + "#LogCycle:" + cycleId + "[filter]");
         return pr ? pr.computeCount : 0;
     }
 
@@ -336,11 +336,11 @@ describe('Logs', () => {
                 "  - 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
                 "    - 0:3 !NEW TestStore/data(O)",
-                "    - 0:4 !NEW TestStore%MinMax(P)",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    - 0:4 !NEW TestStore#MinMax(P)",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
                 "      - 0:6 !GET TestStore/data.count --> 0",
-                "    - 0:8 !NEW TestStore%Render(P)",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:8 !NEW TestStore#Render(P)",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "      - 0:10 !GET TestStore/data.min --> 0",
                 "      - 0:11 !GET TestStore/data.count --> 0",
                 "      - 0:12 !GET TestStore/data.max --> 0",
@@ -354,14 +354,14 @@ describe('Logs', () => {
                 "  - 1:1 !PCG TestStore.increment()",
                 "    - 1:2 !GET TestStore/data.count --> 0",
                 "    - 1:3 !SET TestStore/data.count = 3 (previous: 0)",
-                "    - 1:4 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 1:5 !DRT TestStore/data.count => TestStore%Render",
+                "    - 1:4 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 1:5 !DRT TestStore/data.count => TestStore#Render",
                 "  - 1:7 !PCG !Reconciliation",
-                "    - 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    - 1:8 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 1:9 !GET TestStore/data.count --> 3",
                 "      - 1:10 !SET TestStore/data.min = 3 (previous: 0)",
                 "      - 1:11 !SET TestStore/data.max = 3 (previous: 0)",
-                "    - 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 1:13 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
                 "      - 1:14 !GET TestStore/data.min --> 3",
                 "      - 1:15 !GET TestStore/data.count --> 3",
                 "      - 1:16 !GET TestStore/data.max --> 3",
@@ -372,8 +372,8 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 2)).toMatchObject([
                 "Cycle #2 0/0",
                 "  - 2:1 !DEL TestStore/data",
-                "  - 2:2 !DEL TestStore%MinMax",
-                "  - 2:3 !DEL TestStore%Render",
+                "  - 2:2 !DEL TestStore#MinMax",
+                "  - 2:3 !DEL TestStore#Render",
                 "  - 2:4 !DEL TestStore",
             ]);
 
@@ -389,8 +389,8 @@ describe('Logs', () => {
                 "  - 0:1 !PCG !StoreInit PStore",
                 "    - 0:2 !NEW PStore(S)",
                 "    - 0:3 !NEW PStore/data(O)",
-                "    - 0:4 !NEW PStore%PrettyName(P)",
-                "    - 0:5 !PCG !Compute PStore%PrettyName (Init) #1 P1 ASYNC", // ASYNC DETECTED
+                "    - 0:4 !NEW PStore#PrettyName(P)",
+                "    - 0:5 !PCG !Compute PStore#PrettyName (Init) #1 P1 ASYNC", // ASYNC DETECTED
                 "      - 0:6 !GET PStore/data.firstName --> Homer",
                 "      - 0:7 !GET PStore/data.lastName --> Simpson",
                 "      - 0:8 !SET PStore/data.prettyName = Homer Simpson (previous: undefined)",
@@ -399,7 +399,7 @@ describe('Logs', () => {
                 "Cycle #1 0/0",
                 "  - 1:1 !EVT @traxjs/trax-devtools/test/getAvatarComplete",
                 "Cycle #2 0/0",
-                "  - 2:1 !PCG !Compute:RESUME PStore%PrettyName (Init) #1 P1 ASYNC",
+                "  - 2:1 !PCG !Compute:RESUME PStore#PrettyName (Init) #1 P1 ASYNC",
                 "    - 2:2 !SET PStore/data.avatar = Avatar(Homer) (previous: undefined)",
             ]);
         });
@@ -489,11 +489,11 @@ describe('Logs', () => {
                 "  - 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
                 "    - 0:3 !NEW TestStore/data(O)",
-                "    - 0:4 !NEW TestStore%MinMax(P)",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    - 0:4 !NEW TestStore#MinMax(P)",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
                 "      - 0:6 !GET TestStore/data.count --> 0",
-                "    - 0:8 !NEW TestStore%Render(P)",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:8 !NEW TestStore#Render(P)",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "      - 0:10 !GET TestStore/data.min --> 0",
                 "      - 0:11 !GET TestStore/data.count --> 0",
                 "      - 0:12 !GET TestStore/data.max --> 0",
@@ -503,8 +503,8 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [3] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
             ]);
 
 
@@ -516,10 +516,10 @@ describe('Logs', () => {
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
                 "    - 0:3 !NEW TestStore/data(O)",
-                "    - 0:4 !NEW TestStore%MinMax(P)",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:8 !NEW TestStore%Render(P)",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:4 !NEW TestStore#MinMax(P)",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:8 !NEW TestStore#Render(P)",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
             ]);
 
             logFilters.includeNew = false;
@@ -529,9 +529,9 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    ▼ 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
                 "      - 0:6 !GET TestStore/data.count --> 0",
-                "    ▼ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    ▼ 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "      - 0:10 !GET TestStore/data.min --> 0",
                 "      - 0:11 !GET TestStore/data.count --> 0",
                 "      - 0:12 !GET TestStore/data.max --> 0",
@@ -544,14 +544,14 @@ describe('Logs', () => {
                 "  ▼ 1:1 !PCG TestStore.increment()",
                 "    - 1:2 !GET TestStore/data.count --> 0",
                 "    - 1:3 !SET TestStore/data.count = 1 (previous: 0)",
-                "    - 1:4 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 1:5 !DRT TestStore/data.count => TestStore%Render",
+                "    - 1:4 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 1:5 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 1:8 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 1:9 !GET TestStore/data.count --> 1",
                 "      - 1:10 !SET TestStore/data.min = 1 (previous: 0)",
                 "      - 1:11 !SET TestStore/data.max = 1 (previous: 0)",
-                "    ▼ 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    ▼ 1:13 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
                 "      - 1:14 !GET TestStore/data.min --> 1",
                 "      - 1:15 !GET TestStore/data.count --> 1",
                 "      - 1:16 !GET TestStore/data.max --> 1",
@@ -563,13 +563,13 @@ describe('Logs', () => {
                 "▼ [9] Cycle #1 0/0",
                 "  ▼ 1:1 !PCG TestStore.increment()",
                 "    - 1:3 !SET TestStore/data.count = 1 (previous: 0)",
-                "    - 1:4 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 1:5 !DRT TestStore/data.count => TestStore%Render",
+                "    - 1:4 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 1:5 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 1:8 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 1:10 !SET TestStore/data.min = 1 (previous: 0)",
                 "      - 1:11 !SET TestStore/data.max = 1 (previous: 0)",
-                "    - 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 1:13 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ]);
         });
 
@@ -590,8 +590,8 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [3] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
             ]);
 
             logFilters.includeNew = true;
@@ -601,10 +601,10 @@ describe('Logs', () => {
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
                 "    - 0:3 !NEW TestStore/data(O)",
-                "    - 0:4 !NEW TestStore%MinMax(P)",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:8 !NEW TestStore%Render(P)",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:4 !NEW TestStore#MinMax(P)",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:8 !NEW TestStore#Render(P)",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
             ]);
 
             logFilters.includeNew = false;
@@ -614,9 +614,9 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    ▼ 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
                 "      - 0:6 !GET TestStore/data.count --> 0",
-                "    ▼ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    ▼ 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "      - 0:10 !GET TestStore/data.min --> 0",
                 "      - 0:11 !GET TestStore/data.count --> 0",
                 "      - 0:12 !GET TestStore/data.max --> 0",
@@ -627,9 +627,9 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [4] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    ▼ 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
                 "      - 0:6 !GET TestStore/data.count --> 0",
-                "    ▶ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    ▶ 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
             ]);
 
             client.increment(1);
@@ -637,21 +637,21 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [4] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    ▼ 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
                 "      - 0:6 !GET TestStore/data.count --> 0",
-                "    ▶ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    ▶ 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "▼ [14] Cycle #1 0/0",
                 "  ▼ 1:1 !PCG TestStore.increment()",
                 "    - 1:2 !GET TestStore/data.count --> 0",
                 "    - 1:3 !SET TestStore/data.count = 1 (previous: 0)",
-                "    - 1:4 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 1:5 !DRT TestStore/data.count => TestStore%Render",
+                "    - 1:4 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 1:5 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 1:8 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 1:9 !GET TestStore/data.count --> 1",
                 "      - 1:10 !SET TestStore/data.min = 1 (previous: 0)",
                 "      - 1:11 !SET TestStore/data.max = 1 (previous: 0)",
-                "    ▼ 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    ▼ 1:13 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
                 "      - 1:14 !GET TestStore/data.min --> 1",
                 "      - 1:15 !GET TestStore/data.count --> 1",
                 "      - 1:16 !GET TestStore/data.max --> 1",
@@ -663,15 +663,15 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [4] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    ▼ 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
                 "      - 0:6 !GET TestStore/data.count --> 0",
-                "    ▶ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    ▶ 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "▼ [6] Cycle #1 0/0",
                 "  ▼ 1:1 !PCG TestStore.increment()",
                 "    - 1:2 !GET TestStore/data.count --> 0",
                 "    - 1:3 !SET TestStore/data.count = 1 (previous: 0)",
-                "    - 1:4 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 1:5 !DRT TestStore/data.count => TestStore%Render",
+                "    - 1:4 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 1:5 !DRT TestStore/data.count => TestStore#Render",
                 "  ▶ 1:7 !PCG !Reconciliation",
             ]);
 
@@ -696,11 +696,11 @@ describe('Logs', () => {
                 "▼ [7] Cycle #1 0/0",
                 "  ▶ 1:1 !PCG TestStore.increment()",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 1:8 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 1:9 !GET TestStore/data.count --> 1",
                 "      - 1:10 !SET TestStore/data.min = 1 (previous: 0)",
                 "      - 1:11 !SET TestStore/data.max = 1 (previous: 0)",
-                "    ▶ 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    ▶ 1:13 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ]);
 
             logFilters.includePropertyGet = false;
@@ -711,10 +711,10 @@ describe('Logs', () => {
                 "▼ [6] Cycle #1 0/0",
                 "  ▶ 1:1 !PCG TestStore.increment()",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 1:8 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 1:10 !SET TestStore/data.min = 1 (previous: 0)",
                 "      - 1:11 !SET TestStore/data.max = 1 (previous: 0)",
-                "    - 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 1:13 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ]);
         });
 
@@ -733,18 +733,18 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [3] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "▼ [9] Cycle #1 0/0",
                 "  ▼ 1:1 !PCG TestStore.increment()",
                 "    - 1:3 !SET TestStore/data.count = 42 (previous: 0)",
-                "    - 1:4 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 1:5 !DRT TestStore/data.count => TestStore%Render",
+                "    - 1:4 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 1:5 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 1:8 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 1:10 !SET TestStore/data.min = 42 (previous: 0)",
                 "      - 1:11 !SET TestStore/data.max = 42 (previous: 0)",
-                "    - 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 1:13 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ]);
 
             expandPCG("0:1", false);
@@ -757,10 +757,10 @@ describe('Logs', () => {
                 "▼ [6] Cycle #1 0/0",
                 "  ▶ 1:1 !PCG TestStore.increment()",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▼ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 1:8 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 1:10 !SET TestStore/data.min = 42 (previous: 0)",
                 "      - 1:11 !SET TestStore/data.max = 42 (previous: 0)",
-                "    - 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 1:13 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ];
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject(startLogs);
 
@@ -784,19 +784,19 @@ describe('Logs', () => {
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
                 "    - 0:2 !NEW TestStore(S)",
                 "    - 0:3 !NEW TestStore/data(O)",
-                "    - 0:4 !NEW TestStore%MinMax(P)",
-                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    - 0:4 !NEW TestStore#MinMax(P)",
+                "    ▼ 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
                 "      - 0:6 !GET TestStore/data.count --> 0",
-                "    - 0:8 !NEW TestStore%Render(P)",
-                "    ▼ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:8 !NEW TestStore#Render(P)",
+                "    ▼ 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "      - 0:10 !GET TestStore/data.min --> 0",
                 "      - 0:11 !GET TestStore/data.count --> 0",
                 "      - 0:12 !GET TestStore/data.max --> 0",
                 "▼ [4] Cycle #1 0/0",
                 "  ▶ 1:1 !PCG TestStore.increment()",
                 "  ▼ 1:7 !PCG !Reconciliation",
-                "    ▶ 1:8 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
-                "    ▶ 1:13 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    ▶ 1:8 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
+                "    ▶ 1:13 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ]);
 
             dts.resetFilters();
@@ -824,17 +824,17 @@ describe('Logs', () => {
             const initLogs = [
                 "▼ [12] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.increment()",
                 "    - 0:17 !SET TestStore/data.count = 10 (previous: 0)",
-                "    - 0:18 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 0:19 !DRT TestStore/data.count => TestStore%Render",
+                "    - 0:18 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 0:19 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 0:21 !PCG !Reconciliation",
-                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 0:22 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 0:24 !SET TestStore/data.min = 10 (previous: 0)",
                 "      - 0:25 !SET TestStore/data.max = 10 (previous: 0)",
-                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 0:27 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ];
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
 
@@ -844,14 +844,14 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [9] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.increment()",
-                "    - 0:18 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 0:19 !DRT TestStore/data.count => TestStore%Render",
+                "    - 0:18 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 0:19 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 0:21 !PCG !Reconciliation",
-                "    - 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
-                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 0:22 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
+                "    - 0:27 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ]);
 
             filters.includePropertySet = true;
@@ -868,8 +868,8 @@ describe('Logs', () => {
             const initLogs = [
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.logMessages()",
                 "    - 0:16 !LOG Sample Info Message",
                 "    - 0:17 !WRN Sample Warning Message",
@@ -885,8 +885,8 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [4] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  - 0:15 !PCG TestStore.logMessages()",
             ]);
 
@@ -896,8 +896,8 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [5] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.logMessages()",
                 "    - 0:16 !LOG Sample Info Message",
             ]);
@@ -908,8 +908,8 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [6] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.logMessages()",
                 "    - 0:16 !LOG Sample Info Message",
                 "    - 0:17 !WRN Sample Warning Message",
@@ -931,8 +931,8 @@ describe('Logs', () => {
             const initLogs = [
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.generateAppEvent()",
                 "    - 0:16 !EVT EventA",
                 "  ▼ 0:18 !PCG TestStore.generateAppEvent()",
@@ -946,8 +946,8 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [5] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  - 0:15 !PCG TestStore.generateAppEvent()",
                 "  - 0:18 !PCG TestStore.generateAppEvent()",
             ]);
@@ -966,17 +966,17 @@ describe('Logs', () => {
             const initLogs = [
                 "▼ [12] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.increment()",
                 "    - 0:17 !SET TestStore/data.count = 9 (previous: 0)",
-                "    - 0:18 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 0:19 !DRT TestStore/data.count => TestStore%Render",
+                "    - 0:18 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 0:19 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 0:21 !PCG !Reconciliation",
-                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 0:22 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 0:24 !SET TestStore/data.min = 9 (previous: 0)",
                 "      - 0:25 !SET TestStore/data.max = 9 (previous: 0)",
-                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 0:27 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ];
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
 
@@ -987,15 +987,15 @@ describe('Logs', () => {
 
                 "▼ [10] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.increment()",
                 "    - 0:17 !SET TestStore/data.count = 9 (previous: 0)",
                 "  ▼ 0:21 !PCG !Reconciliation",
-                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 0:22 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 0:24 !SET TestStore/data.min = 9 (previous: 0)",
                 "      - 0:25 !SET TestStore/data.max = 9 (previous: 0)",
-                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 0:27 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ]);
 
             filters.includeProcessorDirty = true;
@@ -1012,17 +1012,17 @@ describe('Logs', () => {
             const initLogs = [
                 "▼ [12] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.increment()",
                 "    - 0:17 !SET TestStore/data.count = 9 (previous: 0)",
-                "    - 0:18 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 0:19 !DRT TestStore/data.count => TestStore%Render",
+                "    - 0:18 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 0:19 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 0:21 !PCG !Reconciliation",
-                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 0:22 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 0:24 !SET TestStore/data.min = 9 (previous: 0)",
                 "      - 0:25 !SET TestStore/data.max = 9 (previous: 0)",
-                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 0:27 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ];
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
 
@@ -1033,12 +1033,12 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [7] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.increment()",
-                "    - 0:18 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 0:19 !DRT TestStore/data.count => TestStore%Render",
+                "    - 0:18 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 0:19 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 0:21 !PCG !Reconciliation",
-                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 0:27 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ]);
 
             filters.includePropertySet = true;
@@ -1056,17 +1056,17 @@ describe('Logs', () => {
             const initLogs = [
                 "▼ [12] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.increment()",
                 "    - 0:17 !SET TestStore/data.count = 9 (previous: 0)",
-                "    - 0:18 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 0:19 !DRT TestStore/data.count => TestStore%Render",
+                "    - 0:18 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 0:19 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 0:21 !PCG !Reconciliation",
-                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 0:22 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 0:24 !SET TestStore/data.min = 9 (previous: 0)",
                 "      - 0:25 !SET TestStore/data.max = 9 (previous: 0)",
-                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 0:27 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ];
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
 
@@ -1076,13 +1076,13 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [10] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
                 "  ▼ 0:15 !PCG TestStore.increment()",
                 "    - 0:17 !SET TestStore/data.count = 9 (previous: 0)",
-                "    - 0:18 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 0:19 !DRT TestStore/data.count => TestStore%Render",
+                "    - 0:18 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 0:19 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 0:21 !PCG !Reconciliation",
-                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 0:22 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 0:24 !SET TestStore/data.min = 9 (previous: 0)",
                 "      - 0:25 !SET TestStore/data.max = 9 (previous: 0)",
             ]);
@@ -1101,17 +1101,17 @@ describe('Logs', () => {
             const initLogs = [
                 "▼ [12] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.increment()",
                 "    - 0:17 !SET TestStore/data.count = 9 (previous: 0)",
-                "    - 0:18 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 0:19 !DRT TestStore/data.count => TestStore%Render",
+                "    - 0:18 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 0:19 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 0:21 !PCG !Reconciliation",
-                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 0:22 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 0:24 !SET TestStore/data.min = 9 (previous: 0)",
                 "      - 0:25 !SET TestStore/data.max = 9 (previous: 0)",
-                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 0:27 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ];
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
 
@@ -1126,8 +1126,8 @@ describe('Logs', () => {
                 "▼ [4] Cycle #0 0/0",
                 "  - 0:1 !PCG !StoreInit TestStore",
                 "  ▼ 0:15 !PCG TestStore.increment()",
-                "    - 0:18 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 0:19 !DRT TestStore/data.count => TestStore%Render",
+                "    - 0:18 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 0:19 !DRT TestStore/data.count => TestStore#Render",
             ]);
 
             filters.includeReconciliation = true;
@@ -1147,17 +1147,17 @@ describe('Logs', () => {
             const initLogs = [
                 "▼ [12] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    - 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
-                "    - 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    - 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
+                "    - 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "  ▼ 0:15 !PCG TestStore.increment()",
                 "    - 0:17 !SET TestStore/data.count = 9 (previous: 0)",
-                "    - 0:18 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 0:19 !DRT TestStore/data.count => TestStore%Render",
+                "    - 0:18 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 0:19 !DRT TestStore/data.count => TestStore#Render",
                 "  ▼ 0:21 !PCG !Reconciliation",
-                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 0:22 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 0:24 !SET TestStore/data.min = 9 (previous: 0)",
                 "      - 0:25 !SET TestStore/data.max = 9 (previous: 0)",
-                "    - 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    - 0:27 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
             ];
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject(initLogs);
 
@@ -1167,22 +1167,22 @@ describe('Logs', () => {
             expect(printLogs(dts.data.logs, 0, true)).toMatchObject([
                 "▼ [19] Cycle #0 0/0",
                 "  ▼ 0:1 !PCG !StoreInit TestStore",
-                "    ▼ 0:5 !PCG !Compute TestStore%MinMax (Init) #1 P1",
+                "    ▼ 0:5 !PCG !Compute TestStore#MinMax (Init) #1 P1",
                 "      - 0:7 END",
-                "    ▼ 0:9 !PCG !Compute TestStore%Render (Init) #1 P2 RENDERER",
+                "    ▼ 0:9 !PCG !Compute TestStore#Render (Init) #1 P2 RENDERER",
                 "      - 0:13 END",
                 "    - 0:14 END",
                 "  ▼ 0:15 !PCG TestStore.increment()",
                 "    - 0:17 !SET TestStore/data.count = 9 (previous: 0)",
-                "    - 0:18 !DRT TestStore/data.count => TestStore%MinMax",
-                "    - 0:19 !DRT TestStore/data.count => TestStore%Render",
+                "    - 0:18 !DRT TestStore/data.count => TestStore#MinMax",
+                "    - 0:19 !DRT TestStore/data.count => TestStore#Render",
                 "    - 0:20 END",
                 "  ▼ 0:21 !PCG !Reconciliation",
-                "    ▼ 0:22 !PCG !Compute TestStore%MinMax (Reconciliation) #2 P1",
+                "    ▼ 0:22 !PCG !Compute TestStore#MinMax (Reconciliation) #2 P1",
                 "      - 0:24 !SET TestStore/data.min = 9 (previous: 0)",
                 "      - 0:25 !SET TestStore/data.max = 9 (previous: 0)",
                 "      - 0:26 END",
-                "    ▼ 0:27 !PCG !Compute TestStore%Render (Reconciliation) #2 P2 RENDERER",
+                "    ▼ 0:27 !PCG !Compute TestStore#Render (Reconciliation) #2 P2 RENDERER",
                 "      - 0:31 END",
                 "    - 0:32 END",
             ]);

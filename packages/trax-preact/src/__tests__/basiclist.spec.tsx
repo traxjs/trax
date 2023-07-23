@@ -55,7 +55,7 @@ describe('Simple List', () => {
         });
 
         it('should load the list and add / clear items', async () => {
-            expect(listHost(0).dataset.id).toBe("Preact%Test:BasicList:1");
+            expect(listHost(0).dataset.id).toBe("Preact#Test:BasicList:1");
             expect(listItemLength(0)).toBe(0);
             expect(listTotalText(0)).toBe("Total: 0");
 
@@ -97,10 +97,10 @@ describe('Simple List', () => {
         });
 
         it('should work independently', async () => {
-            expect(listHost(0).dataset.id).toBe("Preact%Test:BasicList:1");
+            expect(listHost(0).dataset.id).toBe("Preact#Test:BasicList:1");
             expect(listItemLength(0)).toBe(0);
             expect(listTotalText(0)).toBe("Total: 0");
-            expect(listHost(1).dataset.id).toBe("Preact%Test:BasicList:2");
+            expect(listHost(1).dataset.id).toBe("Preact#Test:BasicList:2");
             expect(listItemLength(1)).toBe(0);
             expect(listTotalText(1)).toBe("Total: 0");
 
@@ -168,10 +168,10 @@ describe('Simple List', () => {
             host = container.container as HTMLDivElement;
 
             // Conditional List
-            expect(listHost(0).dataset.id).toBe("Preact%Test:BasicList:1");
+            expect(listHost(0).dataset.id).toBe("Preact#Test:BasicList:1");
             expect(listItemLength(0)).toBe(0);
             expect(listTotalText(0)).toBe("Total: 0");
-            const cptProcessor = trax.getProcessor("Preact%Test:BasicList:1")!;
+            const cptProcessor = trax.getProcessor("Preact#Test:BasicList:1")!;
             expect(cptProcessor.disposed).toBe(false);
             expect(cptProcessor.computeCount).toBe(1);
 
@@ -194,10 +194,10 @@ describe('Simple List', () => {
             context.showList = true;
             await renderComplete();
 
-            expect(listHost(0).dataset.id).toBe("Preact%Test:BasicList:2"); // new id as previous instance was disposed
+            expect(listHost(0).dataset.id).toBe("Preact#Test:BasicList:2"); // new id as previous instance was disposed
             expect(listItemLength(0)).toBe(0);
             expect(listTotalText(0)).toBe("Total: 0");
-            const cptProcessor2 = trax.getProcessor("Preact%Test:BasicList:2")!;
+            const cptProcessor2 = trax.getProcessor("Preact#Test:BasicList:2")!;
             expect(cptProcessor2.disposed).toBe(false);
             expect(cptProcessor2.computeCount).toBe(1);
             expect(cptProcessor).not.toBe(cptProcessor2);

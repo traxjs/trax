@@ -77,7 +77,7 @@ describe('Simple List', () => {
     it('should load the list', async () => {
         const ls = host.querySelectorAll("div.simplelist");
         expect(ls.length).toBe(1);
-        expect((ls[0] as HTMLDivElement)!.dataset.id).toBe("Preact%Test:SimpleList:1");
+        expect((ls[0] as HTMLDivElement)!.dataset.id).toBe("Preact#Test:SimpleList:1");
         expect(listUL().innerHTML).toBe("[Empty List]");
         expect(addItemButton().innerHTML).toBe("Add Item");
         expect(clearListButton().innerHTML).toBe("Clear List");
@@ -92,7 +92,7 @@ describe('Simple List', () => {
         await click(addItemButton());
         expect(listLength()).toBe(1);
         expect(listItemText(0)).toBe("Item #1  (urgent)");
-        expect(listItem(0).dataset.id).toBe("Preact%Test:ListItem:1");
+        expect(listItem(0).dataset.id).toBe("Preact#Test:ListItem:1");
         expect(listTotal()).toBe("Total: 1");
         expect(listUrgent()).toBe("Urgent: 1");
 
@@ -100,14 +100,14 @@ describe('Simple List', () => {
         await click(addItemButton());
         expect(listLength()).toBe(2);
         expect(listItemText(1)).toBe("Item #2");
-        expect(listItem(1).dataset.id).toBe("Preact%Test:ListItem:2");
+        expect(listItem(1).dataset.id).toBe("Preact#Test:ListItem:2");
         expect(listTotal()).toBe("Total: 2");
         expect(listUrgent()).toBe("Urgent: 1");
 
         // Third Add
         await click(addItemButton());
         expect(listLength()).toBe(3);
-        expect(listItem(2).dataset.id).toBe("Preact%Test:ListItem:3");
+        expect(listItem(2).dataset.id).toBe("Preact#Test:ListItem:3");
         expect(listItemText(2)).toBe("Item #3");
         expect(listTotal()).toBe("Total: 3");
         expect(listUrgent()).toBe("Urgent: 1");
@@ -115,7 +115,7 @@ describe('Simple List', () => {
         // Fourth Add
         await click(addItemButton());
         expect(listLength()).toBe(4);
-        expect(listItem(3).dataset.id).toBe("Preact%Test:ListItem:4");
+        expect(listItem(3).dataset.id).toBe("Preact#Test:ListItem:4");
         expect(listItemText(3)).toBe("Item #4  (urgent)");
         expect(listTotal()).toBe("Total: 4");
         expect(listUrgent()).toBe("Urgent: 2");
@@ -133,7 +133,7 @@ describe('Simple List', () => {
         // Add 2 items
         await click(addItemButton());
         await click(addItemButton());
-        expect(listItem(0).dataset.id).toBe("Preact%Test:ListItem:1"); // 1 because resetSuffixes() was called
+        expect(listItem(0).dataset.id).toBe("Preact#Test:ListItem:1"); // 1 because resetSuffixes() was called
         expect(listLength()).toBe(2);
         expect(listTotal()).toBe("Total: 2");
         expect(listUrgent()).toBe("Urgent: 1");

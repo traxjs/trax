@@ -18,14 +18,14 @@ describe('Control Panel', () => {
         // not in beforeEach to avoid missing events
         let p: Promise<any>;
         if (awaitFullRender) {
-            p = trax.log.awaitEvent(traxEvents.ProcessingStart, { processorId: /%ControlPanel/ });
+            p = trax.log.awaitEvent(traxEvents.ProcessingStart, { processorId: /#ControlPanel/ });
         }
         container = render(<ControlPanel />);
         cptDiv = container.container.querySelector(".message-control-panel")!;
         if (!messageStore.data.initialized) {
             // first time
             await trax.log.awaitEvent(LOG_MESSAGE_STORE_INITIALIZED);
-            p = trax.log.awaitEvent(traxEvents.ProcessingStart, { processorId: /%ControlPanel/ });
+            p = trax.log.awaitEvent(traxEvents.ProcessingStart, { processorId: /#ControlPanel/ });
         }
         if (awaitFullRender) {
             await p!;

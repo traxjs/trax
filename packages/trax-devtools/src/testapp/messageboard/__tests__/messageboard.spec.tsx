@@ -17,7 +17,7 @@ describe('MessageBoard', () => {
         // not in beforeEach to avoid missing events
         let p: Promise<any>;
         if (awaitFullRender) {
-            p = trax.log.awaitEvent(traxEvents.ProcessingEnd, { processorId: /%Group/ }); // %AuthorInfo
+            p = trax.log.awaitEvent(traxEvents.ProcessingEnd, { processorId: /#Group/ });
         }
         container = render(<MessageBoard />);
         cptDiv = container.container.querySelector(".message-board")!;
@@ -119,7 +119,7 @@ describe('MessageBoard', () => {
         expect(printContent()).toMatchObject([
             "# Homer Simpson (Away) homer.png",
             // First message deleted
-            "- If he's so smart, how come he's dead?", 
+            "- If he's so smart, how come he's dead?",
             "# Marge Simpson (Online) marge.png",
             "- I guess one person can make a difference. But most of the time, they probably shouldn't.",
             "- Homer, we have to do something. Today Bart's drinking people's blood. Tomorrow he could be smoking.",

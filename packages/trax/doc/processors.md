@@ -30,7 +30,7 @@ Trax processors are entities associated to compute functions that produce new va
 
 Trax supports both **synchronous** and **asynchronous** compute functions that can can either run **eagerly** or **lazyly**.
 - **eager** processors are systematically re-rerun when they get dirty, even if the data they produce are not read. Note that eager processors can be defined as *non-autocompute* which means that their **onDirty** callback will be called instead of running them (in a certain way non-autocompute processors sit between eager and lazy processors). Eager processors are typically used for renderer (e.g. React or Preact components - cf. [@traxjs/trax-react][trax-react] or [@traxjs/trax-preact][trax-preact]). Eager processors are created through the **[store.compute][scompute]** function
-- **lazy** processors are not automatically re-rerun when they get dirty if the data they are associated to is not read or not read by an eager processor. On the contrary to eager processors, lazy processors are associated to a data object (e.g. the store root data object) that should be a **gate** to access the values produced by the processor (i.e. **lazy processors must only produce data accessed through their gate object**). If the gate is not accessed, then the lazy processors don't need to run and are kept dirty. Lazy processors are created through the **[store.init][sinit]** or **[store.add][sadd]** functions.
+- **lazy** processors are not automatically re-rerun when they get dirty if the data they are associated to is not read or not read by an eager processor. On the contrary to eager processors, lazy processors are associated to a data object (e.g. the store root data object) that should be a **gate** to access the values produced by the processor (i.e. **lazy processors must only produce data accessed through their gate object**). If the gate is not accessed **by another processor** (such as a renderer), then the lazy processors don't need to run and are kept dirty. Lazy processors are created through the **[store.init][sinit]** or **[store.add][sadd]** functions.
 
 [trax-react]: https://github.com/traxjs/trax/tree/main/packages/trax-react
 [trax-preact]: https://github.com/traxjs/trax/tree/main/packages/trax-preact
@@ -135,8 +135,8 @@ const store = trax.createStore("PersonStore", (store: Store<Person>) => {
 
 const p1 = store.getProcessor("data[prettyName]");
 
-expect(p1!.id).toBe("PersonStore%data[prettyName]");
-expect(p2!.id).toBe("PersonStore%Avatar");
+expect(p1!.id).toBe("PersonStore#data[prettyName]");
+expect(p2!.id).toBe("PersonStore#Avatar");
 ```
 
 ### ```readonly dirty: boolean```

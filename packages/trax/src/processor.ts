@@ -164,7 +164,6 @@ export function createTraxProcessor<T>(
                 process = tmd(target)?.hasExternalPropListener || false;
             }
 
-
             if ((process && dirty) || forceExecution) {
                 dirty = false;
 

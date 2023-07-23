@@ -10,7 +10,7 @@ const metaData = new WeakMap<object, TraxMd>(); // note: the key is the actual o
 const traxProxyTarget = Symbol("trax.proxy.target");
 /** Symbol used to attach the Object.keys() size to objects used as dictionaries - cf. getObjectKeys() */
 const dictSize = Symbol("trax.dict.size");
-const RX_INVALID_ID = /(\/|\>|\.|\%)/g;
+const RX_INVALID_ID = /(\/|\>|\.|\#)/g;
 const ROOT = "data";
 /** Separator used to join array id definitions */
 const ID_SEPARATOR1 = ":";
@@ -22,8 +22,8 @@ const ID_SEPARATOR3 = "-";
 const ID_SEPARATOR4 = "$";
 /** Property prefix for reference properties */
 const REF_PROP_PREFIX = "$";
-/** Separator for sub-store ids */
-const ID_PROCESSOR_SEPARATOR = "%";
+/** Separator for processor ids */
+const ID_PROCESSOR_SEPARATOR = "#";
 /** Separator for sub-store ids */
 const ID_SUB_STORE_SEPARATOR = ">";
 /** Separator for data objects */

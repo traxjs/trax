@@ -159,7 +159,7 @@ export function useStore<T = any>(factory: (...args: any[]) => T, ...args: any[]
  */
 export function useTraxState<T extends Object>(state: T): T {
     const store = useStore(() => {
-        const name = "State[" + componentId().replace(/(^[^\/\%]+(\/|\%))|(%)/g, "") + "]";
+        const name = "State[" + componentId().replace(/(^[^\/\#]+(\/|\#))|(\#)/g, "") + "]";
         return trax.createStore(name, state);
     });
     return store.data as T;

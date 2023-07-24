@@ -599,9 +599,24 @@ export function createTraxEnv(): Trax {
 
     function registerProcessorForReconciliation(pr: TraxInternalProcessor) {
         const prio = pr.priority;
-        reconciliationList.insert((prev?: TraxInternalProcessor, next?: TraxInternalProcessor) => {
-            if (!next || prio <= next.priority) {
+        const isRenderer = pr.isRenderer;
+        reconciliationList.insert((prev?: TraxInternalProcessor, nd?: TraxInternalProcessor) => {
+            if (!nd) {
                 return pr;
+            } else {
+                if (isRenderer) {
+                    if (nd.isRenderer) {
+                        // both are renderers
+                        return prio <= nd.priority ? pr : undefined;
+                    } // else nd is not a renderer -> move next
+                } else {
+                    if (nd.isRenderer) {
+                        return pr; // renderers go last
+                    } else {
+                        // both are not renderers
+                        return prio <= nd.priority ? pr : undefined;
+                    }
+                }
             }
         });
     }

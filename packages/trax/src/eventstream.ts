@@ -469,8 +469,8 @@ export function formatEventData(eventType: string, data?: any, styleDelimiter = 
             if (d.name === "!StoreInit") {
                 return `${d.name} (${c}${d.storeId}${c})`;
             } else if (d.name === "!Compute") {
-                const R = d.isRenderer ? " R" : "";
-                return `${d.name} #${d.computeCount} (${c}${d.processorId}${c}) P${d.processorPriority} ${d.trigger}${R}`;
+                const R = d.isRenderer ? "R" : "";
+                return `${d.name} #${d.computeCount} (${c}${d.processorId}${c}) P${d.processorPriority}${R} ${d.trigger}`;
             } else if (d.name === "!Reconciliation") {
                 return `${d.name} #${d.index} - ${d.processorCount} processor${d.processorCount !== 1 ? "s" : ""}`;
             } else if (d.name === "!ArrayUpdate") {

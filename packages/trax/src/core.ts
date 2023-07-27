@@ -50,9 +50,9 @@ interface TraxMd {
     */
     hasExternalPropListener: boolean;
     /**
-     * Tell when the contentProcessor were last checked (-1 if not used - only used for computedContent)
+     * Tell when the lazy processors are being checked
      */
-    lastContentProcessorCheck: number;
+    processingLazyCheck: boolean;
     /**
      * Map of computed properties and their associated processor
      * Allows to detect if a computed property is illegaly changed
@@ -65,8 +65,8 @@ interface TraxMd {
      */
     computedContent?: TraxProcessorId;
     /**
-     * Processors associated to this object
-     * These processors are created through store.add() or store.init() and should be disposed
+     * Content processors associated to this object (can be lazy or eager)
+     * These processors are created through store.add() or store.init() and will be disposed
      * when the object is removed from the store
      */
     contentProcessors?: TraxInternalProcessor[];
@@ -145,7 +145,7 @@ function attachMetaData(o: Object, id: string, type: TraxObjectType, storeId: st
     const md: TraxMd = {
         id, type, storeId,
         propListeners: undefined, computedProps: undefined, computedContent: undefined,
-        awLevel: undefined, dictSize: undefined, contentProcessors: undefined, hasExternalPropListener: false, lastContentProcessorCheck: -1
+        awLevel: undefined, dictSize: undefined, contentProcessors: undefined, hasExternalPropListener: false, processingLazyCheck: false
     };
     metaData.set((o as any)[traxProxyTarget] || o, md);
     return md;
@@ -241,10 +241,14 @@ export function createTraxEnv(): Trax {
             }
         },
         async reconciliation(): Promise<void> {
-            const lastEvent = log.lastEvent();
+            let lastEvent = log.lastEvent();
+            if (!lastEvent || lastEvent.type === traxEvents.CycleComplete) {
+                // some async promises may be pending
+                await Promise.resolve(1);
+            }
             // wait for the end of the current cycle if a cycle already started
             // (reconcilation will be automatically triggered at the end of the cycle)
-            if (lastEvent && lastEvent.type !== traxEvents.CycleComplete) {
+            if (reconciliationList.size || (lastEvent && lastEvent.type !== traxEvents.CycleComplete)) {
                 await log.awaitEvent(traxEvents.CycleComplete);
             }
         },
@@ -371,7 +375,7 @@ export function createTraxEnv(): Trax {
                     if (pr) {
                         pr.registerDependency(target, md.id, prop);
                     }
-                    checkContentProcessors(md);
+                    checkLazyProcessors(md);
                     // don't add log for common internal built-in props
                     addLog = ((prop !== "then" && prop !== "constructor") || v !== undefined);
                     if (target[prop] !== undefined) {
@@ -394,7 +398,7 @@ export function createTraxEnv(): Trax {
                     if (pr) {
                         pr.registerDependency(target, md.id, DICT_SIZE_PROP);
                     }
-                    checkContentProcessors(md);
+                    checkLazyProcessors(md);
                     logTraxEvent({ type: "!GET", objectId: md.id, propName: DICT_SIZE_PROP, propValue: v });
                     return v;
                 }
@@ -727,13 +731,14 @@ export function createTraxEnv(): Trax {
     /**
      * Check that content processors associated to the meta data are run
      */
-    function checkContentProcessors(md: TraxMd) {
-        if (md.lastContentProcessorCheck === reconciliationCount) return; // run max once per reconciliation
-        md.lastContentProcessorCheck = reconciliationCount;
+    function checkLazyProcessors(md: TraxMd) {
+        if (md.processingLazyCheck) return; // run max once per reconciliation
         if (md.contentProcessors) {
+            md.processingLazyCheck = true;
             for (const p of md.contentProcessors) {
-                p.compute(false, "TargetRead");
+                p.isLazy && p.compute(false, "TargetRead");
             }
+            md.processingLazyCheck = false;
         }
     }
 
@@ -870,8 +875,9 @@ export function createTraxEnv(): Trax {
                 return false;
             },
             compute(id: TraxIdDef, compute: TraxComputeFn, autoCompute?: boolean, isRenderer?: boolean): TraxProcessor {
-                let pid = buildId(id, storeId, true);
-                return createProcessor(pid, "", compute, null, autoCompute, isRenderer);
+                const pname = buildIdSuffix(id, storeId);
+                const pid = buildId(pname, storeId, true);
+                return createProcessor(pid, pname, compute, null, autoCompute, isRenderer);
             },
             getProcessor(id: TraxIdDef): TraxProcessor | undefined {
                 const sid = buildId(id, storeId, true);
@@ -941,12 +947,17 @@ export function createTraxEnv(): Trax {
                     } else if (separator === ID_PROCESSOR_SEPARATOR) {
                         o = processors.get(id);
                         o && o.dispose();
+                        if (processors.get(id)) {
+                            console.error("Unexpected processor dispose error");
+                            processors.delete(id);
+                        }
                     } else {
                         // note: in this case we don't need to dispose processors associated
                         // to this object (if any) as all store processsors will be disposed
                         removeDataObject(id);
                     }
                 }
+                storeSet.clear();
             }
             logTraxEvent({ type: "!DEL", objectId: storeId });
             return true;
@@ -1062,7 +1073,7 @@ export function createTraxEnv(): Trax {
          * @param o
          * @reeturns
          */
-        function getOrAdd<T extends Object>(id: TraxIdDef, o: T, acceptRootId: boolean, lazyProcessors?: TraxLazyComputeDescriptor<T>): T {
+        function getOrAdd<T extends Object>(id: TraxIdDef, o: T, acceptRootId: boolean, contentProcessors?: TraxLazyComputeDescriptor<T>): T {
             let idSuffix = buildIdSuffix(id, storeId);
 
             if (!acceptRootId) {
@@ -1078,14 +1089,13 @@ export function createTraxEnv(): Trax {
                 }
                 const p = getProxy(buildId(idSuffix, storeId, false), o, storeId);
 
-                if (lazyProcessors !== undefined) {
+                if (contentProcessors !== undefined) {
                     const md = tmd(p)!;
                     const procs: TraxProcessor[] = [];
 
-                    for (const name of Object.getOwnPropertyNames(lazyProcessors)) {
-
+                    for (const name of Object.getOwnPropertyNames(contentProcessors)) {
                         const pid = `${storeId}${ID_PROCESSOR_SEPARATOR}${idSuffix}[${name}]`;
-                        procs.push(createProcessor(pid, name, lazyProcessors[name], p, true, false));
+                        procs.push(createProcessor(pid, name, contentProcessors[name], p, true, false));
                     }
                     md.contentProcessors = procs as TraxInternalProcessor[];
                 }
@@ -1117,9 +1127,12 @@ export function createTraxEnv(): Trax {
                 autoCompute,
                 isRenderer
             );
-            attachMetaData(pr, pid, TraxObjectType.Processor, storeId);
-            processors.set(pid, pr);
-            addStoreItem(pid, storeId);
+            if (!pr.disposed) {
+                // run once processors can be already disposed
+                attachMetaData(pr, pid, TraxObjectType.Processor, storeId);
+                processors.set(pid, pr);
+                addStoreItem(pid, storeId);
+            }
             return pr;
         };
     }

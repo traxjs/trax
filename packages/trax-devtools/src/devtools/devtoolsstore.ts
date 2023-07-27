@@ -84,6 +84,7 @@ export function createDevToolsStore(client: DtClientAPI) {
 }
 
 function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>) {
+    // console.log("ingestNewEvents", eventGroup)
     const cycleId = eventGroup.cycleId;
     let elapsedMs = 0;
     let computeMs = 0;
@@ -135,7 +136,7 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
             matchFilter: true, // computed
             contentSize: 1     // computed
         }, {
-            ingest: (logCycle, cc) => {
+            "~ingest": (logCycle, cc) => {
                 // events ingestion (run once)
                 cc.maxComputeCount = 1; // run once
 
@@ -146,7 +147,7 @@ function ingestNewEvents(eventGroup: DtEventGroup, store: Store<DtDevToolsData>)
                 }
                 logCycle.events = evts;
             },
-            filter: (logCycle) => {
+            "~filter": (logCycle) => {
                 // decorate events according to logFilters
                 const filter = store.data.logFilters;
 

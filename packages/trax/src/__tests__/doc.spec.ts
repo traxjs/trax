@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, test } from 'vitest';
 import { createTraxEnv } from '../core';
 import { Store, Trax, TraxObjectType, TraxProcessor } from '../index';
+import { TraxComputeContext } from '../types';
 
 describe('Doc examples', () => {
     let trax: Trax;
@@ -95,7 +96,7 @@ describe('Doc examples', () => {
         expect(tds).toBe(tdsStore);
     });
 
-    it('should support createStore for a simple todo list (lazy processors)', async () => {
+    it('should support createStore for a simple todo list', async () => {
         interface TodoData {
             todos: TodoItem[],
             completedCount: number;
@@ -114,11 +115,18 @@ describe('Doc examples', () => {
                 completedCount: 0,
                 itemsLeft: 0
             }, {
-                count: (data) => {
-                    // lazy processor to compute the 2 counters
+                count: (data, cc: TraxComputeContext) => {
+                    // processor to compute the 2 counters
                     const completedCount = data.todos.filter((todo) => todo.completed).length;
                     data.completedCount = completedCount;
                     data.itemsLeft = data.todos.length - completedCount;
+
+                    // cc = compute context object
+                    // cc.computeCount - here 1, then 2, 3, etc.
+                    // cc.maxComputeCount - can be changed to automatically dispose a processor
+                    //      after a certain number of executions (e.g. cc.maxComputeCount=1)
+                    // cc.processorId - here: "TodoStore#data[count]"
+                    // cc.processorName - here: "count"
                 }
             })
         });
@@ -156,7 +164,6 @@ describe('Doc examples', () => {
                 prettyName: "" // computed
             }, {
                 adult: (data, cc) => {
-                    // lazy processor
                     data.isAdult = data.age >= 18;
                     processorId1 = cc.processorId;
                     active1 = trax.getActiveProcessor()?.id || "";
@@ -280,14 +287,14 @@ describe('Doc examples', () => {
         await trax.reconciliation();
         expect(msgStore.data.unread).toBe(2);
         const m0 = msgStore.data.messages[0];
-        expect(trax.getTraxId(m0)).toBe("MessageStore/Message:M0");  // id defined by the application
+        expect(trax.getTraxId(m0)).toBe("MessageStore/Message:M0");  // id defined by the application -> easy to retrieve
         expect(trax.getData("MessageStore/Message:M0")).toBe(m0);
 
         const ms = trax.getStore<MessageData>("MessageStore")!;
         // add message outside the addMsg method
         ms.data.messages.push({ id: "M3", text: "Message 3" });
         const m3 = msgStore.data.messages[3];
-        expect(trax.getTraxId(m3)).toBe("MessageStore/data*messages*3"); // generated id
+        expect(trax.getTraxId(m3)).toBe("MessageStore/data*messages*3"); // generated id -> message cannot be easily retrieved by id as its id cannot be easily guessed
         await trax.reconciliation();
 
         expect(ms.get("Message:M0")).toBe(m0);
@@ -399,46 +406,72 @@ describe('Doc examples', () => {
         }
 
         const store1 = trax.createStore("PersonStore", (store: Store<Person>) => {
-            const data = store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" }, {
-                prettyName: (data) => {
-                    // lazy + synchronous processor
+            store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" }, {
+                "~prettyName": (data) => {
+                    // lazy synchronous processor
                     data.prettyName = data.firstName + " " + data.lastName;
                 },
-                avatar: function* (data) {
-                    // lazy + asynchronous processor
+                "~avatar": function* (data) {
+                    // lazy asynchronous processor
                     data.avatar = yield getAvatar(data.id);
                 }
             });
         });
 
-        const person1 = store1.data;
-
-        expect(person1.prettyName).toBe("Homer Simpson"); // processed because we accessed person
-        expect(person1.avatar).toBe(undefined); // being retrieved
+        const p1 = store1.data;
+        expect(p1.prettyName).toBe(undefined); // unprocessed
+        expect(p1.avatar).toBe(undefined); // unprocessed
         await pause(10);
-        expect(person1.avatar).toBe("AVATAR[U1]"); // retrieved
+        expect(p1.avatar).toBe(undefined); // still unprocessed
+
+        let output1 = "";
+        store1.compute("Output1", () => {
+            output1 = `${p1.id} / ${p1.prettyName} / ${p1.avatar}`;
+        });
+
+        expect(output1).toBe('U1 / Homer Simpson / undefined'); // avatar not retrieved yet
+        await pause(10);
+        expect(output1).toBe('U1 / Homer Simpson / AVATAR[U1]'); // avatar retrieved
 
 
         const store2 = trax.createStore("PersonStore2", (store: Store<Person>) => {
-            const data = store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" });
-
-            store.compute("PrettyName", () => {
-                // eager + synchronous processor
-                data.prettyName = data.firstName + " " + data.lastName;
-            });
-
-            store.compute("Avatar", function* () {
-                // eager + asynchronous processor
-                data.avatar = yield getAvatar(data.id);
+            store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" }, {
+                "prettyName": (d) => {
+                    // eager + synchronous processor
+                    d.prettyName = d.firstName + " " + d.lastName;
+                },
+                "avatar": function* (d) {
+                    // eager + asynchronous processor
+                    d.avatar = yield getAvatar(d.id);
+                }
             });
         });
 
-        const person2 = store2.data;
-
-        expect(person2.prettyName).toBe("Homer Simpson");
-        expect(person2.avatar).toBe(undefined); // being retrieved
+        const p2 = store2.data;
+        expect(p2.prettyName).toBe("Homer Simpson");
+        expect(p2.avatar).toBe(undefined); // being retrieved
         await pause(10);
-        expect(person2.avatar).toBe("AVATAR[U1]"); // retrieved
+        expect(p2.avatar).toBe("AVATAR[U1]"); // retrieved
+
+        const store3 = trax.createStore("PersonStore3", (store: Store<Person>) => {
+            const d = store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" });
+
+            store.compute("prettyName", () => {
+                // eager + synchronous processor
+                d.prettyName = d.firstName + " " + d.lastName;
+            });
+
+            store.compute("avatar", function* () {
+                // eager + asynchronous processor
+                d.avatar = yield getAvatar(d.id);
+            });
+        });
+
+        const p3 = store3.data;
+        expect(p3.prettyName).toBe("Homer Simpson");
+        expect(p3.avatar).toBe(undefined); // being retrieved
+        await pause(10);
+        expect(p3.avatar).toBe("AVATAR[U1]"); // retrieved
     });
 
     it('should demo all processor properties and methods', async () => {
@@ -467,13 +500,13 @@ describe('Doc examples', () => {
         const store = trax.createStore("PersonStore", (store: Store<Person>) => {
             const data = store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" }, {
                 prettyName: (data) => {
-                    // lazy + synchronous processor
+                    // synchronous processor
                     data.prettyName = data.firstName + " " + data.lastName;
                 }
             });
 
             p2 = store.compute("Avatar", function* () {
-                // eager + asynchronous processor
+                // asynchronous processor
                 data.avatar = yield getAvatar(data.id);
             });
         });

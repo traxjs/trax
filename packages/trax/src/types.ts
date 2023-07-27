@@ -152,10 +152,10 @@ export interface Store<T> {
     readonly data: T,
     /**
      * Initialize the root data object - must be only called in the store init function
-     * @param lazyProcessors optional compute functions associated to the root object. The processor associated to these functions will follow the object life cycle.
+     * @param contentProcessors optional compute functions associated to the root object. The processor associated to these functions will follow the object life cycle.
      * @param data
      */
-    init(data: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T;
+    init(data: T, contentProcessors?: TraxLazyComputeDescriptor<T>): T;
     /**
      * Tell if the store is disposed and should be ignored
      */
@@ -185,9 +185,9 @@ export interface Store<T> {
     * Get or create a data object associated to the given id
     * @param id the object id - must be unique with the store scope
     * @param initValue the object init value (empty object if nothing is provided)
-    * @param lazyProcessors optional compute functions associated to this object. The processor associated to these functions will follow the object life cycle.
+    * @param contentProcessors optional compute functions associated to this object. The processor associated to these functions will follow the object life cycle.
     */
-    add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T;
+    add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, contentProcessors?: TraxLazyComputeDescriptor<T>): T;
     /**
      * Retrieve a data object/array/dictionary that has been previously created
      * (Doesn't work for processors or stores)
@@ -320,6 +320,10 @@ export interface TraxProcessor {
     * Tell if the processor was labeled as a renderer (debug info)
     */
     readonly isRenderer: boolean;
+    /**
+     * Tell if the processor is lazy (name must start with "~" and must be associated to a target object)
+     */
+    readonly isLazy: boolean;
     /**
      * Tell if the processor is disposed and should be ignored
      */

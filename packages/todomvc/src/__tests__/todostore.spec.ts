@@ -1,26 +1,31 @@
-import { trax } from '@traxjs/trax';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { TraxProcessor, trax } from '@traxjs/trax';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createTodoStore, Todo, TodoFilter, TodoStore } from '../todostore';
 
 describe('TodoStore', () => {
-    let todoStore: TodoStore, data: TodoStore["data"], todos: Todo[];
+    let todoStore: TodoStore, data: TodoStore["data"], todos: Todo[], content: string[], renderer: TraxProcessor;
 
     beforeEach(() => {
         todoStore = createTodoStore();
         data = todoStore.data;
         todos = data.todos;
+
+        // add a renderer processor
+        trax.getStore(todoStore.id)!.compute("Content", () => {
+            content = data.filteredTodos.map((todo, index) => {
+                if (todo === undefined) return "UNDEFINED";
+                let editData = todo.editing ? " [EDITMODE]" : "";
+                if (todo.editDescription !== "") {
+                    editData += ` [EDITVALUE:${todo.editDescription}]`;
+                }
+                return `${index + 1}. ${todo.description}${todo.completed ? " ✅" : ""}${editData}`;
+            });
+        });
     });
 
-    function printTodos(items = todos) {
-        return items.map((todo, index) => {
-            if (todo === undefined) return "UNDEFINED";
-            let editData = todo.editing ? " [EDITMODE]" : "";
-            if (todo.editDescription !== "") {
-                editData += ` [EDITVALUE:${todo.editDescription}]`;
-            }
-            return `${index + 1}. ${todo.description}${todo.completed ? " ✅" : ""}${editData}`;
-        });
-    }
+    afterEach(() => {
+        todoStore.dispose();
+    });
 
     function initTodos(addCompletedTodos = true) {
         data.newEntry = "Firth thing";
@@ -51,18 +56,19 @@ describe('TodoStore', () => {
         expect(data.todos.length).toBe(0);
         data.newEntry = "ABC";
         todoStore.addTodo();
+        await trax.reconciliation();
         expect(data.todos.length).toBe(1);
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. ABC"
         ]);
         expect(data.newEntry).toBe("");
         data.newEntry = "DEF";
         todoStore.addTodo();
-        expect(printTodos()).toMatchObject([
+        await trax.reconciliation();
+        expect(content).toMatchObject([
             "1. ABC",
             "2. DEF"
         ]);
-        await trax.reconciliation();
         expect(data.itemsLeft).toBe(2);
         expect(data.nbrOfCompletedTodos).toBe(0);
     });
@@ -80,7 +86,8 @@ describe('TodoStore', () => {
         initTodos(false);
         expect(data.itemsLeft).toBe(4);
         expect(data.nbrOfCompletedTodos).toBe(0);
-        expect(printTodos()).toMatchObject([
+        await trax.reconciliation();
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing",
             "3. Third thing",
@@ -89,7 +96,7 @@ describe('TodoStore', () => {
 
         todoStore.toggleCompletion(todos[1]);
         await trax.reconciliation();
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅",
             "3. Third thing",
@@ -98,7 +105,7 @@ describe('TodoStore', () => {
 
         todoStore.toggleCompletion(todos[3]);
         await trax.reconciliation();
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅",
             "3. Third thing",
@@ -108,7 +115,7 @@ describe('TodoStore', () => {
         // invalid call
         todoStore.toggleCompletion(todos[5]);
         await trax.reconciliation();
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅",
             "3. Third thing",
@@ -118,7 +125,7 @@ describe('TodoStore', () => {
         // toggle back
         todoStore.toggleCompletion(todos[1]);
         await trax.reconciliation();
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing",
             "3. Third thing",
@@ -128,9 +135,10 @@ describe('TodoStore', () => {
 
     it('should delete todos', async () => {
         initTodos();
+        await trax.reconciliation();
         expect(data.itemsLeft).toBe(2);
         expect(data.nbrOfCompletedTodos).toBe(2);
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅",
             "3. Third thing ✅",
@@ -141,7 +149,7 @@ describe('TodoStore', () => {
         await trax.reconciliation();
         expect(data.itemsLeft).toBe(2);
         expect(data.nbrOfCompletedTodos).toBe(1);
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Third thing ✅",
             "3. Last thing",
@@ -152,7 +160,7 @@ describe('TodoStore', () => {
         await trax.reconciliation();
         expect(data.itemsLeft).toBe(1);
         expect(data.nbrOfCompletedTodos).toBe(1);
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Third thing ✅",
             "2. Last thing",
         ]);
@@ -161,21 +169,21 @@ describe('TodoStore', () => {
         await trax.reconciliation();
         expect(data.itemsLeft).toBe(0);
         expect(data.nbrOfCompletedTodos).toBe(1);
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Third thing ✅",
         ]);
 
         // invalid call
         todoStore.deleteTodo(todos[2]);
         await trax.reconciliation();
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Third thing ✅",
         ]);
 
         // another invalid call
         todoStore.deleteTodo(t0); // t0 is not in the list anymore
         await trax.reconciliation();
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Third thing ✅",
         ]);
 
@@ -186,14 +194,14 @@ describe('TodoStore', () => {
         await trax.reconciliation();
         expect(data.itemsLeft).toBe(0);
         expect(data.nbrOfCompletedTodos).toBe(0);
-        expect(printTodos()).toMatchObject([]);
+        expect(content).toMatchObject([]);
     });
 
     it('should clear all completed', async () => {
         initTodos();
         expect(data.itemsLeft).toBe(2);
         expect(data.nbrOfCompletedTodos).toBe(2);
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅",
             "3. Third thing ✅",
@@ -204,7 +212,7 @@ describe('TodoStore', () => {
         await trax.reconciliation();
         expect(data.itemsLeft).toBe(2);
         expect(data.nbrOfCompletedTodos).toBe(0);
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Last thing",
         ]);
@@ -212,7 +220,7 @@ describe('TodoStore', () => {
 
     it('should toggle all completed', async () => {
         initTodos();
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅",
             "3. Third thing ✅",
@@ -221,7 +229,7 @@ describe('TodoStore', () => {
 
         todoStore.toggleAllCompleted();
         await trax.reconciliation();
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing",
             "3. Third thing",
@@ -232,7 +240,7 @@ describe('TodoStore', () => {
 
         todoStore.toggleAllCompleted();
         await trax.reconciliation();
-        expect(printTodos()).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing ✅",
             "2. Second thing ✅",
             "3. Third thing ✅",
@@ -244,8 +252,9 @@ describe('TodoStore', () => {
 
     it('should filter todos', async () => {
         initTodos();
+        await trax.reconciliation();
         expect(data.filter).toBe(TodoFilter.ALL)
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅",
             "3. Third thing ✅",
@@ -255,7 +264,7 @@ describe('TodoStore', () => {
 
         todoStore.setFilter(TodoFilter.ACTIVE);
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Last thing",
         ]);
@@ -263,7 +272,7 @@ describe('TodoStore', () => {
 
         todoStore.setFilter(TodoFilter.COMPLETED);
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Second thing ✅",
             "2. Third thing ✅",
         ]);
@@ -271,7 +280,7 @@ describe('TodoStore', () => {
 
         todoStore.setFilter(TodoFilter.ALL);
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅",
             "3. Third thing ✅",
@@ -282,7 +291,7 @@ describe('TodoStore', () => {
 
     it('should support editing', async () => {
         initTodos();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅",
             "3. Third thing ✅",
@@ -291,7 +300,7 @@ describe('TodoStore', () => {
 
         todoStore.startEditing(todos[1]);
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅ [EDITMODE] [EDITVALUE:Second thing]",
             "3. Third thing ✅",
@@ -300,7 +309,7 @@ describe('TodoStore', () => {
 
         todoStore.updateEditDescription(todos[1], "Foobar");
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅ [EDITMODE] [EDITVALUE:Foobar]",
             "3. Third thing ✅",
@@ -309,7 +318,7 @@ describe('TodoStore', () => {
 
         todoStore.stopEditing(todos[1]);
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Foobar ✅",
             "3. Third thing ✅",
@@ -322,7 +331,7 @@ describe('TodoStore', () => {
         todoStore.startEditing(todos[1]);
         todoStore.updateEditDescription(todos[1], "Foobar");
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅ [EDITMODE] [EDITVALUE:Foobar]",
             "3. Third thing ✅",
@@ -330,7 +339,8 @@ describe('TodoStore', () => {
         ]);
 
         todoStore.stopEditing(todos[1], false);
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        await trax.reconciliation();
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅",
             "3. Third thing ✅",
@@ -343,7 +353,7 @@ describe('TodoStore', () => {
         todoStore.startEditing(todos[1]);
         todoStore.updateEditDescription(todos[1], "Foobar");
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅ [EDITMODE] [EDITVALUE:Foobar]",
             "3. Third thing ✅",
@@ -352,7 +362,7 @@ describe('TodoStore', () => {
 
         todoStore.startEditing(todos[2]);
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅",
             "3. Third thing ✅ [EDITMODE] [EDITVALUE:Third thing]",
@@ -365,7 +375,7 @@ describe('TodoStore', () => {
         todoStore.startEditing(todos[1]);
         todoStore.updateEditDescription(todos[1], "  ");
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅ [EDITMODE] [EDITVALUE:  ]",
             "3. Third thing ✅",
@@ -374,7 +384,7 @@ describe('TodoStore', () => {
 
         todoStore.stopEditing(todos[1]);
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Third thing ✅",
             "3. Last thing",
@@ -384,7 +394,7 @@ describe('TodoStore', () => {
         todoStore.startEditing(todos[0]);
         todoStore.updateEditDescription(todos[0], "");
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing [EDITMODE]",
             "2. Third thing ✅",
             "3. Last thing",
@@ -392,7 +402,7 @@ describe('TodoStore', () => {
 
         todoStore.stopEditing(todos[0]);
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Third thing ✅",
             "2. Last thing",
         ]);
@@ -403,7 +413,7 @@ describe('TodoStore', () => {
         todoStore.startEditing(todos[1]);
         todoStore.updateEditDescription(todos[1], "Foobar");
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅ [EDITMODE] [EDITVALUE:Foobar]",
             "3. Third thing ✅",
@@ -412,7 +422,7 @@ describe('TodoStore', () => {
 
         todoStore.stopEditing(todos[2]);
         await trax.reconciliation();
-        expect(printTodos(data.filteredTodos)).toMatchObject([
+        expect(content).toMatchObject([
             "1. Firth thing",
             "2. Second thing ✅ [EDITMODE] [EDITVALUE:Foobar]",
             "3. Third thing ✅",

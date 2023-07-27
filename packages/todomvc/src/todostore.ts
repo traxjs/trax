@@ -49,7 +49,7 @@ export function createTodoStore() {
             nbrOfCompletedTodos: 0,
             itemsLeft: 0
         }, {
-            filteredTodos: (data) => {
+            "~filteredTodos": (data) => {
                 let newContent = [];
                 if (data.filter === TodoFilter.ALL) {
                     newContent = data.todos;
@@ -61,7 +61,7 @@ export function createTodoStore() {
                 // to keep the same object reference (will avoid un-necessary re-render)
                 trax.updateArray(data.filteredTodos, newContent)
             },
-            counters: (data) => {
+            "~counters": (data) => {
                 const count = data.todos.filter((todo) => todo.completed).length;
                 data.nbrOfCompletedTodos = count;
                 data.itemsLeft = data.todos.length - count;

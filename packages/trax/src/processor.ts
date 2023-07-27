@@ -3,6 +3,8 @@ import { wrapFunction } from "./functionwrapper";
 import { LinkedList } from "./linkedlist";
 import { ProcessingContext, TraxComputeFn, TraxEvent, TraxLogTraxProcessingCtxt, TraxProcessor, TraxObjectType, TraxObjectComputeFn, TraxComputeContext, traxEvents } from "./types";
 
+const LAZY_PREFIX = "~";
+
 /**
  * Extend the public API with internal APIs
  */
@@ -87,6 +89,15 @@ export function createTraxProcessor<T>(
     let lastTrigger: "Init" | "Reconciliation" | "TargetRead" | "DirectCall" = "DirectCall";
     /** Current compute context */
     let cc: TraxComputeContext | undefined;
+    /** Tell if this is a lazy processor */
+    let lazy = false;
+    if (processorName && processorName[0] === LAZY_PREFIX) {
+        if (target != null) {
+            lazy = true;
+        } else {
+            error(`(${processorId}) Eager processors must not use the ~ prefix`);
+        }
+    }
 
     function error(msg: string) {
         logTraxEvent({ type: traxEvents.Error, data: msg });
@@ -121,6 +132,9 @@ export function createTraxProcessor<T>(
         },
         get isRenderer() {
             return isRenderer;
+        },
+        get isLazy() {
+            return lazy;
         },
         get disposed() {
             return disposed;
@@ -160,7 +174,9 @@ export function createTraxProcessor<T>(
             if (!forceExecution && !autoCompute && (trigger === "Init" || trigger === "Reconciliation")) return;
 
             let process = true;
-            if (target !== null && trigger !== "TargetRead") {
+            // process must be done when the target is read in a processor context
+            const mustProcess = trigger === "TargetRead" && processorStack.size > 0;
+            if (lazy && !mustProcess) {
                 process = tmd(target)?.hasExternalPropListener || false;
             }
 
@@ -205,6 +221,7 @@ export function createTraxProcessor<T>(
                     error(`(${processorId}) No dependencies found: processor will never be re-executed`);
                 }
             } else if (!process) {
+                // process is only false in case of lazy processors
                 logTraxEvent({ type: traxEvents.ProcessorSkipped, processorId });
             }
         },

@@ -95,7 +95,7 @@ async function updateName(value1: string, value2: string) {
 ```
 ### ```startProcessingContext(data: ProcessingContextData, src?: any): ProcessingContext```
 Create a processing context and raise a start event in the event stream.
-**Processing contexts** are used to virtually **regroup events** that occur in a given context (e.g. an async function call) and that can span over several cycles when they involve asynchronous operations. Processing contexts can be stacked. This function requires the following parameter:
+**Processing contexts** are used to virtually **group events** that occur in a given context (e.g. an async function call) and that can span over several cycles when they involve asynchronous operations. Processing contexts can be stacked. This function requires the following parameter:
 - **data** data associated with the processing context. Must contain a name (e.g. process name)
 and may contain an id (useful for awaitEvent())
 ```typescript

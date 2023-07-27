@@ -12,6 +12,7 @@
     + [**onDirty**: (() => void) | null](#ondirty---void--null)
     + [readonly **priority**: number](#readonly-priority-number)
     + [readonly **computeCount**: number](#readonly-computecount-number)
+    + [readonly **isLazy**: boolean](#readonly-islazy-boolean)
     + [readonly **isRenderer**: boolean](#readonly-isrenderer-boolean)
     + [readonly **disposed**: boolean](#readonly-disposed-boolean)
 * [Processor methods](#processor-methods)
@@ -21,16 +22,16 @@
 
 ## Principle
 
-Trax processors are entities associated to compute functions that produce new values (e.g. strings/objects/collections) from other trax objects. The principle used by trax processors is very simple:
-- when running a processor compute functin, trax identifies all its dependencies (i.e. all the **(object,property) pairs** that have been read) and start **tracking** them
+Trax processors are the trax core entities associated to compute functions that produce new values (e.g. strings/objects/collections) from other trax objects. The principle used by trax processors is very simple:
+- when running a processor compute function, trax identifies all its dependencies (i.e. all the **(object,property) pairs** that have been read) and start **tracking** them
 - when a processor dependency changes, trax sets the processor **dirty**
 - dirty processors are then **automatically re-rerun** (this depends on the processor's nature - cf. *eager* vs. *lazy*). The change propagation process (aka. **reconciliation**) is asynchronous and runs in batches (aka. **trax cycle**).
 
 ## Lazy and eager processors
 
 Trax supports both **synchronous** and **asynchronous** compute functions that can can either run **eagerly** or **lazyly**.
-- **eager** processors are systematically re-rerun when they get dirty, even if the data they produce are not read. Note that eager processors can be defined as *non-autocompute* which means that their **onDirty** callback will be called instead of running them (in a certain way non-autocompute processors sit between eager and lazy processors). Eager processors are typically used for renderer (e.g. React or Preact components - cf. [@traxjs/trax-react][trax-react] or [@traxjs/trax-preact][trax-preact]). Eager processors are created through the **[store.compute][scompute]** function
-- **lazy** processors are not automatically re-rerun when they get dirty if the data they are associated to is not read or not read by an eager processor. On the contrary to eager processors, lazy processors are associated to a data object (e.g. the store root data object) that should be a **gate** to access the values produced by the processor (i.e. **lazy processors must only produce data accessed through their gate object**). If the gate is not accessed **by another processor** (such as a renderer), then the lazy processors don't need to run and are kept dirty. Lazy processors are created through the **[store.init][sinit]** or **[store.add][sadd]** functions.
+- **eager** processors are systematically re-rerun when they get dirty, even if the data they produce are not read. By default processors as set as *auto-compute* to have their compute function run automatically. When eager processors are set as *non-autocompute* their **onDirty** callback will be called instead of running the compute function (in a certain way non-autocompute processors sit between eager and lazy processors). Eager non-autocompute processors are typically used for renderer (e.g. React or Preact components - cf. [@traxjs/trax-react][trax-react] or [@traxjs/trax-preact][trax-preact]) that peform rendering asynchronously. Eager processors can be created through the **[store.compute][scompute]**, the **[store.init][sinit]** or **[store.add][sadd]** functions.
+- **lazy** processors are not automatically re-rerun when they get dirty if the data they are associated to **is not read by another processor**. On the contrary to eager processors, lazy processors must be associated to a data object (e.g. the store root data object) that should be a **gate** to access the values produced by the processor (i.e. **lazy processors must only produce data accessed through their gate object**). If the gate is not accessed **by another processor** (such as a renderer), then the lazy processors don't need to run and are kept dirty. Lazy processors are created through the **[store.init][sinit]** or **[store.add][sadd]** functions and **their name must start with a ~ prefix**.
 
 [trax-react]: https://github.com/traxjs/trax/tree/main/packages/trax-react
 [trax-preact]: https://github.com/traxjs/trax/tree/main/packages/trax-preact
@@ -62,50 +63,79 @@ interface Person {
 }
 
 const store1 = trax.createStore("PersonStore", (store: Store<Person>) => {
-    const data = store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" }, {
-        prettyName: (data) => {
-            // lazy + synchronous processor
+    store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" }, {
+        "~prettyName": (data) => {
+            // lazy synchronous processor
             data.prettyName = data.firstName + " " + data.lastName;
         },
-        avatar: function* (data) {
-            // lazy + asynchronous processor
+        "~avatar": function* (data) {
+            // lazy asynchronous processor
             data.avatar = yield getAvatar(data.id);
         }
     });
-    // Note: lazy processors can be defined on any object thanks to store.add()
+});
+const p1 = store1.data;
+
+expect(p1.prettyName).toBe(undefined); // unprocessed
+expect(p1.avatar).toBe(undefined); // unprocessed
+await pause(10);
+expect(p1.avatar).toBe(undefined); // still unprocessed
+
+let output1 = "";
+store1.compute("Output1", () => {
+    output1 = `${p1.id} / ${p1.prettyName} / ${p1.avatar}`;
 });
 
-const person1 = store1.data;
-
-expect(person1.prettyName).toBe("Homer Simpson"); // processed because we accessed the store1 data root data on which processors are defined
-expect(person1.avatar).toBe(undefined); // being retrieved
+expect(output1).toBe('U1 / Homer Simpson / undefined'); // avatar not retrieved yet
 await pause(10);
-expect(person1.avatar).toBe("AVATAR[U1]"); // retrieved
+expect(output1).toBe('U1 / Homer Simpson / AVATAR[U1]'); // avatar retrieved
 ```
 
 Eager processor example:
 ```typescript
 // following previous example:
 const store2 = trax.createStore("PersonStore2", (store: Store<Person>) => {
-    const data = store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" });
-
-    store.compute("PrettyName", () => {
-        // eager + synchronous processor
-        data.prettyName = data.firstName + " " + data.lastName;
-    });
-
-    store.compute("Avatar", function* () {
-        // eager + asynchronous processor
-        data.avatar = yield getAvatar(data.id);
+    store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" }, {
+        "prettyName": (d) => {
+            // eager processor (no ~ prefix)
+            d.prettyName = d.firstName + " " + d.lastName;
+        },
+        "avatar": function* (d) {
+            // eager + asynchronous processor
+            d.avatar = yield getAvatar(d.id);
+        }
     });
 });
 
-const person2 = store2.data;
-
-expect(person2.prettyName).toBe("Homer Simpson");
-expect(person2.avatar).toBe(undefined); // being retrieved
+const p2 = store2.data;
+expect(p2.prettyName).toBe("Homer Simpson");
+expect(p2.avatar).toBe(undefined); // being retrieved
 await pause(10);
-expect(person2.avatar).toBe("AVATAR[U1]"); // retrieved
+expect(p2.avatar).toBe("AVATAR[U1]"); // retrieved
+```
+
+Eager processor with compute() definition:
+```typescript
+// following previous example:
+const store3 = trax.createStore("PersonStore3", (store: Store<Person>) => {
+    const d = store.init({ id: "U1", firstName: "Homer", lastName: "Simpson" });
+
+    store.compute("prettyName", () => {
+        // eager + synchronous processor
+        d.prettyName = d.firstName + " " + d.lastName;
+    });
+
+    store.compute("avatar", function* () {
+        // eager + asynchronous processor
+        d.avatar = yield getAvatar(d.id);
+    });
+});
+
+const p3 = store3.data;
+expect(p3.prettyName).toBe("Homer Simpson");
+expect(p3.avatar).toBe(undefined); // being retrieved
+await pause(10);
+expect(p3.avatar).toBe("AVATAR[U1]"); // retrieved
 ```
 
 ## Processor properties
@@ -232,6 +262,10 @@ await trax.reconciliation();
 expect(outputProcessor.computeCount).toBe(2); // ran twice
 expect(output).toBe("Person[U1] BART SIMPSON");
 ```
+
+### ```readonly isLazy: boolean```
+Tell if the processor is a lazy processor (Lazy processor names start with the ~ prefix).
+
 ### ```readonly isRenderer: boolean```
 Tell if the processor was labeled as a renderer (debug info)
 

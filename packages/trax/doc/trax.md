@@ -30,14 +30,14 @@ The global trax object gather several utility functions associated to trax objec
 ## Trax objects
 ### Trax ids
 
-One of trax main differentiator compared to similar solutions is that trax generates unique ids for each
+One of trax main differentiator compared to similar solutions is that it generates unique ids for each
 its entities in order to ease troubleshooting. Trax supports 4 types of entities:
-- **Stores** that constitute mini trax context that gather trax entities associated to a given functional context (e.g. data, processors and sub-stores). More on stores [here][stores].
-- **Objects** that gather functional data into a JSON object. The object properties could be of primitive types (string, number, boolean) or other trax objects or arrays
-- **Arrays** that gather functional data into a JSON array.
+- **Stores** that constitute mini trax context that gather trax entities associated to a given functional context (entities can be data, processors or sub-stores). More on stores [here][stores].
+- **Data Objects** that gather functional data into a JSON object. The object properties could be of primitive types (string, number, boolean) or other trax objects or arrays
+- **Arrays** and **Dictionaries** that gather functional data into a JSON array or JSON objects considered as dictionaries.
 - **Processors** that wrap compute functions to produce computed values. More on processors [here][processors].
 
-Trax unique ids are designed to be human-readable and are built though concatenation. As such each entity gets its own id format:
+Trax unique ids are designed to be human-readable and are built though concatenation. Each trax entity gets its own id format:
 - Store ids:
     - root stores: **JS_IDENTIFIER** - e.g. *MyStore* or *TodoStore*
     - sub-stores (i.e. stores created in another store): **JS_IDENTIFIER(>JS_IDENTIFIER)+** - e.g. *MyStore>MySubStore>MySubSubStore*
@@ -45,12 +45,12 @@ Trax unique ids are designed to be human-readable and are built though concatena
     - store root data object: *MyStore/data*
     - sub-objects with automatically generated ids (id is genereated from the path used to access the object for the first time): *MyStore/data\*author\*name*
     - properties: *MyStore/data\*author\*name.firstName* or *MyStore/data\*author.id*
-    - data path built from another object - e.g. *SimpleFamilyStore/data:foo* (created through a id array like with ```myStore.add([fst.data, "foo"], { foo: "bar" });```)
+    - data path built from another object - e.g. *SimpleFamilyStore/data:foo* (created through an id array like with ```myStore.add([fst.data, "foo"], { foo: "bar" });```)
     - data path build from several variables: *PersonStore/abc:123:def* (built from ```personStore.add(["abc", 123, "def"], { name: "Maggie" })```)
 
 - Processor ids:
     - eager processors: **STORE_ID#PROCESSOR_NAME** - e.g. *PersonStore#prettyName*
-    - lazy processors: **STORE_ID#OBJECT_PATH[PROCESSOR_NAME]** - e.g. *PersonStore#data[adult]*
+    - lazy processors: **STORE_ID#OBJECT_PATH[~PROCESSOR_NAME]** - e.g. *PersonStore#data[~adult]* (lazy processor names start with ~)
 
 Where
 - JS_IDENTIFIER = valid JS identifier (no "/" or ">" or "#" signs)
@@ -62,7 +62,7 @@ Where
 
 ### ```isTraxObject(obj: any): boolean```
 
-Tell if an object is a trax object.
+Tell if an object is a trax entity (e.g. trax data or stores or processors).
 
 ```typescript
 expect(trax.isTraxObject({})).toBe(false);
@@ -87,7 +87,7 @@ expect(trax.getTraxId(testStore.data.foo.bar)).toBe(""); // bar is not an object
 
 ### ```getTraxObjectType(obj: any): TraxObjectType```
 
-Get the trax type associated to an object
+Get the trax type associated to a trax entity
 
 ```typescript
 export enum TraxObjectType {
@@ -246,19 +246,19 @@ const personStore = trax.createStore("PersonStore", (store: Store<Person>) => {
         prettyName: "" // computed
     }, {
         adult: (data, cc) => {
-            // lazy processor
+            // processor
             data.isAdult = data.age >= 18;
             processorId1 = cc.processorId;
-            active1 = trax.getActiveProcessor()?.id || "";      // active1
+            active1 = trax.getActiveProcessor()?.id || "";      // active1 - cf. below
         }
     });
 
     processor2 = store.compute("prettyName", () => {
         data.prettyName = data.firstName + " " + data.lastName
-        active2 = trax.getActiveProcessor()?.id || "";          // active2
+        active2 = trax.getActiveProcessor()?.id || "";          // active2 - cf. below
     });
 
-    active3 = trax.getActiveProcessor()?.id || "";              // active3
+    active3 = trax.getActiveProcessor()?.id || "";              // active3 - cf. below
 });
 
 expect(processorId1).toBe("PersonStore#data[adult]");
@@ -286,7 +286,7 @@ expect(active3).toBe("");
 
 Trax update (i.e. change propagation) is performed asynchronously. This method returns a promise that
 will be fulfilled when trax reconciliation is complete (i.e. at the end of the current cycle)
-If there is no update cycle on-going, the promise will be immediately fulfilled
+If there is no update cycle on-going, the promise will be fulfilled in a nexg micro-task
 
 Example:
 ```typescript
@@ -346,7 +346,7 @@ Get acess to the trax event logs. Main use cases for application developers:
 - add application logs in the trax even streams.
 - activate log in the console (can be quite verbose) - cf. ```trax.log.consoleOutput = "All"```
 
-More info on the log event stream [here][events].
+Note: The **full event stream API** is documented [here][events].
 
 Example:
 ```typescript
@@ -360,8 +360,6 @@ trax.log.consoleOutput = "AllButGet"; // All logs except property get
 // Stop logging in the console
 trax.log.consoleOutput = "None";
 ```
-
-Another use
 
 [events]: ./log.md
 

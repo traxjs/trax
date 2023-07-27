@@ -7,10 +7,10 @@
     + [readonly **data**: T](#readonly-data-t)
     + [readonly **disposed**: boolean](#disposed)
 * [Store Life Cycle](#store-life-cycle)
-    + [**init**(data: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T](#initroot-t-lazyprocessors-traxlazycomputedescriptort-t)
+    + [**init**(data: T, contentProcessors?: TraxLazyComputeDescriptor<T>): T](#initroot-t-lazyprocessors-traxlazycomputedescriptort-t)
     + [**dispose**(): boolean](#dispose-boolean)
 * [Store data](#store-data)
-    + [**add**<T extends Object | Object[]>(id: TraxIdDef, initValue: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T](#addt-extends-object--objectid-traxiddef-initvalue-t-lazyprocessors-traxlazycomputedescriptort-t)
+    + [**add**<T extends Object | Object[]>(id: TraxIdDef, initValue: T, contentProcessors?: TraxLazyComputeDescriptor<T>): T](#addt-extends-object--objectid-traxiddef-initvalue-t-lazyprocessors-traxlazycomputedescriptort-t)
     + [**get**<T extends Object>(id: TraxIdDef): T | void](#gett-extends-objectid-traxiddef-t--void)
     + [**remove**<T extends Object>(dataObject: T): boolean](#removet-extends-objectdataobject-t-boolean)
 * [Store processors](#store-processors))
@@ -37,7 +37,7 @@ Stores are created through [trax.createStore()][tcs] or [store.createStore()][sc
 
 ### ```readonly id: string```
 
-The store id - cf. [trax ids](./trax.md#trax-ids) for fmore details on trax id structures.
+The store id - cf. [trax ids](./trax.md#trax-ids) for more details on trax id structures.
 
 ```typescript
 // Simple data store
@@ -70,11 +70,11 @@ expect(greetingStore.disposed).toBe(true);
 
 Store must be created with an initial data graph that must either be passed as [trax.createStore()][tcs] argument or that must be defined through the init() method:
 
-### ```init(data: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T```
+### ```init(data: T, contentProcessors?: TraxLazyComputeDescriptor<T>): T```
 
 Initialize the root data object - must be only called in the store init function. Accepts 2 parameters:
 - **data**: the initial data graph value (JSON object)
-- **lazyProcessors**: optional compute functions associated to the root data object. The processor associated to these functions will follow the object life cycle and will be automatically disposed when the store is disposed
+- **contentProcessors**: optional compute functions associated to the root data object. The processor associated to these functions will follow the object life cycle and will be automatically disposed when the store is disposed
 
 Note: ```store.init(x)``` is equivalent to ```store.add("data", x)``` (but init cannot be done with *add()* as *data* is a reserved id).
 
@@ -97,11 +97,18 @@ const todoStore = trax.createStore("TodoStore", (store: Store<TodoData>) => {
         completedCount: 0,
         itemsLeft: 0
     }, {
-        count: (data) => {
-            // lazy processor to compute the 2 counters
+        count: (data, cc: TraxComputeContext) => {
+            // content processor to compute the 2 counters
             const completedCount = data.todos.filter((todo) => todo.completed).length;
             data.completedCount = completedCount;
             data.itemsLeft = data.todos.length - completedCount;
+
+            // cc = compute context object
+            // cc.computeCount - 1, then 2, 3, etc.
+            // cc.maxComputeCount - can be changed to automatically dispose a processor
+            //      after a certain number of executions (e.g. cc.maxComputeCount=1)
+            // cc.processorId - here: "TodoStore#data[count]"
+            // cc.processorName - here: "count"
         }
     })
 });
@@ -131,14 +138,14 @@ expect(greetingStore.disposed).toBe(true);
 
 Add / retrieve / remove data objects from a store:
 
-### ```add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, lazyProcessors?: TraxLazyComputeDescriptor<T>): T```
+### ```add<T extends Object | Object[]>(id: TraxIdDef, initValue: T, contentProcessors?: TraxLazyComputeDescriptor<T>): T```
 
 **Get or create** a data object associated to the given id (i.e. if the id is already used, this method will **return the existing object**). This method allows to choose a specific id for new objects, whereas adding objects directly in the data graph generates ids from the first access path.
 
 This method accepts the following parameters:
 - **id**: the object id within the store scope - must be unique with the store scope
 - **initValue**: the object init value that will be used if the object is not found and needs to be created (empty object if nothing is provided)
-- **lazyProcessors**: optional compute functions associated to this object. The processor associated to these functions will follow the object life cycle.
+- **contentProcessors**: optional compute functions associated to this object. The processor associated to these functions will follow the object life cycle.
 
 Note: ***add()* must be used when processors create data objects**: the first time the processor is run *add()* will create the object, and the second time it will retrieve the previous objects.
 
@@ -180,12 +187,12 @@ msgStore.addMsg("M2", "Message 2", true);
 await trax.reconciliation();
 expect(msgStore.data.unread).toBe(2);
 const m0 = msgStore.data.messages[0];
-expect(trax.getTraxId(m0)).toBe("MessageStore/Message:M0");  // id defined by the application
+expect(trax.getTraxId(m0)).toBe("MessageStore/Message:M0");  // id defined by the application -> easy to retrieve
 expect(trax.getData("MessageStore/Message:M0")).toBe(m0);
 
 const ms = trax.getStore<MessageData>("MessageStore")!;
 // add message outside the addMsg method
-ms.data.messages.push({ id: "M3", text: "Message 3" }); // message added without store.add()
+ms.data.messages.push({ id: "M3", text: "Message 3" });
 const m3 = msgStore.data.messages[3];
 expect(trax.getTraxId(m3)).toBe("MessageStore/data*messages*3"); // generated id -> message cannot be easily retrieved by id as its id cannot be easily guessed
 ```
@@ -231,7 +238,7 @@ in the previous function. *Compute* accepts the following parameters:
 - **id** the processor id - must be unique with the store scope
 - **compute** the compute function
 - **autoCompute** (optional) if true (default) the processor compute will be automatically called after getting dirty (i.e. at the end of a cycle when trax.processChanges() is called). If false, the process **onDirty** callback will be called - and it will be up to the appliction to explicitely call the compute function (useful for **React renderers** that are asynchronous - this is what the *@traxjs/trax-react* library uses).
-- **isRenderer** (optional) flag the processor as a renderer (e.g. React or Preact component - default: false) - used to separate renderers in the logs.
+- **isRenderer** (optional - default:false) flag the processor as a renderer (e.g. React or Preact component) - used to separate renderers in the logs.
 
 Note: non-autoCompute processors are still considered eager as their *onDirty* callback will be called when they get dirty, even the data generated by the processor are not read.
 
@@ -288,7 +295,7 @@ expect(store.getStore("Bar")).toBe(subStore);
 ##  Utilities
 ### ```async(...)```
 
-Create an async function from a generator function in order to have its logs properly tracked in the trax logger This is meant to be used in store wrapper objects to expose action functions. This can also be used to define an async block that will be called asychronously (e.g. store async initialization).
+Create an async function from a generator function in order to have its logs properly tracked in the trax logger. This is meant to be used in store wrapper objects to expose action functions. This can also be used to define an async block that will be called asychronously (e.g. store async initialization).
 
 Note: The reason for **using generator functions** instead of simple **async functions** is because trax can determine when JS runs in the generator callstack or not. This cannot be done with async functions. This is why any async function that we want to track in the trax dev tools must be implemented as a generator function.
 

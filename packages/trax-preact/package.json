@@ -1,6 +1,6 @@
 {
     "name": "@traxjs/trax-preact",
-    "version": "0.0.5",
+    "version": "1.0.0",
     "description": "Preact bindings for Trax: create reactive components",
     "main": "dist/trax-preact.mjs",
     "types": "dist/index.d.ts",
@@ -45,7 +45,7 @@
         "@testing-library/dom": "8.20.0",
         "@testing-library/preact": "^3.2.3",
         "@testing-library/user-event": "^14.4.3",
-        "@traxjs/trax": "0.0.3",
+        "@traxjs/trax": "1.0.0",
         "@types/react": "^18.0.27",
         "@types/react-dom": "^18.0.10",
         "chai": "^4.3.7",

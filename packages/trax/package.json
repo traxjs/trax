@@ -1,6 +1,6 @@
 {
     "name": "@traxjs/trax",
-    "version": "0.0.3",
+    "version": "1.0.0",
     "description": "Reactive state management",
     "main": "dist/trax.mjs",
     "types": "dist/index.d.ts",

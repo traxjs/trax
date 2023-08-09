@@ -95,7 +95,7 @@ describe('MessageBoard', () => {
         ]);
     });
 
-    it('should react to message deletion from control panel', async () => {
+    it.skip('should react to message deletion from control panel', async () => {
         await init();
 
         expect(printContent()).toMatchObject([

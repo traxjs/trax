@@ -26,8 +26,7 @@ describe('Control Panel', () => {
             // first time
             await trax.log.awaitEvent(LOG_MESSAGE_STORE_INITIALIZED);
             p = trax.log.awaitEvent(traxEvents.ProcessingStart, { processorId: /#ControlPanel/ });
-        }
-        if (awaitFullRender) {
+        } else if (awaitFullRender) {
             await p!;
         }
     }

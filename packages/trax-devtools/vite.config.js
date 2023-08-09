@@ -11,7 +11,6 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 "index": "index.html",
-                "page-script": "lib/libs/page-script.js",
                 "panel": "src/panel/panel.html"
             },
             output: {

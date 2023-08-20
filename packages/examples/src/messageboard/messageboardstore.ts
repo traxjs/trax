@@ -19,7 +19,7 @@ interface MessageBoardData {
 export type MessageBoardStore = ReturnType<typeof createMessageBoardStore>;
 
 export function createMessageBoardStore(msgStore?: MessageStore, usrStore?: UserStore) {
-    const messageStore = msgStore || globalMessageStore;
+    const messageStore: MessageStore = msgStore || (globalMessageStore as MessageStore);
     const userStore = usrStore || globalUserStore;
 
     return trax.createStore("MessageBoardStore", (store: Store<MessageBoardData>) => {

@@ -710,8 +710,8 @@ __metadata:
     "@testing-library/dom": 8.20.0
     "@testing-library/preact": ^3.2.3
     "@testing-library/user-event": ^14.4.3
-    "@traxjs/trax": ^0.0.3
-    "@traxjs/trax-react": ^0.0.5
+    "@traxjs/trax": ^1.0.0
+    "@traxjs/trax-react": ^1.0.0
     jsdom: ^21.1.0
     preact: ^10.11.3
     preact-dom: ^1.0.1
@@ -731,8 +731,8 @@ __metadata:
     "@testing-library/dom": 9.2.0
     "@testing-library/preact": ^3.2.3
     "@testing-library/user-event": ^14.4.3
-    "@traxjs/trax": ^0.0.3
-    "@traxjs/trax-preact": 0.0.4
+    "@traxjs/trax": ^1.0.0
+    "@traxjs/trax-preact": 1.0.0
     jsdom: ^21.1.0
     preact: ^10.11.3
     preact-dom: ^1.0.1
@@ -753,8 +753,8 @@ __metadata:
     "@testing-library/dom": 8.20.0
     "@testing-library/preact": ^3.2.3
     "@testing-library/user-event": ^14.4.3
-    "@traxjs/trax": ^0.0.3
-    "@traxjs/trax-preact": ^0.0.5
+    "@traxjs/trax": ^1.0.0
+    "@traxjs/trax-preact": ^1.0.0
     jsdom: ^21.1.0
     preact: ^10.11.3
     preact-dom: ^1.0.1
@@ -764,21 +764,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@traxjs/trax-preact@npm:0.0.4":
-  version: 0.0.4
-  resolution: "@traxjs/trax-preact@npm:0.0.4"
-  checksum: b301719f6c7ed3571d2c7e97b9d499986b69bf9282ede7701891389a4891085874e43651c2b678f11a2cd2d749ba2aaddf83855723b06572c1fa4d5768e71625
-  languageName: node
-  linkType: hard
-
-"@traxjs/trax-preact@npm:^0.0.5":
-  version: 0.0.5
-  resolution: "@traxjs/trax-preact@npm:0.0.5"
-  checksum: 4eff1470bdf47ba0d48b828e2e862d25059e975e9ae09b15a87c948ada8f3137c557c7e6d0c73229d2d2b8f9f7afa92974b31f8d7449d94fad0878bd09e8bc4b
-  languageName: node
-  linkType: hard
-
-"@traxjs/trax-preact@workspace:packages/trax-preact":
+"@traxjs/trax-preact@1.0.0, @traxjs/trax-preact@^1.0.0, @traxjs/trax-preact@workspace:packages/trax-preact":
   version: 0.0.0-use.local
   resolution: "@traxjs/trax-preact@workspace:packages/trax-preact"
   dependencies:
@@ -805,21 +791,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@traxjs/trax-react@npm:0.0.1":
-  version: 0.0.1
-  resolution: "@traxjs/trax-react@npm:0.0.1"
-  checksum: 6de967e54dbf96dc706103189f889a01f4495529d3e74397c87c36d2a4c93f8409158a2a74dbc3a29b0e92fbd34111c6ef8afb518c764d64c5b3a8252538e416
-  languageName: node
-  linkType: hard
-
-"@traxjs/trax-react@npm:^0.0.5":
-  version: 0.0.5
-  resolution: "@traxjs/trax-react@npm:0.0.5"
-  checksum: 8cca08751aacdc83efcd38712c87d0db0868146530e1abffd464a8a63f589a1d975b67a103bdbbb9dbf8dc21526a803b9c4e0f4ca9e37f656376f46dbb1f6ee3
-  languageName: node
-  linkType: hard
-
-"@traxjs/trax-react@workspace:packages/trax-react":
+"@traxjs/trax-react@^1.0.0, @traxjs/trax-react@workspace:packages/trax-react":
   version: 0.0.0-use.local
   resolution: "@traxjs/trax-react@workspace:packages/trax-react"
   dependencies:
@@ -837,6 +809,13 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@traxjs/trax-react@npm:0.0.1":
+  version: 0.0.1
+  resolution: "@traxjs/trax-react@npm:0.0.1"
+  checksum: 6de967e54dbf96dc706103189f889a01f4495529d3e74397c87c36d2a4c93f8409158a2a74dbc3a29b0e92fbd34111c6ef8afb518c764d64c5b3a8252538e416
+  languageName: node
+  linkType: hard
+
 "@traxjs/trax@1.0.0, @traxjs/trax@^1.0.0, @traxjs/trax@workspace:packages/trax":
   version: 0.0.0-use.local
   resolution: "@traxjs/trax@workspace:packages/trax"
@@ -853,13 +832,6 @@ __metadata:
   version: 0.0.1
   resolution: "@traxjs/trax@npm:0.0.1"
   checksum: ee87d1f9f1fee654b900c8e76137ce43b1dcca049468d14fb6a8cb06a3395c936f6759f25b3d80f22c3caad10924bfea870dcaf8c77a898cd95d20a92d9b2a2f
-  languageName: node
-  linkType: hard
-
-"@traxjs/trax@npm:^0.0.3":
-  version: 0.0.3
-  resolution: "@traxjs/trax@npm:0.0.3"
-  checksum: 4fa0ee10be539c9ae331e6dec38589e6b9f03d20215d62f976f43d45fba77183c96c15be123f8098ce7585e6e2bef71cc4b13aaaaae12c2b02b4457a919be0a9
   languageName: node
   linkType: hard
 

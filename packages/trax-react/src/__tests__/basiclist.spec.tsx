@@ -1,17 +1,24 @@
 // @vitest-environment jsdom
-import * as React from 'react';
-import * as ReactDOM from 'react-dom/client';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { act, Simulate } from 'react-dom/test-utils';
-import { resetReactEnv } from '..';
-import { BasicList, ConditionalList, CptWithUseStoreArgs } from './basiclist';
-import { trax } from '@traxjs/trax';
+import * as React from "react";
+import * as ReactDOM from "react-dom/client";
+import { beforeEach, describe, expect, it } from "vitest";
+import { act, Simulate } from "react-dom/test-utils";
+import { resetReactEnv } from "..";
+import { BasicList, ConditionalList, CptWithUseStoreArgs } from "./basiclist";
+import { trax } from "@traxjs/trax";
+import { REACT_DISPOSE_TIMEOUT } from "../core";
 
 // workaround to remove react-dom/test-utils warnings
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-describe('Simple List', () => {
+describe("Simple List", () => {
     let host: HTMLDivElement;
+
+    async function pause(ms: number) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, ms);
+        });
+    }
 
     function listHost(listIdx: number) {
         return host.querySelectorAll("div.basiclist")[listIdx] as HTMLDivElement;
@@ -43,17 +50,17 @@ describe('Simple List', () => {
         });
     }
 
-    describe('Single Instance', () => {
+    describe("Single Instance", () => {
         beforeEach(() => {
             resetReactEnv();
-            host = document.createElement('div');
+            host = document.createElement("div");
             act(() => {
                 const root = ReactDOM.createRoot(host);
                 root.render(<BasicList />);
             });
         });
 
-        it('should load the list and add / clear items', async () => {
+        it("should load the list and add / clear items", async () => {
             expect(listHost(0).dataset.id).toBe("React#Test:BasicList:1");
             expect(listItemLength(0)).toBe(0);
             expect(listTotalText(0)).toBe("Total: 0");
@@ -84,20 +91,22 @@ describe('Simple List', () => {
         });
     });
 
-    describe('Multi Instances', () => {
+    describe("Multi Instances", () => {
         beforeEach(() => {
             resetReactEnv();
-            host = document.createElement('div');
+            host = document.createElement("div");
             act(() => {
                 const root = ReactDOM.createRoot(host);
-                root.render(<>
-                    <BasicList />
-                    <BasicList />
-                </>);
+                root.render(
+                    <>
+                        <BasicList />
+                        <BasicList />
+                    </>
+                );
             });
         });
 
-        it('should work independently', async () => {
+        it("should work independently", async () => {
             expect(listHost(0).dataset.id).toBe("React#Test:BasicList:1");
             expect(listItemLength(0)).toBe(0);
             expect(listTotalText(0)).toBe("Total: 0");
@@ -142,10 +151,10 @@ describe('Simple List', () => {
         });
     });
 
-    describe('UseStore', () => {
-        it('should support multiple arguments', async () => {
+    describe("UseStore", () => {
+        it("should support multiple arguments", async () => {
             resetReactEnv();
-            host = document.createElement('div');
+            host = document.createElement("div");
             act(() => {
                 const root = ReactDOM.createRoot(host);
                 root.render(<CptWithUseStoreArgs text="Hello World" />);
@@ -156,15 +165,15 @@ describe('Simple List', () => {
         });
     });
 
-    describe('Dispose', () => {
-        it('should be called when the component is removed from the DOM', async () => {
+    describe("Dispose", () => {
+        it("should be called when the component is removed from the DOM", async () => {
             resetReactEnv();
-            host = document.createElement('div');
+            host = document.createElement("div");
 
             const ctxtStore = trax.createStore("TestContext", {
-                showList: true
+                showList: true,
             });
-            const context = ctxtStore.data
+            const context = ctxtStore.data;
 
             act(() => {
                 const root = ReactDOM.createRoot(host);
@@ -192,6 +201,9 @@ describe('Simple List', () => {
                 context.showList = false;
             });
 
+            // dispose is now async
+            await pause(REACT_DISPOSE_TIMEOUT * 1.5);
+
             expect(listHost(0)).toBe(undefined);
             expect(cptProcessor.disposed).toBe(true);
 
@@ -216,7 +228,18 @@ describe('Simple List', () => {
             expect(cptProcessor2.disposed).toBe(false);
             expect(cptProcessor2.computeCount).toBe(2);
             expect(cptProcessor.disposed).toBe(true);
+
+            // Remove the list again
+            await act(async () => {
+                context.showList = false;
+            });
+            expect(cptProcessor2.disposed).toBe(false);
+
+            // dispose is now async
+            await pause(REACT_DISPOSE_TIMEOUT * 1.5);
+
+            expect(listHost(0)).toBe(undefined);
+            expect(cptProcessor2.disposed).toBe(true);
         });
     });
 });
-

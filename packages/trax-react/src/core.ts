@@ -1,14 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { trax, TraxProcessor } from '@traxjs/trax';
+import { trax, TraxProcessor } from "@traxjs/trax";
+import React, { useEffect, useRef, useState } from "react";
 
 interface TraxReactCptCtxt {
     id?: string;
-    props: any;
+    props?: object;
     processor?: TraxProcessor;
-    jsx: JSX.Element;
+    jsx?: JSX.Element | string;
 }
 
 const REACT_STORE_ID = "React";
+export const REACT_DISPOSE_TIMEOUT = 50;
 
 const creationCounts: Map<NamedCurve, number> = new Map();
 
@@ -21,32 +22,44 @@ function buildProcessorId(name: string, instanceCount: number) {
 
 function createReactStore() {
     const rs = trax.getStore(REACT_STORE_ID);
+    // eslint-disable-next-line @typescript-eslint/ban-types
     return rs || trax.createStore<{}>(REACT_STORE_ID, {});
 }
 
 /** React store: gathers all react processors in the same store */
 let reactStore = createReactStore();
 
-function addProcessor(name: string, reactFunctionCpt: (prop?: any) => JSX.Element, cc: TraxReactCptCtxt, setRefreshCount: (c: number) => void) {
-    cc.jsx = "" as any;
+function addProcessor(
+    name: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    reactFunctionCpt: (prop?: any) => JSX.Element,
+    cc: TraxReactCptCtxt,
+    setRefreshCount: (c: number) => void
+) {
+    cc.jsx = "";
     let instanceCount = creationCounts.get(name);
-    if (instanceCount === undefined) {
+    if (!instanceCount || isNaN(instanceCount)) {
         instanceCount = 1;
     } else {
         instanceCount++;
     }
-    creationCounts.set(name, instanceCount);
+    creationCounts.set(name, instanceCount as number);
 
-    const id = buildProcessorId(name, instanceCount);
+    const id = buildProcessorId(name, instanceCount as number);
     cc.id = id;
 
-    const pr = reactStore.compute(id, () => {
-        try {
-            cc.jsx = reactFunctionCpt(cc.props);
-        } catch (ex) {
-            trax.log.error(`[@traxjs/trax-react] Processing Error: ${ex}`);
-        }
-    }, false, true);
+    const pr = reactStore.compute(
+        id,
+        () => {
+            try {
+                cc.jsx = reactFunctionCpt(cc.props);
+            } catch (ex) {
+                trax.log.error(`[@traxjs/trax-react] Processing Error: ${ex}`);
+            }
+        },
+        false,
+        true
+    );
     pr.onDirty = () => {
         // onDirty is synchronous
         // mark react component as dirty
@@ -70,30 +83,39 @@ export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.E
     // Make the component pure (React.memo) to avoid re-processing if prop reference didn't change
     function fc(props: T) {
         // Use an internal state variable to trigger refresh
-        const [$$traxRefreshCount, $$setTraxRefreshCount] = useState(0);
-        let c: React.MutableRefObject<TraxReactCptCtxt> = useRef({} as any);
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const [_traxRefreshCount, setTraxRefreshCount] = useState(0);
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        const c: React.MutableRefObject<TraxReactCptCtxt> = useRef({});
         const cc = c.current;
-        if (!cc.processor) {
-            addProcessor(name, reactFunctionCpt, cc, $$setTraxRefreshCount);
+        if (!cc.processor || cc.processor.disposed) {
+            addProcessor(name, reactFunctionCpt, cc, setTraxRefreshCount);
         }
+        // add the processor as candidate for disposal (React Strict mode constraint - cf. next)
+        disposalPool.addProcessor(cc.processor);
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         useEffect(() => {
             // processor cleanup
+            // warning: we cannot dispose processors immediately due to side effects
+            // in React Strict Mode (in this mode effects are not always called)
+            // remove the processor from the pool as it must not be disposed yet
+            disposalPool.removeProcessor(cc.processor);
             return function cleanup() {
-                if (cc.processor) {
-                    cc.processor.dispose();
-                    cc.processor = undefined;
-                }
+                // add the procesoor to have it disposed
+                disposalPool.addProcessor(cc.processor);
             };
-        }, [cc]);
-        cc.props = props;
+        }); // change here: must run all the time
+        cc.props = props as object;
         // compute must be forced as this function is called when component props have changed
-        cc.processor!.compute(true);
-        return cc.jsx;
+        // console.log("COMPUTE", cc.processor!.id);
+        cc.processor && cc.processor.compute(true);
+        return cc.jsx || "";
     }
 
     // use a dynamic function to keep the component name (will show in react dev tools)
     const fcName = name.replace(/\:/g, "_");
     const func = new Function("fc", `return function ${fcName}(props){ return fc(props) }`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return React.memo(func(fc)) as any;
 }
 
@@ -103,7 +125,7 @@ export function component<T>(name: string, reactFunctionCpt: (props: T) => JSX.E
  * @param o
  * @returns
  */
-export function traxId(o: any) {
+export function traxId(o: object) {
     return trax.getTraxId(o);
 }
 
@@ -133,20 +155,24 @@ export function resetReactEnv() {
  * @param factory a factory function to create the store instance
  * @returns the store object
  */
-export function useStore<T = any>(factory: (...args: any[]) => T, ...args: any[]): T {
-    const ref = (useRef({})).current as any;
-    let store: T = ref.store;
+export function useStore<T extends { dispose?: () => void }, V extends Array<any>>(
+    factory: (...args: V) => T,
+    ...args: V
+): T {
+    const ref = useRef({} as { store?: T }).current;
+    let store = ref.store;
     if (!store) {
         // create it
         ref.store = store = factory(...args);
     }
-    if (typeof (store as any).dispose === "function") {
-        useEffect(() => {
-            return () => {
-                (store as any)?.dispose!();
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+        return () => {
+            if (store && typeof store.dispose === "function") {
+                store.dispose();
             }
-        }, [store]);
-    }
+        };
+    }, [store]);
     return store;
 }
 
@@ -157,10 +183,49 @@ export function useStore<T = any>(factory: (...args: any[]) => T, ...args: any[]
  * @param state the default state value
  * @returns the current state value
  */
-export function useTraxState<T extends Object>(state: T): T {
+export function useTraxState<T extends object>(state: T): T {
     const store = useStore(() => {
         const name = "State[" + componentId().replace(/(^[^\/\#]+(\/|\#))|(\#)/g, "") + "]";
         return trax.createStore(name, state);
     });
     return store.data as T;
 }
+
+const disposalPool = (() => {
+    const pool: Set<TraxProcessor> = new Set();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let timerId: any = undefined;
+
+    function checkTimeout() {
+        if (timerId) {
+            clearTimeout(timerId);
+            timerId = undefined;
+        }
+        if (pool.size) {
+            timerId = setTimeout(disposeAll, REACT_DISPOSE_TIMEOUT);
+        }
+    }
+
+    function disposeAll() {
+        for (const p of pool) {
+            // console.log("DISPOSE", p.id);
+            p.dispose();
+        }
+        pool.clear();
+    }
+
+    return {
+        addProcessor(p?: TraxProcessor) {
+            if (p) {
+                pool.add(p);
+                checkTimeout();
+            }
+        },
+        removeProcessor(p?: TraxProcessor) {
+            if (p) {
+                pool.delete(p);
+                checkTimeout();
+            }
+        },
+    };
+})();

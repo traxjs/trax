@@ -1,49 +1,44 @@
-import React from 'react';
-import { trax, traxEvents } from '@traxjs/trax';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createCounterStore, Counter } from '../counter';
+import React from "react";
+import { trax, traxEvents } from "@traxjs/trax";
+import { beforeEach, describe, expect, it } from "vitest";
+import { createCounterStore, Counter, Timer } from "../counter";
 import { resetReactEnv } from "@traxjs/trax-react";
-import { render, fireEvent, RenderResult } from '@testing-library/preact';
+import { render, fireEvent, RenderResult } from "@testing-library/preact";
 
-describe('Counter', () => {
+describe("Counter", () => {
     const intervalId = {};
-    let setInterval1: any, clearInterval1: any;
     let lastIntervalMs: number, setIntervalCount: number, setIntervalCb: () => void;
     let clearIntervalCount: number, lastClearIntervalId: any;
+    let timer: Timer;
 
     beforeEach(() => {
         // mock setInterval
         lastIntervalMs = -1;
         setIntervalCount = 0;
-        setInterval1 = globalThis.setInterval;
-        setIntervalCb = () => { };
-        (globalThis as any).setInterval = (cb: () => void, ms?: number) => {
-            lastIntervalMs = ms || 0;
-            setIntervalCount++;
-            setIntervalCb = cb;
-            return intervalId;
-        }
-        // mock clearInterval
-        clearInterval1 = globalThis.clearInterval;
         clearIntervalCount = 0;
         lastClearIntervalId = null;
-        (globalThis as any).clearInterval = (id: any) => {
-            clearIntervalCount++;
-            lastClearIntervalId = id;
+
+        setIntervalCb = () => {};
+        timer = {
+            setInterval(cb: () => void, ms?: number) {
+                lastIntervalMs = ms || 0;
+                setIntervalCount++;
+                setIntervalCb = cb;
+                return intervalId;
+            },
+            clearInterval(id: any) {
+                clearIntervalCount++;
+                lastClearIntervalId = id;
+            },
         };
     });
 
-    afterEach(() => {
-        globalThis.setInterval = setInterval1;
-        globalThis.clearInterval = clearInterval1;
-    })
-
-    describe('Store', () => {
-        it('should support init / reset / dipose', async function () {
-            const cs = createCounterStore();
+    describe("Store", () => {
+        it("should support init / reset / dipose", async function () {
+            const cs = createCounterStore(timer);
             expect(setIntervalCount).toBe(1);
             expect(cs.data.count).toBe(0);
-            expect(lastIntervalMs).toBe(1000);
+            expect(lastIntervalMs).toBe(1001);
 
             setIntervalCb();
             await trax.reconciliation(); // not really needed here as ther is no processor
@@ -77,14 +72,16 @@ describe('Counter', () => {
         });
     });
 
-    describe('Component', () => {
+    describe("Component", () => {
         let container: RenderResult;
 
         beforeEach(() => {
             resetReactEnv();
-            container = render(<div>
-                <Counter />
-            </div>);
+            container = render(
+                <div>
+                    <Counter timer={timer} />
+                </div>
+            );
         });
 
         async function renderComplete() {
@@ -99,7 +96,7 @@ describe('Counter', () => {
             return counterDiv().querySelector(".counter-value")!.innerHTML.trim();
         }
 
-        it('should render and reset counter', async () => {
+        it("should render and reset counter", async () => {
             expect(counterDiv().dataset.id).toBe("React#Counter:1");
             expect(counterValue()).toBe("0");
             setIntervalCb();

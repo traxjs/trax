@@ -23,8 +23,8 @@
         "serve": "vite preview"
     },
     "dependencies": {
-        "@traxjs/trax": "^0.0.3",
-        "@traxjs/trax-preact": "0.0.4",
+        "@traxjs/trax": "^1.0.0",
+        "@traxjs/trax-preact": "1.0.0",
         "preact": "^10.11.3",
         "preact-dom": "^1.0.1",
         "preact-jsx-runtime": "^1.2.0"
